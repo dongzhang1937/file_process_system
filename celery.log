@@ -31,3 +31,8 @@ User information: uid=0 euid=0 gid=0 egid=0
 [2026-01-09 11:08:26,882: INFO/MainProcess] mingle: searching for neighbors
 [2026-01-09 11:08:27,892: INFO/MainProcess] mingle: all alone
 [2026-01-09 11:08:27,920: INFO/MainProcess] worker1@XIANZHECHU-PC1 ready.
+[2026-01-09 11:16:05,330: INFO/MainProcess] Task file_process.models.prodetail.process_document_task[c8ae8d9b-240a-4dae-aca6-aef43aa225cc] received
+2026-01-09 11:16:05.331 | INFO     | file_process.models.prodetail:process_document_task:785 - 开始处理文档: doc_id=719df31327598804d6f9cdd3aca0b3bd, file_path=/mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/华能点对点-0419.docx
+2026-01-09 11:16:05.332 | INFO     | file_process.models.prodetail:process_document_task:790 - 直接调用WordParser处理Word文档: /mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/华能点对点-0419.docx
+2026-01-09 11:16:20.602 | INFO     | file_process.models.prodetail:process_document_task:950 - Word文档处理成功: doc_id=719df31327598804d6f9cdd3aca0b3bd, chapters=321, images=558
+[2026-01-09 11:16:20,626: INFO/MainProcess] Task file_process.models.prodetail.process_document_task[c8ae8d9b-240a-4dae-aca6-aef43aa225cc] succeeded in 15.294731724003213s: {'metadata': {'chapter_count': 321, 'image_count': 558}, 'process_time': '2026-01-09 11:16:20', 'status': 'success'}

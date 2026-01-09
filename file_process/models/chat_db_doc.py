@@ -403,40 +403,25 @@ def export_to_word():
         doc.add_paragraph(f"生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         doc.add_paragraph()
         
+        # 全局章节计数器
+        global_chapter_index = 0
+        
         # 遍历结果
-        query_index = 0
         for query_result in results:
             query = query_result.get('query', '')
             doc_results = query_result.get('results', [])
-            query_index += 1
-            
-            # 添加用户输入作为标题（带序号）
-            doc.add_heading(f"{query_index} 用户输入", level=1)
-            # 添加用户输入的内容
-            query_para = doc.add_paragraph(query)
-            query_para.runs[0].bold = True
-            doc.add_paragraph()  # 空行
             
             if not doc_results:
-                doc.add_paragraph("未找到匹配结果")
                 continue
             
-            source_index = 0
             for doc_result in doc_results:
                 filename = doc_result.get('filename', '未知文档')
                 chapters = doc_result.get('chapters', [])
-                source_index += 1
                 
-                # 添加来源（带序号，如 1.1 来源xxx）
-                doc.add_heading(f"{query_index}.{source_index} 来源 {filename}", level=2)
-                
-                # 添加章节内容（带层级序号）
-                chapter_counters = [0] * 10  # 支持最多10级
                 for chapter in chapters:
-                    add_chapter_to_doc_with_numbering(doc, chapter, level=3, 
-                                                       prefix=f"{query_index}.{source_index}", 
-                                                       counters=chapter_counters, 
-                                                       depth=0)
+                    global_chapter_index += 1
+                    # 添加章节（带路径和序号）
+                    add_chapter_with_path(doc, chapter, global_chapter_index, filename)
         
         # 保存到临时文件
         temp_dir = tempfile.gettempdir()
@@ -463,6 +448,114 @@ def export_to_word():
             'success': False,
             'error': str(e)
         }), 500
+
+
+def add_chapter_with_path(doc, chapter, index, filename):
+    """
+    添加章节到Word文档，显示完整路径和带序号的标题
+    
+    格式:
+    [需删除]技术规范专用部分 -> 原生分布式数据库 -> 总体要求 -> 标题
+    1 标题
+      内容...
+    
+    Args:
+        doc: Word文档对象
+        chapter: 章节数据（包含 path, title, content, images, children）
+        index: 章节序号（1, 2, 3...）
+        filename: 来源文件名
+    """
+    from docx.shared import Inches, Pt, RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    
+    title = chapter.get('title', '')
+    content = chapter.get('content', '')
+    images = chapter.get('images', [])
+    children = chapter.get('children', [])
+    path = chapter.get('path', [])
+    
+    # 1. 构建完整路径字符串（如: 技术规范专用部分 -> 原生分布式数据库 -> 总体要求 -> 标题）
+    if path:
+        path_titles = [p.get('title', '') for p in path]
+        path_str = ' -> '.join(path_titles)
+    else:
+        path_str = title
+    
+    # 添加路径行（灰色小字，标记为[需删除]）
+    path_para = doc.add_paragraph()
+    path_run = path_para.add_run(f"[需删除]{path_str}")
+    path_run.font.size = Pt(9)
+    path_run.font.color.rgb = RGBColor(128, 128, 128)  # 灰色
+    
+    # 2. 添加带序号的标题（如: 1 ▲拥有自主知识产权...）
+    heading = doc.add_heading(f"{index} {title}", level=1)
+    
+    # 3. 添加内容
+    if content:
+        _add_content_with_tables(doc, content, images)
+    else:
+        # 没有内容时仍需添加图片
+        for img in images:
+            img_path = img.get('image_path', '')
+            if img_path and os.path.exists(img_path):
+                try:
+                    doc.add_picture(img_path, width=Inches(5))
+                except Exception as e:
+                    logger.warning(f"添加图片失败: {img_path}, 错误: {e}")
+    
+    # 4. 递归添加子章节（带层级序号 1.1, 1.1.1 等）
+    if children:
+        child_counters = [0] * 10
+        for child in children:
+            add_child_chapter_with_numbering(doc, child, prefix=str(index), 
+                                              counters=child_counters, depth=0)
+    
+    # 添加空行分隔
+    doc.add_paragraph()
+
+
+def add_child_chapter_with_numbering(doc, chapter, prefix, counters, depth):
+    """
+    递归添加子章节，带层级序号（如 1.1, 1.1.1）
+    """
+    from docx.shared import Inches
+    
+    title = chapter.get('title', '')
+    content = chapter.get('content', '')
+    images = chapter.get('images', [])
+    children = chapter.get('children', [])
+    
+    # 增加当前层级计数
+    counters[depth] += 1
+    # 重置更深层级的计数
+    for i in range(depth + 1, len(counters)):
+        counters[i] = 0
+    
+    # 构建完整序号（如 1.1.1）
+    number_parts = [str(counters[i]) for i in range(depth + 1)]
+    full_number = f"{prefix}.{'.'.join(number_parts)}"
+    
+    # 添加章节标题（带序号）
+    if title:
+        heading_level = min(depth + 2, 9)  # 从 level 2 开始
+        doc.add_heading(f"{full_number} {title}", level=heading_level)
+    
+    # 添加内容
+    if content:
+        _add_content_with_tables(doc, content, images)
+    else:
+        for img in images:
+            img_path = img.get('image_path', '')
+            if img_path and os.path.exists(img_path):
+                try:
+                    doc.add_picture(img_path, width=Inches(5))
+                except Exception as e:
+                    logger.warning(f"添加图片失败: {img_path}, 错误: {e}")
+    
+    # 递归添加子章节
+    for child in children:
+        add_child_chapter_with_numbering(doc, child, prefix=prefix, 
+                                          counters=counters, depth=depth + 1)
 
 
 def add_chapter_to_doc_with_numbering(doc, chapter, level=3, prefix="", counters=None, depth=0):
