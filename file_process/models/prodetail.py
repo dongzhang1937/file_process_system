@@ -456,6 +456,11 @@ def delete_document():
             }), 404
 
         # 6. 删除处理过程中生成的图片文件（不删除原始word文件）
+        # 先记录图片目录路径，再删除文件
+        images_dir = None
+        if image_paths:
+            images_dir = os.path.dirname(image_paths[0])
+        
         deleted_count = 0
         for img_path in image_paths:
             try:
@@ -466,12 +471,10 @@ def delete_document():
             except Exception as e:
                 logger.warning(f"删除图片文件失败 {img_path}: {e}")
 
-        # 7. 删除空的图片目录（如果目录为空则删除）
-        if image_paths and os.path.exists(image_paths[0]):
+        # 7. 删除图片目录（如果目录为空或只剩空目录则删除）
+        if images_dir:
             try:
-                # 获取第一个图片文件的目录
-                images_dir = os.path.dirname(image_paths[0])
-                # 检查目录是否为空
+                # 检查目录是否存在且为空
                 if os.path.exists(images_dir) and not os.listdir(images_dir):
                     shutil.rmtree(images_dir)
                     logger.info(f"删除空的图片目录: {images_dir}")

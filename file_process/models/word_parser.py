@@ -27,16 +27,16 @@ class WordParser:
         self.file_path = file_path
         self.doc = DocumentLoader(file_path)
 
-        # 物理路径隔离: /base_path/username/doc_id/
-        self.storage_dir = os.path.join(base_storage_path, username, str(doc_id))
-        os.makedirs(self.storage_dir, exist_ok=True)
-
-        # URL 隔离: /base_url/username/doc_id/
-        self.url_prefix = f"{base_url}/{username}/{doc_id}"
-
-        # 图片命名前缀：原始文件名（去掉 .docx）
+        # 图片目录使用文件名（不带后缀）而不是 doc_id，更易于识别
         base_name = os.path.splitext(os.path.basename(file_path))[0]
         self.image_name_prefix = self._sanitize_filename(base_name)
+        
+        # 物理路径隔离: /base_path/username/文件名/
+        self.storage_dir = os.path.join(base_storage_path, username, self.image_name_prefix)
+        os.makedirs(self.storage_dir, exist_ok=True)
+
+        # URL 隔离: /base_url/username/文件名/
+        self.url_prefix = f"{base_url}/{username}/{self.image_name_prefix}"
 
         self.chapters = []
         self.images = []
