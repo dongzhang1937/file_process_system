@@ -481,9 +481,9 @@ def add_chapter_with_path(doc, chapter, index, filename):
     else:
         path_str = title
     
-    # 添加路径行（灰色小字，标记为[需删除]）
+    # 添加路径行（灰色小字，标记为[需删除]-文件名-路径）
     path_para = doc.add_paragraph()
-    path_run = path_para.add_run(f"[需删除]{path_str}")
+    path_run = path_para.add_run(f"[需删除]-{filename}-{path_str}")
     path_run.font.size = Pt(9)
     path_run.font.color.rgb = RGBColor(128, 128, 128)  # 灰色
     
