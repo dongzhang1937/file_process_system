@@ -1,0 +1,33 @@
+/mnt/e/codebuddy/data/tencentcode/lib/python3.12/site-packages/celery/platforms.py:841: SecurityWarning: You're running the worker with superuser privileges: this is
+absolutely not recommended!
+
+Please specify a different user using the --uid option.
+
+User information: uid=0 euid=0 gid=0 egid=0
+
+  warnings.warn(SecurityWarning(ROOT_DISCOURAGED.format(
+ 
+ -------------- worker1@XIANZHECHU-PC1 v5.6.2 (recovery)
+--- ***** ----- 
+-- ******* ---- Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.28 2026-01-09 11:08:26
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         file_process:0x71f42539d640
+- ** ---------- .> transport:   redis://127.0.0.1:6379/0
+- ** ---------- .> results:     mysql+pymysql://test:**@127.0.0.1:3306/t11
+- *** --- * --- .> concurrency: 1 (solo)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . file_process.models.fileupload.merge_chunks_task
+  . file_process.models.prodetail.process_document_task
+  . file_process.models.word_parser.process_word_task
+
+[2026-01-09 11:08:26,879: INFO/MainProcess] Connected to redis://127.0.0.1:6379/0
+[2026-01-09 11:08:26,882: INFO/MainProcess] mingle: searching for neighbors
+[2026-01-09 11:08:27,892: INFO/MainProcess] mingle: all alone
+[2026-01-09 11:08:27,920: INFO/MainProcess] worker1@XIANZHECHU-PC1 ready.

@@ -404,27 +404,39 @@ def export_to_word():
         doc.add_paragraph()
         
         # 遍历结果
+        query_index = 0
         for query_result in results:
             query = query_result.get('query', '')
             doc_results = query_result.get('results', [])
+            query_index += 1
             
-            # 添加查询标题
-            doc.add_heading(f"查询: {query}", level=1)
+            # 添加用户输入作为标题（带序号）
+            doc.add_heading(f"{query_index} 用户输入", level=1)
+            # 添加用户输入的内容
+            query_para = doc.add_paragraph(query)
+            query_para.runs[0].bold = True
+            doc.add_paragraph()  # 空行
             
             if not doc_results:
                 doc.add_paragraph("未找到匹配结果")
                 continue
             
+            source_index = 0
             for doc_result in doc_results:
                 filename = doc_result.get('filename', '未知文档')
                 chapters = doc_result.get('chapters', [])
+                source_index += 1
                 
-                # 添加文档名
-                doc.add_heading(f"来源: {filename}", level=2)
+                # 添加来源（带序号，如 1.1 来源xxx）
+                doc.add_heading(f"{query_index}.{source_index} 来源 {filename}", level=2)
                 
-                # 添加章节内容
+                # 添加章节内容（带层级序号）
+                chapter_counters = [0] * 10  # 支持最多10级
                 for chapter in chapters:
-                    add_chapter_to_doc(doc, chapter, level=3)
+                    add_chapter_to_doc_with_numbering(doc, chapter, level=3, 
+                                                       prefix=f"{query_index}.{source_index}", 
+                                                       counters=chapter_counters, 
+                                                       depth=0)
         
         # 保存到临时文件
         temp_dir = tempfile.gettempdir()
@@ -453,9 +465,66 @@ def export_to_word():
         }), 500
 
 
+def add_chapter_to_doc_with_numbering(doc, chapter, level=3, prefix="", counters=None, depth=0):
+    """
+    递归添加章节到Word文档，带层级序号（如 1.1.1, 1.1.2）
+    
+    Args:
+        doc: Word文档对象
+        chapter: 章节数据
+        level: Word标题层级
+        prefix: 序号前缀（如 "1.1"）
+        counters: 各层级计数器列表
+        depth: 当前递归深度
+    """
+    from docx.shared import Inches
+    import re
+    
+    if counters is None:
+        counters = [0] * 10
+    
+    title = chapter.get('title', '')
+    content = chapter.get('content', '')
+    images = chapter.get('images', [])
+    children = chapter.get('children', [])
+    
+    # 增加当前层级计数
+    counters[depth] += 1
+    # 重置更深层级的计数
+    for i in range(depth + 1, len(counters)):
+        counters[i] = 0
+    
+    # 构建完整序号（如 1.1.1）
+    number_parts = [str(counters[i]) for i in range(depth + 1)]
+    full_number = f"{prefix}.{'.'.join(number_parts)}" if prefix else '.'.join(number_parts)
+    
+    # 添加章节标题（带序号）
+    if title:
+        heading_level = min(level, 9)
+        doc.add_heading(f"{full_number} {title}", level=heading_level)
+    
+    # 添加内容（处理 [表格]...[/表格] 标签）
+    if content:
+        _add_content_with_tables(doc, content, images)
+    else:
+        # 没有内容时仍需添加图片
+        for img in images:
+            img_path = img.get('image_path', '')
+            if img_path and os.path.exists(img_path):
+                try:
+                    doc.add_picture(img_path, width=Inches(5))
+                except Exception as e:
+                    logger.warning(f"添加图片失败: {img_path}, 错误: {e}")
+    
+    # 递归添加子章节
+    for child in children:
+        add_chapter_to_doc_with_numbering(doc, child, level=level + 1, 
+                                          prefix=prefix, counters=counters, depth=depth + 1)
+
+
 def add_chapter_to_doc(doc, chapter, level=3):
     """
-    递归添加章节到Word文档
+    递归添加章节到Word文档（旧版本，保留兼容性）
     """
     from docx.shared import Inches
     import re
