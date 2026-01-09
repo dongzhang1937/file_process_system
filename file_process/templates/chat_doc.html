@@ -1,0 +1,1297 @@
+{% extends "base.html" %}
+{% block title %}文档对话 - 文件处理系统{% endblock %}
+{% block content %}
+
+<style>
+    .main-container {
+        display: flex;
+        flex: 1;
+        width: 100%;
+    }
+
+    /* 左侧菜单 */
+    .sidebar {
+        width: 200px;
+        min-width: 200px;
+        border-right: 1px solid #ddd;
+        padding: 20px;
+        background: #f8f9fa;
+    }
+
+    .sidebar h3 {
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    .sidebar ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .sidebar li {
+        margin-bottom: 15px;
+    }
+
+    .sidebar a {
+        text-decoration: none;
+        color: #333;
+        padding: 8px 12px;
+        display: block;
+        border-radius: 5px;
+        transition: all 0.3s;
+    }
+
+    .sidebar a:hover {
+        background: #e9ecef;
+    }
+
+    .sidebar a.active {
+        background: #667eea;
+        color: white;
+    }
+
+    /* 主内容区 */
+    .content-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-width: 0;
+    }
+
+    /* Tab 切换 */
+    .tab-container {
+        display: flex;
+        border-bottom: 2px solid #667eea;
+        background: #f8f9fa;
+    }
+
+    .tab-btn {
+        padding: 12px 30px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        color: #666;
+        transition: all 0.3s;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+    }
+
+    .tab-btn:hover {
+        background: #e9ecef;
+    }
+
+    .tab-btn.active {
+        color: #667eea;
+        border-bottom-color: #667eea;
+        background: white;
+    }
+
+    .tab-content {
+        display: none;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    .tab-content.active {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* 文档选择区 */
+    .doc-selector {
+        padding: 15px 20px;
+        background: #f0f4ff;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .doc-selector h4 {
+        margin: 0 0 10px 0;
+        color: #333;
+        font-size: 14px;
+    }
+
+    .doc-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        max-height: 100px;
+        overflow-y: auto;
+    }
+
+    .doc-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 10px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .doc-checkbox:hover {
+        border-color: #667eea;
+    }
+
+    .doc-checkbox.selected {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+
+    .doc-checkbox input {
+        margin: 0;
+    }
+
+    /* 对话区 */
+    .chat-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .chat-messages {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        background: #fafafa;
+    }
+
+    .message {
+        margin-bottom: 20px;
+        max-width: 85%;
+    }
+
+    .message.user {
+        margin-left: auto;
+    }
+
+    .message-content {
+        padding: 12px 16px;
+        border-radius: 12px;
+        line-height: 1.6;
+    }
+
+    .message.user .message-content {
+        background: #667eea;
+        color: white;
+        border-bottom-right-radius: 4px;
+    }
+
+    .message.system .message-content {
+        background: white;
+        border: 1px solid #ddd;
+        border-bottom-left-radius: 4px;
+    }
+
+    .message-time {
+        font-size: 11px;
+        color: #999;
+        margin-top: 5px;
+    }
+
+    .message.user .message-time {
+        text-align: right;
+    }
+
+    /* 搜索结果 */
+    .search-result {
+        margin-top: 15px;
+    }
+
+    .result-doc {
+        background: #f8f9fa;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        overflow: hidden;
+    }
+
+    .result-doc-header {
+        padding: 10px 15px;
+        background: #667eea;
+        color: white;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .result-chapter {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .result-chapter:last-child {
+        border-bottom: none;
+    }
+
+    .chapter-path {
+        font-size: 12px;
+        color: #888;
+        margin-bottom: 6px;
+        padding: 4px 8px;
+        background: #f5f5f5;
+        border-radius: 4px;
+        border-left: 3px solid #667eea;
+    }
+
+    .chapter-title {
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .chapter-level {
+        background: #e0e0e0;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        color: #666;
+    }
+
+    .chapter-content {
+        color: #555;
+        line-height: 1.8;
+        white-space: pre-wrap;
+    }
+
+    .chapter-images {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .chapter-image {
+        width: 120px;
+        height: 90px;
+        object-fit: cover;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+    .chapter-image:hover {
+        transform: scale(1.05);
+    }
+
+    .chapter-children {
+        margin-left: 20px;
+        border-left: 2px solid #667eea;
+        padding-left: 15px;
+        margin-top: 10px;
+    }
+
+    /* 输入区 */
+    .input-area {
+        padding: 15px 20px;
+        background: white;
+        border-top: 1px solid #ddd;
+    }
+
+    .input-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .input-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .chat-input {
+        flex: 1;
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 14px;
+        resize: none;
+        min-height: 44px;
+        max-height: 120px;
+    }
+
+    .chat-input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background: #667eea;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #5568d3;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+    }
+
+    .btn-success {
+        background: #28a745;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #218838;
+    }
+
+    .btn-outline {
+        background: white;
+        border: 1px solid #667eea;
+        color: #667eea;
+    }
+
+    .btn-outline:hover {
+        background: #667eea;
+        color: white;
+    }
+
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* 文件上传 */
+    .file-upload-area {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .file-input {
+        display: none;
+    }
+
+    .file-label {
+        padding: 8px 15px;
+        background: #f0f0f0;
+        border: 1px dashed #999;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.15s ease;
+        user-select: none;
+    }
+
+    .file-label:hover {
+        background: #e0e0e0;
+        border-color: #667eea;
+    }
+
+    .file-label:active {
+        background: #d0d0d0;
+        transform: scale(0.98);
+    }
+
+    .file-name {
+        font-size: 13px;
+        color: #666;
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* 冲突选择对话框 */
+    .conflict-dialog {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .conflict-dialog.show {
+        display: flex;
+    }
+
+    .conflict-content {
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        max-width: 500px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .conflict-title {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 15px;
+        color: #333;
+    }
+
+    .conflict-options {
+        margin: 20px 0;
+    }
+
+    .conflict-option {
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .conflict-option:hover {
+        border-color: #667eea;
+        background: #f0f4ff;
+    }
+
+    .conflict-option.selected {
+        border-color: #667eea;
+        background: #667eea;
+        color: white;
+    }
+
+    .conflict-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+
+    /* 图片预览 */
+    .image-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .image-modal.show {
+        display: flex;
+    }
+
+    .image-modal img {
+        max-width: 90%;
+        max-height: 90%;
+        border-radius: 8px;
+    }
+
+    .image-modal-close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: white;
+        font-size: 30px;
+        cursor: pointer;
+    }
+
+    /* LLM Tab 样式 */
+    .llm-placeholder {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        text-align: center;
+        color: #666;
+    }
+
+    .llm-placeholder h2 {
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    .llm-placeholder p {
+        max-width: 600px;
+        line-height: 1.8;
+        margin-bottom: 15px;
+    }
+
+    .llm-features {
+        text-align: left;
+        background: #f8f9fa;
+        padding: 20px 30px;
+        border-radius: 10px;
+        margin-top: 20px;
+    }
+
+    .llm-features h4 {
+        color: #667eea;
+        margin-bottom: 15px;
+    }
+
+    .llm-features ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+
+    .llm-features li {
+        margin-bottom: 8px;
+    }
+
+    /* 加载动画 */
+    .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-message {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #666;
+    }
+</style>
+
+<div class="main-container">
+    <!-- 左侧菜单 -->
+    <div class="sidebar">
+        <h3>功能菜单</h3>
+        <ul>
+            <li><a href="/documentlist">文档上传</a></li>
+            <li><a href="/docprocess">文档处理</a></li>
+            <li><a href="/chatdoc" class="active">文档对话</a></li>
+        </ul>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="content-area">
+        <!-- Tab 切换 -->
+        <div class="tab-container">
+            <button class="tab-btn active" data-tab="exact">精准匹配</button>
+            <button class="tab-btn" data-tab="llm">LLM匹配</button>
+        </div>
+
+        <!-- 精准匹配 Tab -->
+        <div id="tab-exact" class="tab-content active">
+            <!-- 文档选择 -->
+            <div class="doc-selector">
+                <h4>选择查询范围（不选则查询所有文档）:</h4>
+                <div class="doc-list" id="docList">
+                    <span style="color: #999;">加载中...</span>
+                </div>
+            </div>
+
+            <!-- 对话区 -->
+            <div class="chat-area">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message system">
+                        <div class="message-content">
+                            欢迎使用文档对话功能！您可以：
+                            <br>1. 输入关键词进行精确匹配或模糊匹配
+                            <br>2. 上传TXT文件批量查询（每行一个关键词）
+                            <br>3. 查询结果可导出为Word文档
+                        </div>
+                        <div class="message-time">系统消息</div>
+                    </div>
+                </div>
+
+                <!-- 输入区 -->
+                <div class="input-area">
+                    <div class="input-row">
+                        <textarea class="chat-input" id="queryInput" placeholder="输入查询内容..." rows="1"></textarea>
+                    </div>
+                    <div class="input-row">
+                        <div class="file-upload-area">
+                            <input type="file" id="txtFile" class="file-input" accept=".txt">
+                            <label for="txtFile" class="file-label">📄 上传TXT批量查询</label>
+                            <span class="file-name" id="fileName"></span>
+                        </div>
+                        <div style="flex: 1;"></div>
+                        <label style="display: flex; align-items: center; gap: 5px; font-size: 13px;">
+                            <input type="checkbox" id="includeChildren" checked> 包含子章节
+                        </label>
+                        <button class="btn btn-primary" id="btnExact" onclick="doSearch('exact')">完全匹配</button>
+                        <button class="btn btn-secondary" id="btnFuzzy" onclick="doSearch('fuzzy')">模糊查询</button>
+                        <button class="btn btn-success" id="btnExport" onclick="exportToWord()" disabled>导出Word</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LLM匹配 Tab -->
+        <div id="tab-llm" class="tab-content">
+            <div class="llm-placeholder">
+                <h2>🤖 LLM智能匹配</h2>
+                <p>LLM匹配功能正在开发中，该功能将使用大语言模型进行智能语义匹配，能够理解自然语言查询并返回最相关的文档内容。</p>
+                
+                <div class="llm-features">
+                    <h4>计划实现的功能：</h4>
+                    <ul>
+                        <li><strong>语义理解</strong>：理解用户的自然语言查询意图</li>
+                        <li><strong>智能检索</strong>：使用向量相似度检索最相关的章节</li>
+                        <li><strong>上下文对话</strong>：支持多轮对话，理解上下文</li>
+                        <li><strong>答案生成</strong>：基于检索内容生成准确的回答</li>
+                        <li><strong>来源引用</strong>：标注答案来源的具体章节</li>
+                    </ul>
+                    
+                    <h4 style="margin-top: 20px;">技术方案：</h4>
+                    <ul>
+                        <li>RAG（检索增强生成）架构</li>
+                        <li>向量数据库存储文档嵌入</li>
+                        <li>支持多种LLM（GPT-4、Claude、文心一言等）</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 冲突选择对话框 -->
+<div class="conflict-dialog" id="conflictDialog">
+    <div class="conflict-content">
+        <div class="conflict-title">多个文档匹配到相同内容</div>
+        <p>以下文档都包含匹配的内容，请选择要使用的文档：</p>
+        <div class="conflict-options" id="conflictOptions"></div>
+        <div class="conflict-actions">
+            <button class="btn btn-outline" onclick="closeConflictDialog()">取消</button>
+            <button class="btn btn-primary" onclick="confirmConflictSelection()">确认选择</button>
+        </div>
+    </div>
+</div>
+
+<!-- 图片预览 -->
+<div class="image-modal" id="imageModal" onclick="closeImageModal()">
+    <span class="image-modal-close">&times;</span>
+    <img id="modalImage" src="" alt="图片预览">
+</div>
+
+<script>
+const API_BASE = '/api/chat';
+
+// 统一的占位图（用于懒加载/内联展示）
+const PLACEHOLDER_IMG = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjkwIiB2aWV3Qm94PSIwIDAgMTIwIDkwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iMTIwIiBoZWlnaHQ9IjkwIiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik00MCA0MEw2MCA2MEw4MCA0MEw4MCA3MEg0MFY0MFoiIGZpbGw9IiNEREREREQiLz4KPHRleHQgeD0iNjAiIHk9IjUwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5IiBmb250LXNpemU9IjEyIj7ngrnlh7vliKDovb08L3RleHQ+PC9zdmc+';
+
+// 注意：模板由 Jinja2 渲染，源码里不能出现连续两个左大括号，否则会被当成模板语法。
+const IMAGE_ID_PREFIX = '{' + '{IMAGE_ID_';
+const IMAGE_ID_RE = /\{\{IMAGE_ID_(\d+)\}\}/g;
+
+// 将章节 content 中的 IMAGE_ID 占位符替换为内联 <img>（先 escape，再替换，避免 XSS）
+// 同时处理 [表格]...[/表格] 标签，渲染成 HTML 表格
+function renderContentWithImages(content, images) {
+    const imgMap = {};
+    (images || []).forEach(img => {
+        if (img && img.id) {
+            imgMap[String(img.id)] = img.image_url || img.image_path;
+        }
+    });
+
+    const escaped = escapeHtml(content || '');
+    
+    // 先替换图片占位符
+    let result = escaped.replace(IMAGE_ID_RE, (m, id) => {
+        const url = imgMap[String(id)];
+        if (!url) return m;
+        const safeUrl = escapeHtml(url);
+        return `<div style="margin:10px 0;"><img class="chapter-image" data-src="${safeUrl}" src="${safeUrl}" alt="图片 ${id}" onclick="showImage(this.getAttribute('data-src'))"></div>`;
+    });
+    
+    // 处理 [表格]...[/表格] 标签：渲染成带边框的表格
+    // 注意：escapeHtml 后 [ 和 ] 不会被转义，所以可以直接匹配
+    result = result.replace(/\[表格\]([\s\S]*?)\[\/表格\]/g, (m, tableContent) => {
+        // 去掉首尾空白和换行符
+        const cleaned = tableContent.trim();
+        if (!cleaned) return '';
+        return `<table class="inline-table" style="border:1px solid #ccc; border-collapse:collapse; margin:10px 0; width:100%;"><tr><td style="border:1px solid #ccc; padding:10px;">${cleaned.replace(/\r?\n/g, '<br>')}</td></tr></table>`;
+    });
+    
+    // 处理剩余的换行符
+    result = result.replace(/\r?\n/g, '<br>');
+    
+    return result;
+}
+
+let selectedDocuments = [];
+let lastSearchResults = null;
+let pendingConflict = null;
+
+// Tab 切换
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+});
+
+// 加载文档列表
+async function loadDocuments() {
+    try {
+        const response = await fetch(`${API_BASE}/documents`, {
+            credentials: 'same-origin'
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            renderDocList(result.data);
+        } else {
+            document.getElementById('docList').innerHTML = '<span style="color: #dc3545;">加载失败</span>';
+        }
+    } catch (error) {
+        console.error('加载文档列表失败:', error);
+        document.getElementById('docList').innerHTML = '<span style="color: #dc3545;">加载失败</span>';
+    }
+}
+
+function renderDocList(documents) {
+    const container = document.getElementById('docList');
+    
+    if (!documents || documents.length === 0) {
+        container.innerHTML = '<span style="color: #999;">暂无已处理的文档</span>';
+        return;
+    }
+    
+    container.innerHTML = documents.map(doc => `
+        <label class="doc-checkbox" data-doc-id="${doc.doc_id}">
+            <input type="checkbox" value="${doc.doc_id}" onchange="toggleDocument('${doc.doc_id}')">
+            ${escapeHtml(doc.filename)}
+        </label>
+    `).join('');
+}
+
+function toggleDocument(docId) {
+    const index = selectedDocuments.indexOf(docId);
+    const checkbox = document.querySelector(`.doc-checkbox[data-doc-id="${docId}"]`);
+    
+    if (index === -1) {
+        selectedDocuments.push(docId);
+        checkbox.classList.add('selected');
+    } else {
+        selectedDocuments.splice(index, 1);
+        checkbox.classList.remove('selected');
+    }
+}
+
+// 搜索功能
+async function doSearch(matchType) {
+    const input = document.getElementById('queryInput');
+    const query = input.value.trim();
+    const txtFile = document.getElementById('txtFile');
+    const includeChildren = document.getElementById('includeChildren').checked;
+    
+    // 检查是否有TXT文件上传
+    if (txtFile.files.length > 0) {
+        await doBatchSearch(matchType);
+        return;
+    }
+    
+    if (!query) {
+        alert('请输入查询内容');
+        return;
+    }
+    
+    // 添加用户消息
+    addMessage('user', query);
+    input.value = '';
+    
+    // 显示加载状态
+    const loadingId = addLoadingMessage();
+    
+    try {
+        const response = await fetch(`${API_BASE}/search`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                query: query,
+                match_type: matchType,
+                document_ids: selectedDocuments,
+                include_children: includeChildren
+            })
+        });
+        
+        const result = await response.json();
+        removeMessage(loadingId);
+        
+        if (result.success) {
+            lastSearchResults = [{
+                query: query,
+                results: result.data.results,
+                match_count: result.data.total_matches
+            }];
+            
+            // 检查是否有多个文档匹配
+            if (result.data.document_count > 1) {
+                showConflictDialog(query, matchType, result.data.results);
+            } else {
+                displaySearchResult(result.data);
+                
+                // 显示查询完成提示
+                if (result.data.total_matches > 0) {
+                    addMessage('system', `✅ 查询完成！找到 <strong>${result.data.total_matches}</strong> 个匹配结果。<br>您可以点击 <strong>"导出Word"</strong> 按钮将结果导出为文档。`, true);
+                }
+            }
+            
+            // 启用导出按钮
+            if (result.data.total_matches > 0) {
+                document.getElementById('btnExport').disabled = false;
+            }
+        } else {
+            addMessage('system', `查询失败: ${result.error}`);
+        }
+    } catch (error) {
+        removeMessage(loadingId);
+        addMessage('system', `查询出错: ${error.message}`);
+    }
+}
+
+// 批量搜索
+async function doBatchSearch(matchType) {
+    const txtFile = document.getElementById('txtFile');
+    const includeChildren = document.getElementById('includeChildren').checked;
+    
+    if (txtFile.files.length === 0) {
+        alert('请先上传TXT文件');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', txtFile.files[0]);
+    
+    // 先上传文件获取查询列表
+    addMessage('user', `批量查询文件: ${txtFile.files[0].name}`);
+    const loadingId = addLoadingMessage();
+    
+    try {
+        // 上传TXT文件
+        const uploadResponse = await fetch(`${API_BASE}/upload-txt`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: formData
+        });
+        
+        const uploadResult = await uploadResponse.json();
+        
+        if (!uploadResult.success) {
+            removeMessage(loadingId);
+            addMessage('system', `文件上传失败: ${uploadResult.error}`);
+            return;
+        }
+        
+        const queries = uploadResult.data.queries;
+        addMessage('system', `已解析 ${queries.length} 条查询`);
+        
+        // 执行批量搜索
+        const searchResponse = await fetch(`${API_BASE}/batch-search`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                queries: queries,
+                match_type: matchType,
+                document_ids: selectedDocuments,
+                include_children: includeChildren
+            })
+        });
+        
+        const searchResult = await searchResponse.json();
+        removeMessage(loadingId);
+        
+        if (searchResult.success) {
+            lastSearchResults = searchResult.data.batch_results;
+            displayBatchResults(searchResult.data);
+            
+            // 启用导出按钮
+            const hasResults = searchResult.data.batch_results.some(r => r.match_count > 0);
+            document.getElementById('btnExport').disabled = !hasResults;
+            
+            // 显示查询完成提示
+            if (hasResults) {
+                const totalMatches = searchResult.data.batch_results.reduce((sum, r) => sum + r.match_count, 0);
+                addMessage('system', `✅ 批量查询完成！共找到 <strong>${totalMatches}</strong> 个匹配结果。<br>您可以点击 <strong>"导出Word"</strong> 按钮将结果导出为文档。`, true);
+            }
+        } else {
+            addMessage('system', `批量查询失败: ${searchResult.error}`);
+        }
+        
+        // 清除文件
+        txtFile.value = '';
+        document.getElementById('fileName').textContent = '';
+        
+    } catch (error) {
+        removeMessage(loadingId);
+        addMessage('system', `批量查询出错: ${error.message}`);
+    }
+}
+
+// 显示搜索结果
+function displaySearchResult(data) {
+    const matchType = data.match_type === 'exact' ? '完全匹配' : '模糊匹配';
+    
+    if (data.results.length === 0) {
+        addMessage('system', `未找到匹配的内容（${matchType}）`);
+        return;
+    }
+    
+    let html = `<div class="search-result">`;
+    html += `<p>找到 <strong>${data.total_matches}</strong> 个匹配项（${matchType}），来自 <strong>${data.document_count}</strong> 个文档：</p>`;
+    
+    for (const docResult of data.results) {
+        html += renderDocResult(docResult);
+    }
+    
+    html += `</div>`;
+    addMessage('system', html, true);
+}
+
+// 显示批量结果
+function displayBatchResults(data) {
+    let html = `<div class="search-result">`;
+    html += `<p>批量查询完成，共 ${data.total_queries} 条查询：</p>`;
+    
+    for (const queryResult of data.batch_results) {
+        html += `<h4 style="margin: 15px 0 10px 0; color: #667eea;">查询: "${escapeHtml(queryResult.query)}"</h4>`;
+        
+        if (queryResult.results.length === 0) {
+            html += `<p style="color: #999;">未找到匹配结果</p>`;
+        } else {
+            for (const docResult of queryResult.results) {
+                html += renderDocResult(docResult);
+            }
+        }
+    }
+    
+    html += `</div>`;
+    addMessage('system', html, true);
+}
+
+// 渲染文档结果
+function renderDocResult(docResult) {
+    let html = `<div class="result-doc">`;
+    html += `<div class="result-doc-header">
+        <span>📄 ${escapeHtml(docResult.filename)}</span>
+        <span>${docResult.chapters.length} 个章节</span>
+    </div>`;
+    
+    for (const chapter of docResult.chapters) {
+        html += renderChapter(chapter);
+    }
+    
+    html += `</div>`;
+    return html;
+}
+
+// 渲染章节
+function renderChapter(chapter, isChild = false) {
+    let html = `<div class="result-chapter${isChild ? ' chapter-child' : ''}">`;
+    
+    // 显示层级路径（只在非子章节时显示，显示完整路径包括当前章节）
+    if (!isChild && chapter.path && chapter.path.length > 0) {
+        const pathTitles = chapter.path.map(p => escapeHtml(p.title || '(无标题)'));
+        html += `<div class="chapter-path">${pathTitles.join(' -> ')}</div>`;
+    }
+    
+    html += `<div class="chapter-title">
+        <span class="chapter-level">L${chapter.level}</span>
+        ${escapeHtml(chapter.title || '(无标题)')}
+    </div>`;
+    
+    if (chapter.content) {
+        html += `<div class="chapter-content">${renderContentWithImages(chapter.content, chapter.images || [])}</div>`;
+    }
+
+    const hasInlineImages = chapter.content && chapter.content.includes(IMAGE_ID_PREFIX);
+
+    // 兼容旧数据：如果 content 没有占位符，但 images 有值，则显示图片列表
+    if (!hasInlineImages && chapter.images && chapter.images.length > 0) {
+        html += `<div class="chapter-images">`;
+        for (const img of chapter.images) {
+            const imgUrl = img.image_url || img.image_path;
+            const safeUrl = escapeHtml(imgUrl);
+            html += `<img class="chapter-image" src="${safeUrl}" data-src="${safeUrl}" onclick="showImage(this.getAttribute('data-src'))" alt="章节图片">`;
+        }
+        html += `</div>`;
+    }
+    
+    // 显示子章节
+    if (chapter.children && chapter.children.length > 0) {
+        html += `<div class="chapter-children">`;
+        for (const child of chapter.children) {
+            html += renderChapter(child, true);
+        }
+        html += `</div>`;
+    }
+    
+    html += `</div>`;
+    return html;
+}
+
+// 导出Word
+async function exportToWord() {
+    if (!lastSearchResults || lastSearchResults.length === 0) {
+        alert('没有可导出的结果');
+        return;
+    }
+    
+    const btn = document.getElementById('btnExport');
+    btn.disabled = true;
+    btn.textContent = '导出中...';
+    
+    try {
+        const response = await fetch(`${API_BASE}/export-word`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                results: lastSearchResults,
+                title: '文档查询结果'
+            })
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `查询结果_${new Date().toISOString().slice(0,10)}.docx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            addMessage('system', 'Word文档已下载');
+        } else {
+            const result = await response.json();
+            addMessage('system', `导出失败: ${result.error}`);
+        }
+    } catch (error) {
+        addMessage('system', `导出出错: ${error.message}`);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '导出Word';
+    }
+}
+
+// 冲突对话框
+function showConflictDialog(query, matchType, results) {
+    pendingConflict = { query, matchType, results };
+    
+    const optionsHtml = results.map(doc => `
+        <div class="conflict-option" data-doc-id="${doc.document_id}" onclick="selectConflictOption(this)">
+            <strong>${escapeHtml(doc.filename)}</strong>
+            <br><small>${doc.chapters.length} 个匹配章节</small>
+        </div>
+    `).join('');
+    
+    document.getElementById('conflictOptions').innerHTML = optionsHtml;
+    document.getElementById('conflictDialog').classList.add('show');
+}
+
+function selectConflictOption(element) {
+    document.querySelectorAll('.conflict-option').forEach(el => el.classList.remove('selected'));
+    element.classList.add('selected');
+}
+
+function closeConflictDialog() {
+    document.getElementById('conflictDialog').classList.remove('show');
+    pendingConflict = null;
+    
+    // 如果用户取消，显示所有结果
+    if (lastSearchResults && lastSearchResults.length > 0) {
+        displaySearchResult({
+            results: lastSearchResults[0].results,
+            total_matches: lastSearchResults[0].match_count,
+            document_count: lastSearchResults[0].results.length,
+            match_type: 'exact'
+        });
+    }
+}
+
+async function confirmConflictSelection() {
+    const selected = document.querySelector('.conflict-option.selected');
+    if (!selected) {
+        alert('请选择一个文档');
+        return;
+    }
+    
+    const docId = selected.dataset.docId;
+    document.getElementById('conflictDialog').classList.remove('show');
+    
+    const loadingId = addLoadingMessage();
+    
+    try {
+        const response = await fetch(`${API_BASE}/select-document`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                document_id: docId,
+                query: pendingConflict.query,
+                match_type: pendingConflict.matchType,
+                include_children: document.getElementById('includeChildren').checked
+            })
+        });
+        
+        const result = await response.json();
+        removeMessage(loadingId);
+        
+        if (result.success) {
+            // 找到选中文档的信息
+            const selectedDoc = pendingConflict.results.find(r => r.document_id === docId);
+            
+            lastSearchResults = [{
+                query: pendingConflict.query,
+                results: [{
+                    document_id: docId,
+                    filename: selectedDoc ? selectedDoc.filename : '未知文档',
+                    chapters: result.data.chapters
+                }],
+                match_count: result.data.chapters.length
+            }];
+            
+            displaySearchResult({
+                results: lastSearchResults[0].results,
+                total_matches: result.data.chapters.length,
+                document_count: 1,
+                match_type: pendingConflict.matchType
+            });
+        } else {
+            addMessage('system', `选择失败: ${result.error}`);
+        }
+    } catch (error) {
+        removeMessage(loadingId);
+        addMessage('system', `选择出错: ${error.message}`);
+    }
+    
+    pendingConflict = null;
+}
+
+// 消息相关
+let messageId = 0;
+
+function addMessage(type, content, isHtml = false) {
+    const container = document.getElementById('chatMessages');
+    const id = 'msg-' + (++messageId);
+    
+    const div = document.createElement('div');
+    div.className = `message ${type}`;
+    div.id = id;
+    
+    const time = new Date().toLocaleTimeString('zh-CN');
+    
+    div.innerHTML = `
+        <div class="message-content">${isHtml ? content : escapeHtml(content)}</div>
+        <div class="message-time">${time}</div>
+    `;
+    
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    
+    return id;
+}
+
+function addLoadingMessage() {
+    const container = document.getElementById('chatMessages');
+    const id = 'msg-' + (++messageId);
+    
+    const div = document.createElement('div');
+    div.className = 'message system';
+    div.id = id;
+    div.innerHTML = `
+        <div class="message-content">
+            <div class="loading-message">
+                <div class="loading"></div>
+                <span>正在查询...</span>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    
+    return id;
+}
+
+function removeMessage(id) {
+    const msg = document.getElementById(id);
+    if (msg) msg.remove();
+}
+
+// 图片预览
+function showImage(src) {
+    document.getElementById('modalImage').src = src;
+    document.getElementById('imageModal').classList.add('show');
+}
+
+function closeImageModal() {
+    document.getElementById('imageModal').classList.remove('show');
+}
+
+// 工具函数
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// 文件选择
+document.getElementById('txtFile').addEventListener('change', function() {
+    const fileName = this.files.length > 0 ? this.files[0].name : '';
+    document.getElementById('fileName').textContent = fileName;
+    
+    // 异步显示消息，避免阻塞UI
+    if (fileName) {
+        requestAnimationFrame(() => {
+            addMessage('system', `已选择文件: <strong>${escapeHtml(fileName)}</strong><br>请点击"完全匹配"或"模糊查询"按钮开始批量查询`, true);
+        });
+    }
+});
+
+// 回车发送
+document.getElementById('queryInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        doSearch('exact');
+    }
+});
+
+// 初始化
+loadDocuments();
+</script>
+
+{% endblock %}

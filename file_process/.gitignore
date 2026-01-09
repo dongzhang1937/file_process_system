@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+eggs/
+*.egg
+
+# 虚拟环境
+venv/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 上传的文件（运行时生成）
+uploads/
+images/
+
+# 日志
+logs/
+*.log
+
+# 数据库配置（敏感信息）
+# config/db_config.py  # 如果包含敏感信息可取消注释
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 临时文件
+*.tmp
+*.bak
+
+# CodeBuddy
+.codebuddy/

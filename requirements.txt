@@ -1,0 +1,16 @@
+# Flask 框架
+Flask>=2.0.0
+Flask-SQLAlchemy>=3.0.0
+
+# 数据库
+PyMySQL>=1.0.0
+redis>=4.0.0
+
+# Celery 任务队列
+celery>=5.0.0
+
+# Word 文档处理
+python-docx>=0.8.11
+
+# 其他
+Werkzeug>=2.0.0

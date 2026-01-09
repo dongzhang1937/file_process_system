@@ -1,0 +1,817 @@
+{% extends "base.html" %}
+{% block title %}文件处理系统{% endblock %}
+{% block content %}
+    <style>
+        .progress-container {
+            margin-top: 20px;
+        }
+        
+        .upload-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .upload-table th,
+        .upload-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        .upload-table th {
+            background-color: #667eea;
+            color: white;
+        }
+        
+        .upload-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .upload-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 25px;
+            position: relative;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status-uploading {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status-completed {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-failed {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-merging {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .upload-form {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px dashed #667eea;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        
+        .file-input-wrapper input[type="file"] {
+            display: none;
+        }
+        
+        .file-input-label {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .file-input-label:hover {
+            background: #5568d3;
+        }
+        
+        .selected-file {
+            display: inline-block;
+            margin-left: 10px;
+            color: #666;
+        }
+        
+        .upload-btn {
+            padding: 10px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        
+        .upload-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+        
+        .upload-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .delete-btn {
+            padding: 5px 10px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .delete-btn:hover {
+            background: #c82333;
+        }
+    </style>
+
+    <div style="display: flex; flex: 1; width: 100%;">
+        <!-- 左侧功能栏 -->
+        <div style="width: 200px; min-width: 200px; border-right: 1px solid #ddd; padding: 20px; background: #f8f9fa;">
+            <h3 style="margin-bottom: 20px; color: #333;">功能菜单</h3>
+            <ul style="list-style: none; padding: 0;">
+                <li style="margin-bottom: 15px;"><a href="/documentlist" style="color: #667eea; text-decoration: none; font-weight: bold;">文档上传</a></li>
+                <li style="margin-bottom: 15px;"><a href="/docprocess" style="color: #333; text-decoration: none;">文档处理</a></li>
+                <li style="margin-bottom: 15px;"><a href="/chatdoc" style="color: #333; text-decoration: none;">文档对话</a></li>
+            </ul>
+        </div>
+
+        <!-- 右侧内容区 -->
+        <div style="flex: 1; padding: 20px; overflow-y: auto; overflow-x: hidden;">
+            <h2>文档上传</h2>
+            
+            <div class="upload-form">
+                <form id="uploadForm" action="/upload">
+                    <div class="file-input-wrapper">
+                        <input type="file" id="fileInput" name="file" accept=".docx,.pdf,.txt" required>
+                        <label for="fileInput" class="file-input-label">选择文件</label>
+                    </div>
+                    <span class="selected-file" id="selectedFileName">未选择文件</span>
+                    <br><br>
+                    <button type="submit" class="upload-btn" id="uploadBtn">开始上传</button>
+                </form>
+                <p style="color: #666; margin-top: 10px; font-size: 14px;">
+                    ⚠️ 支持的文件格式: .docx, .pdf, .txt | 最大文件大小: 500MB
+                </p>
+            </div>
+
+            <!-- 上传进度表格 -->
+            <div class="progress-container">
+                <h3>上传列表</h3>
+                <table class="upload-table" id="uploadTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 5%;">序号</th>
+                            <th style="width: 25%;">文件名</th>
+                            <th style="width: 10%;">文件大小</th>
+                            <th style="width: 30%;">上传进度</th>
+                            <th style="width: 10%;">状态</th>
+                            <th style="width: 15%;">上传时间</th>
+                            <th style="width: 5%;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="uploadTableBody">
+                        <!-- 动态添加上传任务行 -->
+                    </tbody>
+                </table>
+                <p id="emptyMessage" style="display: block; text-align: center; color: #999; margin-top: 20px;">
+                    暂无上传任务
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/upload';
+        const CHUNK_SIZE = 20 * 1024 * 1024 ; // 2MB per chunk
+        const MAX_FILE_SIZE = 500 * 1024 * 1024 *1024; //  5G
+        
+        let uploadTasks = []; // 存储所有上传任务
+        let taskCounter = 1; // 任务序号计数器
+        let isLoadingList = false; // 防止重复加载列表
+        
+        // DOM元素
+        const fileInput = document.getElementById('fileInput');
+        const selectedFileName = document.getElementById('selectedFileName');
+        const uploadForm = document.getElementById('uploadForm');
+        const uploadTableBody = document.getElementById('uploadTableBody');
+        const emptyMessage = document.getElementById('emptyMessage');
+        
+        // 页面加载时从数据库加载上传列表
+        document.addEventListener('DOMContentLoaded', () => {
+            // 清除URL中的查询参数
+            if (window.location.search) {
+                const cleanUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, cleanUrl);
+            }
+
+            // 重置文件选择器
+            fileInput.value = '';
+            selectedFileName.textContent = '未选择文件';
+
+            // 加载上传列表
+            loadUploadList();
+
+            // 每5秒刷新一次列表
+            setInterval(loadUploadList, 5000);
+        });
+        
+        // 从数据库加载上传列表
+        async function loadUploadList() {
+            // 防止重复加载
+            if (isLoadingList) {
+                console.log('loadUploadList - skipping, already loading');
+                return;
+            }
+
+            isLoadingList = true;
+
+            try {
+                const response = await fetch(`${API_BASE}/list`);
+                if (!response.ok) {
+                    throw new Error('获取上传列表失败');
+                }
+
+                const data = await response.json();
+                const uploads = data.uploads || [];
+
+                console.log('loadUploadList - DB uploads:', uploads.length, 'uploadTasks:', uploadTasks.length);
+
+                // 获取数据库中所有的上传ID
+                const dbUploadIds = new Set(uploads.map(u => u.upload_id));
+
+                // 清理内存中已完成的任务（在数据库中存在的）
+                uploadTasks = uploadTasks.filter(task => {
+                    const shouldKeep =
+                        !task.uploadId ||  // 没有uploadId的任务保留
+                        !dbUploadIds.has(task.uploadId);  // 不在数据库中的任务保留
+
+                    if (!shouldKeep) {
+                        console.log('Removing task:', task.id, task.uploadId, task.status);
+                        // 移除DOM元素
+                        const row = document.getElementById(`task-row-${task.id}`);
+                        if (row) row.remove();
+                    }
+                    return shouldKeep;
+                });
+
+                console.log('After cleanup - uploadTasks:', uploadTasks.length);
+
+                // 获取当前正在上传的任务ID
+                const uploadingTaskIds = new Set(
+                    uploadTasks.map(t => t.uploadId).filter(id => id !== null)
+                );
+
+                if (uploads.length === 0 && uploadTasks.length === 0) {
+                    // 没有任何记录，显示空提示
+                    emptyMessage.style.display = 'block';
+                    uploadTableBody.innerHTML = '';
+                } else {
+                    // 隐藏空提示
+                    emptyMessage.style.display = 'none';
+
+                    // 清空表格
+                    uploadTableBody.innerHTML = '';
+
+                    // 添加数据库中的记录
+                    uploads.forEach((upload, index) => {
+                        // 跳过正在上传的任务（避免重复显示）
+                        if (!uploadingTaskIds.has(upload.upload_id)) {
+                            addUploadRow(upload, index + 1);
+                        }
+                    });
+
+                    // 添加正在上传的任务
+                    uploadTasks.forEach((task) => {
+                        console.log('Adding task row:', task.id, task.status);
+                        addTaskRow(task);
+                    });
+                }
+
+            } catch (error) {
+                console.error('加载上传列表失败:', error);
+            } finally {
+                isLoadingList = false;
+            }
+        }
+
+        // 添加数据库记录行到表格
+        function addUploadRow(upload, index) {
+            const row = document.createElement('tr');
+            row.id = `upload-row-${upload.upload_id}`;
+            
+            const progress = calculateProgress(upload.uploaded_chunks || [], upload.total_chunks);
+            const statusBadge = getStatusBadge(upload.status, upload.uploaded_chunks || [], upload.total_chunks);
+            
+            row.innerHTML = `
+                <td>${index}</td>
+                <td title="${upload.filename}">${truncateFileName(upload.filename, 30)}</td>
+                <td>${formatFileSize(upload.filesize)}</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progress-${upload.upload_id}" style="width: ${progress}%;">
+                            ${Math.round(progress)}%
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="status-badge ${statusBadge.className}" id="status-${upload.upload_id}">
+                        ${statusBadge.text}
+                    </span>
+                </td>
+                <td>${upload.created_at ? new Date(upload.created_at).toLocaleString('zh-CN') : '-'}</td>
+                <td>
+                    <button class="delete-btn" onclick="deleteUpload('${upload.upload_id}')" id="delete-${upload.upload_id}">
+                        删除
+                    </button>
+                </td>
+            `;
+            
+            uploadTableBody.appendChild(row);
+        }
+        
+        // 计算上传进度
+        function calculateProgress(uploadedChunks, totalChunks) {
+            if (!uploadedChunks || uploadedChunks.length === 0 || totalChunks === 0) {
+                return 0;
+            }
+            return (uploadedChunks.length / totalChunks) * 100;
+        }
+        
+        // 获取状态徽章
+        function getStatusBadge(status, uploadedChunks, totalChunks) {
+            const uploadedCount = uploadedChunks ? uploadedChunks.length : 0;
+            
+            switch (status) {
+                case 'initialized':
+                    return { text: '初始化中', className: 'status-uploading' };
+                case 'uploading':
+                    return { text: `上传中 (${uploadedCount}/${totalChunks})`, className: 'status-uploading' };
+                case 'merging':
+                    return { text: '合并中', className: 'status-merging' };
+                case 'completed':
+                    return { text: '完成', className: 'status-completed' };
+                case 'failed':
+                    return { text: '失败', className: 'status-failed' };
+                default:
+                    return { text: status, className: 'status-uploading' };
+            }
+        }
+        
+        // 删除上传记录
+        async function deleteUpload(uploadId) {
+            if (!confirm('确定要删除这条上传记录吗？')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/delete/${uploadId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || '删除失败');
+                }
+                
+                // 从表格中移除
+                const row = document.getElementById(`upload-row-${uploadId}`);
+                if (row) {
+                    row.remove();
+                }
+                
+                // 重新加载列表
+                await loadUploadList();
+                
+                alert('删除成功');
+            } catch (error) {
+                console.error('删除失败:', error);
+                alert(`删除失败: ${error.message}`);
+            }
+        }
+        
+        // 文件选择事件
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                // 检查文件类型
+                const allowedTypes = ['.docx', '.pdf', '.txt'];
+                const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+                
+                if (!allowedTypes.includes(fileExt)) {
+                    alert('不支持的文件格式！仅支持: .docx, .pdf, .txt');
+                    fileInput.value = '';
+                    selectedFileName.textContent = '未选择文件';
+                    return;
+                }
+                
+                // 检查文件大小
+                if (file.size > MAX_FILE_SIZE) {
+                    alert('文件过大！最大支持500MB');
+                    fileInput.value = '';
+                    selectedFileName.textContent = '未选择文件';
+                    return;
+                }
+                
+                selectedFileName.textContent = `${file.name} (${formatFileSize(file.size)})`;
+            } else {
+                selectedFileName.textContent = '未选择文件';
+            }
+        });
+        
+        // 表单提交事件
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('请先选择文件！');
+                return;
+            }
+            
+            // 创建上传任务
+            await createUploadTask(file);
+            
+            // 清空文件选择
+            fileInput.value = '';
+            selectedFileName.textContent = '未选择文件';
+        });
+        
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // 格式化时间
+        function formatTime(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        }
+        
+        // 创建上传任务
+        async function createUploadTask(file) {
+            const task = {
+                id: taskCounter++,
+                file: file,
+                fileName: file.name,
+                fileSize: file.size,
+                uploadId: null,
+                totalChunks: 0,
+                uploadedChunks: 0,
+                progress: 0,
+                status: 'initializing', // initializing, uploading, merging, completed, failed
+                startTime: new Date(),
+                isPaused: false
+            };
+
+            try {
+                // 初始化上传
+                const initResponse = await fetch(`${API_BASE}/init`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        filename: file.name,
+                        filesize: file.size
+                    })
+                });
+
+                if (!initResponse.ok) {
+                    // 先尝试解析错误信息
+                    const errorData = await initResponse.json();
+                    throw new Error(errorData.error || '初始化上传失败');
+                }
+
+                const initData = await initResponse.json();
+                task.uploadId = initData.upload_id;
+                task.totalChunks = initData.total_chunks;
+                task.status = 'uploading';
+
+                // 只有初始化成功后才添加任务到表格
+                uploadTasks.push(task);
+                addTaskRow(task);
+                updateTaskRow(task);
+
+                // 开始上传分片
+                await uploadChunks(task);
+
+                // 注意：不要在这里调用 loadUploadList()，因为轮询可能还没完成
+                // loadUploadList() 会在 pollMergeStatus 完成时被调用
+
+            } catch (error) {
+                console.error('Upload error:', error);
+                // 初始化失败时不添加到表格,只显示错误提示
+                alert(`上传失败: ${error.message}`);
+            }
+        }
+        
+        // 上传所有分片
+        async function uploadChunks(task) {
+            const totalChunks = task.totalChunks;
+
+            for (let i = 0; i < totalChunks; i++) {
+                if (task.isPaused) {
+                    task.status = 'paused';
+                    updateTaskRow(task);
+                    return;
+                }
+
+                const start = i * CHUNK_SIZE;
+                const end = Math.min(start + CHUNK_SIZE, task.fileSize);
+                const chunk = task.file.slice(start, end);
+
+                try {
+                    const formData = new FormData();
+                    formData.append('upload_id', task.uploadId);
+                    formData.append('chunk_index', i);
+                    formData.append('chunk', chunk);
+
+                    const response = await fetch(`${API_BASE}/chunk`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`分片${i}上传失败`);
+                    }
+
+                    const result = await response.json();
+                    task.uploadedChunks = result.uploaded_chunks;
+                    task.progress = result.progress;
+
+                    updateTaskRow(task);
+
+                } catch (error) {
+                    console.error(`Chunk ${i} upload error:`, error);
+                    task.status = 'failed';
+                    updateTaskRow(task);
+                    throw error;
+                }
+            }
+
+            // 所有分片上传完成，开始合并
+            await completeUpload(task);
+        }
+        
+        // 完成上传并合并
+        async function completeUpload(task) {
+            task.status = 'merging';
+            updateTaskRow(task);
+
+            try {
+                const response = await fetch(`${API_BASE}/complete`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({upload_id: task.uploadId})
+                });
+
+                if (!response.ok) {
+                    throw new Error('合并请求失败');
+                }
+
+                const data = await response.json();
+                const taskId = data.task_id;
+
+                // 轮询合并状态（等待轮询完成后才继续）
+                await pollMergeStatus(task, taskId);
+
+            } catch (error) {
+                console.error('Merge error:', error);
+                task.status = 'failed';
+                updateTaskRow(task);
+                // 失败后也重新加载列表
+                await loadUploadList();
+            }
+        }
+        
+        // 轮询合并状态
+        async function pollMergeStatus(task, taskId) {
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch(`${API_BASE}/merge-status/${taskId}`);
+                    const data = await response.json();
+                    
+                    if (data.state === 'SUCCESS') {
+                        clearInterval(interval);
+                        task.status = 'completed';
+                        task.progress = 100;
+                        updateTaskRow(task);
+                        // 合并成功后，重新从数据库加载列表
+                        await loadUploadList();
+                    } else if (data.state === 'PROGRESS') {
+                        // 显示合并进度
+                        const progressBar = document.getElementById(`progress-${task.id}`);
+                        if (progressBar && data.progress) {
+                            progressBar.style.width = data.progress + '%';
+                            progressBar.textContent = Math.round(data.progress) + '%';
+                        }
+                    } else if (data.state === 'RETRY') {
+                        // 任务重试中，显示重试信息
+                        const statusBadge = document.getElementById(`status-${task.id}`);
+                        if (statusBadge) {
+                            statusBadge.textContent = `重试中 (${data.retries || 0}/${3})`;
+                        }
+                    } else if (data.state === 'FAILURE' || data.state === 'REJECTED') {
+                        clearInterval(interval);
+                        task.status = 'failed';
+                        updateTaskRow(task);
+                        // 合并失败后，重新从数据库加载列表
+                        await loadUploadList();
+                    } else if (data.state === 'PENDING' && task.progress < 100) {
+                        // 任务等待中，但已经上传完成，保持merging状态
+                    }
+                } catch (error) {
+                    console.error('Polling error:', error);
+                    // 不要立即停止轮询，可能是网络问题
+                    // clearInterval(interval);
+                    // task.status = 'failed';
+                    // updateTaskRow(task);
+                }
+            }, 5000); // 每秒查询一次
+}
+
+        
+        // 添加任务行到表格
+        function addTaskRow(task) {
+            emptyMessage.style.display = 'none';
+
+            const row = document.createElement('tr');
+            row.id = `task-row-${task.id}`;
+
+            // 根据任务状态确定显示
+            let statusText = '初始化中';
+            let statusClass = 'status-uploading';
+            let progress = Math.round(task.progress) || 0;
+
+            switch (task.status) {
+                case 'initializing':
+                    statusText = '初始化中';
+                    statusClass = 'status-uploading';
+                    break;
+                case 'uploading':
+                    statusText = `上传中 (${task.uploadedChunks}/${task.totalChunks})`;
+                    statusClass = 'status-uploading';
+                    break;
+                case 'merging':
+                    statusText = '合并中';
+                    statusClass = 'status-merging';
+                    break;
+                case 'completed':
+                    statusText = '完成';
+                    statusClass = 'status-completed';
+                    progress = 100;
+                    break;
+                case 'failed':
+                    statusText = '失败';
+                    statusClass = 'status-failed';
+                    break;
+            }
+
+            row.innerHTML = `
+                <td>${task.id}</td>
+                <td title="${task.fileName}">${truncateFileName(task.fileName, 30)}</td>
+                <td>${formatFileSize(task.fileSize)}</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progress-${task.id}" style="width: ${progress}%;">
+                            ${progress}%
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="status-badge ${statusClass}" id="status-${task.id}">
+                        ${statusText}
+                    </span>
+                </td>
+                <td>${formatTime(task.startTime)}</td>
+                <td>
+                    <button class="delete-btn" onclick="deleteTask(${task.id})" id="delete-${task.id}">
+                        删除
+                    </button>
+                </td>
+            `;
+
+            uploadTableBody.appendChild(row);
+        }
+        
+        // 更新任务行
+        function updateTaskRow(task) {
+            const progressBar = document.getElementById(`progress-${task.id}`);
+            const statusBadge = document.getElementById(`status-${task.id}`);
+            const deleteBtn = document.getElementById(`delete-${task.id}`);
+            
+            if (progressBar) {
+                const progress = Math.round(task.progress);
+                progressBar.style.width = progress + '%';
+                progressBar.textContent = progress + '%';
+            }
+            
+            if (statusBadge) {
+                let statusText = '';
+                let statusClass = 'status-uploading';
+                
+                switch (task.status) {
+                    case 'initializing':
+                        statusText = '初始化中';
+                        statusClass = 'status-uploading';
+                        break;
+                    case 'uploading':
+                        statusText = `上传中 (${task.uploadedChunks}/${task.totalChunks})`;
+                        statusClass = 'status-uploading';
+                        break;
+                    case 'merging':
+                        statusText = '合并中';
+                        statusClass = 'status-merging';
+                        break;
+                    case 'completed':
+                        statusText = '完成';
+                        statusClass = 'status-completed';
+                        break;
+                    case 'failed':
+                        statusText = '失败';
+                        statusClass = 'status-failed';
+                        break;
+                }
+                
+                statusBadge.textContent = statusText;
+                statusBadge.className = `status-badge ${statusClass}`;
+            }
+            
+            // 完成或失败后，删除按钮可用
+            if (deleteBtn && (task.status === 'completed' || task.status === 'failed')) {
+                deleteBtn.disabled = false;
+            }
+        }
+        
+        // 删除任务
+        function deleteTask(taskId) {
+            const task = uploadTasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            if (task.status === 'uploading' || task.status === 'merging') {
+                if (!confirm('任务正在进行中，确定要删除吗？')) {
+                    return;
+                }
+            }
+            
+            // 从数组中移除
+            uploadTasks = uploadTasks.filter(t => t.id !== taskId);
+            
+            // 从表格中移除
+            const row = document.getElementById(`task-row-${taskId}`);
+            if (row) {
+                row.remove();
+            }
+            
+            // 如果没有任务了，显示空消息
+            if (uploadTasks.length === 0) {
+                emptyMessage.style.display = 'block';
+            }
+        }
+        
+        // 截断文件名
+        function truncateFileName(fileName, maxLength) {
+            if (fileName.length <= maxLength) return fileName;
+            const extension = fileName.split('.').pop();
+            const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+            const truncated = nameWithoutExt.substring(0, maxLength - extension.length - 4) + '...';
+            return truncated + '.' + extension;
+        }
+    </script>
+{% endblock %}

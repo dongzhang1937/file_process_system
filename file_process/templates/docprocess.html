@@ -1,0 +1,1467 @@
+{% extends "base.html" %}
+{% block title %}文档处理系统{% endblock %}
+{% block content %}
+
+<style>
+    .main-container {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 15px;
+        color: #333;
+    }
+
+    .action-bar {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .btn-primary {
+        background: #667eea;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #5568d3;
+    }
+
+    .btn-success {
+        background: #28a745;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #218838;
+    }
+
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #c82333;
+    }
+
+    .btn-info {
+        background: #17a2b8;
+        color: white;
+    }
+
+    .btn-info:hover {
+        background: #138496;
+    }
+
+    .btn-warning {
+        background: #ffc107;
+        color: #212529;
+    }
+
+    .btn-warning:hover {
+        background: #e0a800;
+    }
+
+    /* 禁用状态的按钮样式 */
+    .btn:disabled {
+        background: #cccccc !important;
+        color: #666666 !important;
+        cursor: not-allowed !important;
+        opacity: 0.5;
+        box-shadow: none;
+    }
+
+    .btn-sm {
+        padding: 5px 10px;
+        font-size: 12px;
+    }
+
+    .doc-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    .doc-table th,
+    .doc-table td {
+        border: 1px solid #ddd;
+        padding: 12px;
+        text-align: left;
+    }
+
+    .doc-table th {
+        background-color: #667eea;
+        color: white;
+        font-weight: bold;
+    }
+
+    .doc-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    .doc-table tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
+    .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .status-processing {
+        background-color: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .status-completed {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .status-failed {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    /* 状态单元格的动态样式 */
+    .status-cell.status-processing {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.5;
+        }
+        100% {
+            opacity: 1;
+        }
+    }
+
+    /* 模态框样式 */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal.show {
+        display: flex;
+    }
+
+    .modal-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        width: 90%;
+        max-width: 800px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #667eea;
+    }
+
+    .modal-title {
+        font-size: 20px;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .modal-close {
+        font-size: 28px;
+        cursor: pointer;
+        color: #666;
+        transition: color 0.3s;
+    }
+
+    .modal-close:hover {
+        color: #333;
+    }
+
+    .modal-body {
+        line-height: 1.6;
+    }
+
+    .detail-section {
+        margin-bottom: 20px;
+        padding: 15px;
+        background-color: #f8f9ff;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+    }
+
+    .detail-section h4 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: #667eea;
+    }
+
+    .detail-item {
+        margin-bottom: 8px;
+    }
+
+    .detail-label {
+        font-weight: bold;
+        color: #555;
+        display: inline-block;
+        width: 120px;
+    }
+
+    .detail-value {
+        color: #333;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+    }
+
+    .empty-state-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: #667eea;
+    }
+
+    /* 章节树样式 */
+    .chapter-tree {
+        margin-top: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .chapter-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    .chapter-item {
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .chapter-item:last-child {
+        border-bottom: none;
+    }
+
+    .chapter-item:hover {
+        background-color: #f0f0f0;
+    }
+
+    .chapter-item.active {
+        background-color: #e8f4f8;
+        border-left: 3px solid #667eea;
+    }
+
+    .chapter-title {
+        padding: 12px 15px;
+        display: flex;
+        align-items: center;
+    }
+
+    .chapter-level-indicator {
+        margin-right: 10px;
+        color: #999;
+        font-size: 12px;
+    }
+
+    .chapter-text {
+        flex: 1;
+        font-size: 14px;
+        color: #333;
+    }
+
+    .chapter-text.is-bold {
+        font-weight: bold;
+    }
+
+    .chapter-content {
+        padding: 15px 20px;
+        background-color: #f9f9f9;
+        border-top: 1px solid #eee;
+        display: none;
+        line-height: 1.8;
+        color: #555;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+
+    .chapter-content.show {
+        display: block;
+    }
+
+    /* 文本内联图片（占位符替换后插入） */
+    .inline-image-wrapper {
+        margin: 10px 0;
+        text-align: left;
+    }
+
+    .inline-image {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #fff;
+    }
+
+    /* 章节图片样式 */
+    .chapter-images {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #ddd;
+    }
+
+    .chapter-images h5 {
+        margin: 0 0 10px 0;
+        color: #667eea;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .image-gallery {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .image-item {
+        position: relative;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .image-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .image-thumbnail {
+        width: 120px;
+        height: 90px;
+        object-fit: cover;
+        cursor: pointer;
+        display: block;
+        transition: opacity 0.3s ease;
+    }
+    
+    .image-thumbnail[data-loaded="false"] {
+        opacity: 0.7;
+        background-color: #f8f9fa;
+    }
+    
+    .image-thumbnail[data-loaded="true"] {
+        opacity: 1;
+    }
+    
+    .image-thumbnail[data-loaded="error"] {
+        opacity: 0.5;
+        border: 1px dashed #dc3545;
+    }
+
+    .image-caption {
+        padding: 5px 8px;
+        font-size: 12px;
+        color: #666;
+        background: #f8f9fa;
+        text-align: center;
+        border-top: 1px solid #eee;
+    }
+
+    /* 图片预览模态框 */
+    .image-modal {
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        align-items: center;
+        justify-content: center;
+    }
+
+    .image-modal.show {
+        display: flex;
+    }
+
+    .image-modal-content {
+        position: relative;
+        max-width: 90%;
+        max-height: 90%;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .image-modal img {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    .image-modal-close {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        color: white;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        background: rgba(0,0,0,0.5);
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.3s;
+    }
+
+    .image-modal-close:hover {
+        background: rgba(0,0,0,0.7);
+    }
+
+    .chapter-empty {
+        padding: 20px;
+        text-align: center;
+        color: #999;
+    }
+
+    .chapter-toggle-icon {
+        margin-right: 8px;
+        transition: transform 0.2s;
+    }
+
+    .chapter-toggle-icon.expanded {
+        transform: rotate(90deg);
+    }
+</style>
+
+<div style="display: flex; flex: 1; width: 100%;">
+    <!-- 左侧功能栏 -->
+    <div style="width: 200px; min-width: 200px; border-right: 1px solid #ddd; padding: 20px; background: #f8f9fa;">
+        <h3 style="margin-bottom: 20px; color: #333;">功能菜单</h3>
+        <ul style="list-style: none; padding: 0;">
+            <li style="margin-bottom: 15px;">
+                <a href="/documentlist" style="text-decoration: none; color: #333;">
+                    文档上传
+                </a>
+            </li>
+            <li style="margin-bottom: 15px;">
+                <a href="/docprocess" style="text-decoration: none; color: #667eea; font-weight: bold;">
+                    文档处理
+                </a>
+            </li>
+            <li style="margin-bottom: 15px;">
+                <a href="/chatdoc" style="text-decoration: none; color: #333;">
+                    文档对话
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main-container" style="flex: 1; overflow-x: hidden;">
+        <h2>文档处理</h2>
+
+        <!-- 操作栏 -->
+        <div class="action-bar">
+            <button class="btn btn-primary" onclick="openAddModal()">
+                添加文档
+            </button>
+            <button class="btn btn-info" onclick="loadDocProcessList()">
+                刷新列表
+            </button>
+            <button class="btn btn-warning" onclick="recoverOrphanedTasks()" title="恢复系统重启后丢失的处理任务">
+                恢复任务
+            </button>
+        </div>
+
+        <!-- 文档列表 -->
+        <div id="docListContainer">
+            <div class="loading">加载中...</div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加文档模态框 -->
+<div id="addModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3 class="modal-title">添加文档到处理列表</h3>
+            <span class="modal-close" onclick="closeAddModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom: 15px; color: #666;">请从文档上传列表中选择要处理的文档:</p>
+            <div id="uploadDocList" style="max-height: 400px; overflow-y: auto;">
+                <div class="loading">加载中...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 详情模态框 -->
+<div id="detailModal" class="modal">
+    <div class="modal-content" style="max-width: 900px;">
+        <div class="modal-header">
+            <h3 class="modal-title">文档处理详情</h3>
+            <span class="modal-close" onclick="closeDetailModal()">&times;</span>
+        </div>
+        <div class="modal-body" id="detailContent">
+            <!-- 详情内容 -->
+        </div>
+    </div>
+</div>
+
+<!-- 图片预览模态框 -->
+<div id="imageModal" class="image-modal">
+    <div class="image-modal-content">
+        <span class="image-modal-close" onclick="closeImageModal()">&times;</span>
+        <img id="modalImage" src="" alt="图片预览">
+    </div>
+</div>
+
+<script>
+const API_BASE = '/api/doc-process';
+
+// 统一的占位图（用于懒加载）
+const PLACEHOLDER_IMG = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjkwIiB2aWV3Qm94PSIwIDAgMTIwIDkwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iMTIwIiBoZWlnaHQ9IjkwIiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik00MCA0MEw2MCA2MEw4MCA0MEw4MCA3MEg0MFY0MFoiIGZpbGw9IiNEREREREQiLz4KPHRleHQgeD0iNjAiIHk9IjUwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5IiBmb250LXNpemU9IjEyIj7ngrnlh7vliKDovb08L3RleHQ+PC9zdmc+';
+
+// 注意：模板由 Jinja2 渲染，源码里不能出现连续两个左大括号，否则会被当成模板语法。
+const IMAGE_ID_PREFIX = '{' + '{IMAGE_ID_';
+const IMAGE_ID_RE = /\{\{IMAGE_ID_(\d+)\}\}/g;
+
+// 将章节 content 中的 IMAGE_ID 占位符替换为内联 <img>（先 escape，再替换，避免 XSS）
+// 同时处理 [表格]...[/表格] 标签，渲染成 HTML 表格
+function renderContentWithImages(content, images) {
+    const imgMap = {};
+    (images || []).forEach(img => {
+        if (img && img.id) {
+            imgMap[String(img.id)] = img.image_url || img.image_path;
+        }
+    });
+
+    const escaped = escapeHtml(content || '');
+    
+    // 先替换图片占位符
+    let result = escaped.replace(IMAGE_ID_RE, (m, id) => {
+        const url = imgMap[String(id)];
+        if (!url) return m;
+        const safeUrl = escapeHtml(url);
+        return `<div class="inline-image-wrapper"><img class="inline-image" data-src="${safeUrl}" data-loaded="false" src="${PLACEHOLDER_IMG}" alt="图片 ${id}" onclick="showImageModal(this.getAttribute('data-src'))"></div>`;
+    });
+    
+    // 处理 [表格]...[/表格] 标签：渲染成带边框的表格
+    result = result.replace(/\[表格\]([\s\S]*?)\[\/表格\]/g, (m, tableContent) => {
+        const cleaned = tableContent.trim();
+        if (!cleaned) return '';
+        return `<table class="inline-table" style="border:1px solid #ccc; border-collapse:collapse; margin:10px 0; width:100%;"><tr><td style="border:1px solid #ccc; padding:10px;">${cleaned.replace(/\r?\n/g, '<br>')}</td></tr></table>`;
+    });
+    
+    // 处理剩余的换行符
+    result = result.replace(/\r?\n/g, '<br>');
+    
+    return result;
+}
+
+// 加载文档处理列表
+async function loadDocProcessList() {
+    try {
+        const response = await fetch(`${API_BASE}/list`, {
+            credentials: 'same-origin'
+        });
+        
+        // 检查是否被重定向到登录页面
+        if (response.redirected || response.url.endsWith('/')) {
+            window.location.href = '/';
+            return;
+        }
+        
+        const result = await response.json();
+
+        if (result.success) {
+            renderDocList(result.data);
+        } else {
+            console.error('加载失败:', result.error);
+            document.getElementById('docListContainer').innerHTML =
+                `<div class="empty-state">加载失败: ${result.error}</div>`;
+        }
+    } catch (error) {
+        console.error('加载文档列表失败:', error);
+        document.getElementById('docListContainer').innerHTML =
+            `<div class="empty-state">加载失败: ${error.message}</div>`;
+    }
+}
+
+// 渲染文档列表
+function renderDocList(documents) {
+    const container = document.getElementById('docListContainer');
+
+    if (!documents || documents.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📭</div>
+                <p>暂无处理文档</p>
+                <p style="font-size: 14px; margin-top: 10px;">点击"添加文档"按钮开始</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = `
+        <table class="doc-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">序号</th>
+                    <th style="width: 25%;">文件名</th>
+                    <th style="width: 10%;">状态</th>
+                    <th style="width: 15%;">添加时间</th>
+                    <th style="width: 15%;">处理时间</th>
+                    <th style="width: 35%;">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    documents.forEach((doc, index) => {
+        html += `
+            <tr data-doc-id="${doc.doc_id}">
+                <td>${index + 1}</td>
+                <td>${escapeHtml(doc.filename)}</td>
+                <td><span class="status-cell status-badge status-${doc.status}">${getStatusText(doc.status)}</span></td>
+                <td>${formatDate(doc.created_at)}</td>
+                <td>${doc.process_end_time ? formatDate(doc.process_end_time) : '-'}</td>
+                <td>
+                    ${doc.status === 'failed' ? `
+                        <button class="btn btn-primary btn-sm" onclick="processDoc('${doc.doc_id}', '${doc.status}')">
+                            重试
+                        </button>
+                    ` : (doc.status === 'completed' ? `
+                        <button class="btn btn-success btn-sm" onclick="processDoc('${doc.doc_id}', '${doc.status}')">
+                            重新处理
+                        </button>
+                    ` : `
+                        <button class="btn btn-success btn-sm" onclick="processDoc('${doc.doc_id}', '${doc.status}')" ${doc.status === 'processing' ? 'disabled' : ''}>
+                            处理
+                        </button>
+                    `)}
+                    <button class="btn btn-info btn-sm" onclick="showDetail('${doc.doc_id}')">
+                        详情
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="downloadDoc('${doc.doc_id}')">
+                        下载
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteDoc('${doc.doc_id}')">
+                        删除
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+
+    html += `
+            </tbody>
+        </table>
+    `;
+
+    container.innerHTML = html;
+}
+
+// 获取状态文本
+function getStatusText(status) {
+    const statusMap = {
+        'pending': '待处理',
+        'processing': '处理中',
+        'completed': '已完成',
+        'failed': '处理失败'
+    };
+    return statusMap[status] || status;
+}
+
+// 格式化日期
+function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return date.toLocaleString('zh-CN');
+}
+
+// HTML转义
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// 打开添加文档模态框
+async function openAddModal() {
+    document.getElementById('addModal').classList.add('show');
+    loadUploadDocList();
+}
+
+// 关闭添加文档模态框
+function closeAddModal() {
+    document.getElementById('addModal').classList.remove('show');
+}
+
+// 加载可添加的文档列表
+async function loadUploadDocList() {
+    try {
+        const response = await fetch('/upload/list', {
+            credentials: 'same-origin'
+        });
+        if (!response.ok) {
+            throw new Error('获取上传列表失败');
+        }
+        const data = await response.json();
+        const uploads = data.uploads || [];
+
+        if (uploads.length > 0) {
+            renderUploadDocList(uploads);
+        } else {
+            document.getElementById('uploadDocList').innerHTML =
+                `<div class="empty-state">暂无可添加的文档</div>`;
+        }
+    } catch (error) {
+        console.error('加载文档列表失败:', error);
+        document.getElementById('uploadDocList').innerHTML =
+            `<div class="empty-state">加载失败: ${error.message}</div>`;
+    }
+}
+
+// 渲染可添加的文档列表
+function renderUploadDocList(documents) {
+    const container = document.getElementById('uploadDocList');
+
+    if (!documents || documents.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <p>暂无可添加的文档</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '<table class="doc-table"><thead><tr><th>文件名</th><th>上传时间</th><th>操作</th></tr></thead><tbody>';
+
+    documents.forEach(doc => {
+        html += `
+            <tr>
+                <td>${escapeHtml(doc.filename)}</td>
+                <td>${formatDate(doc.created_at)}</td>
+                <td>
+                    <button class="btn btn-success btn-sm" onclick="addDoc('${doc.upload_id}', '${escapeHtml(doc.filename)}')">
+                        添加
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+// 添加文档到处理列表
+async function addDoc(uploadId, filename) {
+    try {
+        const response = await fetch(`${API_BASE}/add`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({upload_id: uploadId}),
+            credentials: 'same-origin'
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert(`"${filename}" 添加成功!`);
+            closeAddModal();
+            loadDocProcessList();
+        } else {
+            alert(`添加失败: ${result.error}`);
+        }
+    } catch (error) {
+        console.error('添加文档失败:', error);
+        alert(`添加失败: ${error.message}`);
+    }
+}
+
+// 处理文档
+async function processDoc(docId, status) {
+    const isReprocess = status === 'completed';
+    const confirmMsg = isReprocess ? '该文档已处理完成，确定要重新处理吗?\n\n重新处理会用最新规则重建章节/图片数据。' : '确定要处理该文档吗?';
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+
+    // 立即禁用按钮
+    const row = document.querySelector(`[data-doc-id="${docId}"]`);
+    if (row) {
+        const firstButton = row.querySelector('button:first-child');
+        if (firstButton) {
+            firstButton.disabled = true;
+        }
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/process`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({doc_id: docId, reprocess: status === 'completed'}),
+            credentials: 'same-origin'
+        });
+
+        // 检查响应是否为 JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('服务器返回非JSON响应，可能是认证失败，请刷新页面重新登录');
+        }
+
+        const result = await response.json();
+
+        // 处理认证失败
+        if (result.code === 'UNAUTHORIZED') {
+            alert('登录已过期，请重新登录');
+            window.location.href = '/';
+            return;
+        }
+
+        if (result.success) {
+            alert('处理任务已提交!');
+            loadDocProcessList();
+            // 轮询状态
+            pollDocStatus(docId);
+        } else {
+            alert(`处理失败: ${result.error}`);
+            // 失败后恢复按钮
+            if (row) {
+                const firstButton = row.querySelector('button:first-child');
+                if (firstButton) {
+                    firstButton.disabled = false;
+                }
+            }
+        }
+    } catch (error) {
+        console.error('处理文档失败:', error);
+        alert(`处理失败: ${error.message}`);
+        // 失败后恢复按钮
+        if (row) {
+            const firstButton = row.querySelector('button:first-child');
+            if (firstButton) {
+                firstButton.disabled = false;
+            }
+        }
+    }
+}
+
+// 轮询文档状态
+function pollDocStatus(docId) {
+    const interval = setInterval(async () => {
+        try {
+            // 使用新的状态查询API
+            const response = await fetch(`${API_BASE}/status?doc_id=${docId}`, {
+                credentials: 'same-origin'
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                const status = result.data.status;
+
+                // 更新表格中的状态显示
+                updateDocStatus(docId, status, result.data);
+
+                // 如果处理完成或失败，停止轮询
+                if (status === 'completed') {
+                    clearInterval(interval);
+                    alert('文档处理完成!');
+                    loadDocProcessList();
+                } else if (status === 'failed') {
+                    clearInterval(interval);
+                    const errorMsg = result.data.process_result?.error || '处理失败，请查看详细信息';
+                    alert(`文档处理失败: ${errorMsg}`);
+                    loadDocProcessList();
+                }
+            }
+        } catch (error) {
+            console.error('轮询状态失败:', error);
+        }
+    }, 5000); // 每5秒轮询一次
+
+    // 10分钟后停止轮询（避免无限轮询）
+    setTimeout(() => {
+        clearInterval(interval);
+        console.log('轮询超时，停止轮询');
+    }, 600000);
+}
+
+// 更新文档状态显示
+function updateDocStatus(docId, status, data) {
+    // 找到对应的行
+    const row = document.querySelector(`[data-doc-id="${docId}"]`);
+    if (!row) return;
+
+    const statusCell = row.querySelector('.status-cell');
+    if (statusCell) {
+        let statusClass = '';
+        let statusText = getStatusText(status);
+
+        if (status === 'processing') {
+            statusClass = 'status-processing';
+            statusText += ` (处理中...)`;
+        } else if (status === 'completed') {
+            statusClass = 'status-completed';
+        } else if (status === 'failed') {
+            statusClass = 'status-failed';
+        }
+
+        statusCell.className = `status-cell ${statusClass}`;
+        statusCell.textContent = statusText;
+    }
+
+    // 更新处理按钮状态
+    const firstButton = row.querySelector('button:first-child');
+    if (firstButton) {
+        // 确保 onclick 携带最新状态
+        firstButton.setAttribute('onclick', `processDoc('${docId}', '${status}')`);
+
+        if (status === 'failed') {
+            // 失败状态显示"重试"按钮，可以点击
+            firstButton.textContent = '重试';
+            firstButton.className = 'btn btn-primary btn-sm';
+            firstButton.disabled = false;
+        } else if (status === 'completed') {
+            // 已完成允许重新处理
+            firstButton.textContent = '重新处理';
+            firstButton.className = 'btn btn-success btn-sm';
+            firstButton.disabled = false;
+        } else if (status === 'pending') {
+            firstButton.textContent = '处理';
+            firstButton.className = 'btn btn-success btn-sm';
+            firstButton.disabled = false;
+        } else {
+            // processing 等：禁用
+            firstButton.textContent = '处理中';
+            firstButton.className = 'btn btn-success btn-sm';
+            firstButton.disabled = true;
+        }
+    }
+}
+
+// 恢复孤儿任务
+async function recoverOrphanedTasks() {
+    if (!confirm('确定要恢复系统重启后丢失的处理任务吗？\n\n这将检查所有长时间处于"处理中"状态的任务，并重新提交到处理队列。')) {
+        return;
+    }
+
+    // 禁用按钮，防止重复点击
+    const recoverBtn = event.target;
+    const originalText = recoverBtn.textContent;
+    recoverBtn.disabled = true;
+    recoverBtn.textContent = '恢复中...';
+
+    try {
+        const response = await fetch(`${API_BASE}/recover-tasks`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin'
+        });
+
+        // 检查响应是否为 JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('服务器返回非JSON响应，可能是认证失败，请刷新页面重新登录');
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert('任务恢复检查完成！\n\n已自动处理所有孤儿任务，请查看任务列表。');
+            // 刷新列表以显示最新状态
+            loadDocProcessList();
+        } else {
+            alert(`任务恢复失败: ${result.error}`);
+        }
+    } catch (error) {
+        console.error('恢复任务失败:', error);
+        alert(`恢复任务失败: ${error.message}`);
+    } finally {
+        // 恢复按钮状态
+        recoverBtn.disabled = false;
+        recoverBtn.textContent = originalText;
+    }
+}
+
+// 删除文档
+async function deleteDoc(docId) {
+    if (!confirm('确定要删除该文档吗?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/delete`, {
+            method: 'DELETE',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({doc_id: docId, reprocess: status === 'completed'}),
+            credentials: 'same-origin'
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert('删除成功!');
+            loadDocProcessList();
+        } else {
+            alert(`删除失败: ${result.error}`);
+        }
+    } catch (error) {
+        console.error('删除文档失败:', error);
+        alert(`删除失败: ${error.message}`);
+    }
+}
+
+// 下载文档
+function downloadDoc(docId) {
+    window.open(`${API_BASE}/download?doc_id=${docId}`, '_blank');
+}
+
+// 显示详情
+async function showDetail(docId) {
+    try {
+        const response = await fetch(`${API_BASE}/detail?doc_id=${docId}`, {
+            credentials: 'same-origin'
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            // 同时获取章节信息
+            await renderDetail(result.data);
+            await loadChapters(docId);
+            document.getElementById('detailModal').classList.add('show');
+        } else {
+            alert(`获取详情失败: ${result.error}`);
+        }
+    } catch (error) {
+        console.error('获取详情失败:', error);
+        alert(`获取详情失败: ${error.message}`);
+    }
+}
+
+// 加载章节树
+async function loadChapters(docId) {
+    try {
+        const response = await fetch(`${API_BASE}/chapters?doc_id=${docId}`, {
+            credentials: 'same-origin'
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            renderChapterTree(result.data.chapters, result.data.total_count);
+        }
+    } catch (error) {
+        console.error('获取章节失败:', error);
+    }
+}
+
+// 渲染章节树
+function renderChapterTree(chapters, totalCount) {
+    const container = document.getElementById('detailContent');
+    const existingSection = document.getElementById('chapterSection');
+
+    // 如果已经有章节区域,移除它
+    if (existingSection) {
+        existingSection.remove();
+    }
+
+    if (!chapters || chapters.length === 0) {
+        // 没有章节,不显示章节区域
+        return;
+    }
+
+    // 创建章节区域
+    const chapterSection = document.createElement('div');
+    chapterSection.id = 'chapterSection';
+    chapterSection.className = 'detail-section';
+    chapterSection.innerHTML = `
+        <h4>文档目录 (${totalCount} 个章节)</h4>
+        <div class="chapter-tree">
+            <ul class="chapter-list" id="chapterList"></ul>
+        </div>
+    `;
+
+    container.appendChild(chapterSection);
+
+    // 递归渲染章节
+    renderChapterItems(chapters, document.getElementById('chapterList'), 0);
+}
+
+// 递归渲染章节项
+function renderChapterItems(chapters, container, level) {
+    chapters.forEach(chapter => {
+        const li = document.createElement('li');
+        li.className = 'chapter-item';
+        li.dataset.chapterId = chapter.id;
+
+        // 计算缩进
+        const paddingLeft = 15 + level * 20;
+
+        // 创建标题
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'chapter-title';
+        titleDiv.style.paddingLeft = `${paddingLeft}px`;
+
+        // 有子章节的显示箭头
+        if (chapter.children && chapter.children.length > 0) {
+            const toggleIcon = document.createElement('span');
+            toggleIcon.className = 'chapter-toggle-icon';
+            toggleIcon.innerHTML = '▼';
+            titleDiv.appendChild(toggleIcon);
+        }
+
+        // 层级指示器
+        const levelIndicator = document.createElement('span');
+        levelIndicator.className = 'chapter-level-indicator';
+        levelIndicator.textContent = `${'│'.repeat(level)}${level === 0 ? '└' : '├'}`;
+        titleDiv.appendChild(levelIndicator);
+
+        // 标题文本
+        const titleText = document.createElement('span');
+        titleText.className = `chapter-text ${chapter.is_bold ? 'is-bold' : ''}`;
+        titleText.textContent = chapter.title;
+        titleDiv.appendChild(titleText);
+
+        li.appendChild(titleDiv);
+
+        // 创建内容区域
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'chapter-content';
+        contentDiv.id = `chapter-content-${chapter.id}`;
+        
+        // 添加文本内容（支持 IMAGE_ID 占位符 -> inline <img>）
+        const textContent = document.createElement('div');
+        const rawContent = chapter.content || '（无内容）';
+        textContent.innerHTML = renderContentWithImages(rawContent, chapter.images || []);
+        contentDiv.appendChild(textContent);
+
+        const hasInlineImages = (chapter.content || '').includes(IMAGE_ID_PREFIX);
+
+        // 兼容旧数据：如果没有占位符，但存在图片，则仍显示图片列表
+        if (!hasInlineImages && chapter.images && chapter.images.length > 0) {
+            const imagesDiv = document.createElement('div');
+            imagesDiv.className = 'chapter-images';
+
+            const imagesTitle = document.createElement('h5');
+            imagesTitle.textContent = `相关图片 (${chapter.images.length}张)`;
+            imagesDiv.appendChild(imagesTitle);
+
+            const imageGallery = document.createElement('div');
+            imageGallery.className = 'image-gallery';
+
+            chapter.images.forEach((image, index) => {
+                const imageItem = document.createElement('div');
+                imageItem.className = 'image-item';
+
+                const img = document.createElement('img');
+                img.className = 'image-thumbnail';
+                // 懒加载：先不设置src，使用data-src存储真实URL
+                img.setAttribute('data-src', image.image_url || image.image_path);
+                img.setAttribute('data-loaded', 'false');
+                img.alt = `章节图片 ${index + 1}`;
+
+                // 设置占位图
+                img.src = PLACEHOLDER_IMG;
+
+                img.onclick = function() {
+                    const realSrc = this.getAttribute('data-src');
+                    showImageModal(realSrc);
+                };
+
+                imageItem.appendChild(img);
+
+                const caption = document.createElement('div');
+                caption.className = 'image-caption';
+                caption.textContent = `图片 ${index + 1}`;
+                imageItem.appendChild(caption);
+
+                imageGallery.appendChild(imageItem);
+            });
+
+            imagesDiv.appendChild(imageGallery);
+            contentDiv.appendChild(imagesDiv);
+        }
+        
+        li.appendChild(contentDiv);
+
+        // 点击事件:显示/隐藏内容
+        titleDiv.addEventListener('click', (e) => {
+            e.stopPropagation();
+
+            // 如果有子章节,切换展开/折叠
+            if (chapter.children && chapter.children.length > 0) {
+                const childrenContainer = li.querySelector('.chapter-children');
+                const toggleIcon = titleDiv.querySelector('.chapter-toggle-icon');
+
+                if (childrenContainer) {
+                    childrenContainer.style.display = childrenContainer.style.display === 'none' ? 'block' : 'none';
+                    toggleIcon.classList.toggle('expanded');
+                }
+            }
+
+            // 切换内容显示
+            const allContent = document.querySelectorAll('.chapter-content');
+            allContent.forEach(c => c.classList.remove('show'));
+
+            const allItems = document.querySelectorAll('.chapter-item');
+            allItems.forEach(item => item.classList.remove('active'));
+
+            contentDiv.classList.add('show');
+            li.classList.add('active');
+            
+            // 懒加载：当章节内容显示时，加载该章节的图片
+            loadChapterImages(contentDiv);
+        });
+
+        container.appendChild(li);
+
+        // 渲染子章节
+        if (chapter.children && chapter.children.length > 0) {
+            const childrenContainer = document.createElement('ul');
+            childrenContainer.className = 'chapter-list chapter-children';
+            childrenContainer.style.display = 'block'; // 默认展开
+            childrenContainer.style.paddingLeft = '0';
+            li.appendChild(childrenContainer);
+
+            renderChapterItems(chapter.children, childrenContainer, level + 1);
+        }
+    });
+}
+
+// 渲染详情
+function renderDetail(doc) {
+    const container = document.getElementById('detailContent');
+    const processResult = doc.process_result || {};
+
+    let html = `
+        <div class="detail-section">
+            <h4>基本信息</h4>
+            <div class="detail-item">
+                <span class="detail-label">文件名:</span>
+                <span class="detail-value">${escapeHtml(doc.filename)}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">状态:</span>
+                <span class="detail-value">
+                    <span class="status-badge status-${doc.status}">${getStatusText(doc.status)}</span>
+                </span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">创建时间:</span>
+                <span class="detail-value">${formatDate(doc.created_at)}</span>
+            </div>
+            ${doc.process_start_time ? `
+            <div class="detail-item">
+                <span class="detail-label">处理开始时间:</span>
+                <span class="detail-value">${formatDate(doc.process_start_time)}</span>
+            </div>
+            ` : ''}
+            ${doc.process_end_time ? `
+            <div class="detail-item">
+                <span class="detail-label">处理结束时间:</span>
+                <span class="detail-value">${formatDate(doc.process_end_time)}</span>
+            </div>
+            ` : ''}
+        </div>
+    `;
+
+    if (processResult) {
+        html += `
+            <div class="detail-section">
+                <h4>处理结果</h4>
+                <div class="detail-item">
+                    <span class="detail-label">处理时间:</span>
+                    <span class="detail-value">${processResult.process_time || '-'}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">消息:</span>
+                    <span class="detail-value">${processResult.message || '-'}</span>
+                </div>
+                ${processResult.file_size ? `
+                <div class="detail-item">
+                    <span class="detail-label">文件大小:</span>
+                    <span class="detail-value">${formatFileSize(processResult.file_size)}</span>
+                </div>
+                ` : ''}
+                ${processResult.file_type ? `
+                <div class="detail-item">
+                    <span class="detail-label">文件类型:</span>
+                    <span class="detail-value">${processResult.file_type}</span>
+                </div>
+                ` : ''}
+                ${processResult.details ? `
+                <div class="detail-section" style="margin-top: 15px; margin-bottom: 0;">
+                    <h4>详细信息</h4>
+                    ${processResult.details.word_count !== undefined ? `
+                    <div class="detail-item">
+                        <span class="detail-label">字数:</span>
+                        <span class="detail-value">${processResult.details.word_count}</span>
+                    </div>
+                    ` : ''}
+                    ${processResult.details.paragraph_count !== undefined ? `
+                    <div class="detail-item">
+                        <span class="detail-label">段落数:</span>
+                        <span class="detail-value">${processResult.details.paragraph_count}</span>
+                    </div>
+                    ` : ''}
+                    ${processResult.details.summary ? `
+                    <div class="detail-item">
+                        <span class="detail-label">摘要:</span>
+                        <span class="detail-value">${escapeHtml(processResult.details.summary)}</span>
+                    </div>
+                    ` : ''}
+                </div>
+                ` : ''}
+                ${processResult.error ? `
+                <div class="detail-section" style="background-color: #fff3f0; border-left-color: #dc3545;">
+                    <h4 style="color: #dc3545;">错误信息</h4>
+                    <p style="color: #721c24; margin: 0;">${escapeHtml(processResult.error)}</p>
+                </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    container.innerHTML = html;
+}
+
+// 格式化文件大小
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+}
+
+// 懒加载章节图片
+function loadChapterImages(contentDiv) {
+    const images = contentDiv.querySelectorAll('img[data-loaded="false"]');
+    
+    images.forEach(img => {
+        const realSrc = img.getAttribute('data-src');
+        if (realSrc) {
+            console.log(`懒加载图片: ${realSrc}`);
+            
+            // 创建新的Image对象来预加载
+            const newImg = new Image();
+            
+            newImg.onload = function() {
+                // 图片加载成功，替换占位图
+                img.src = realSrc;
+                img.setAttribute('data-loaded', 'true');
+                console.log(`图片加载成功: ${realSrc}`);
+            };
+            
+            newImg.onerror = function() {
+                // 图片加载失败，显示错误占位图
+                img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjkwIiB2aWV3Qm94PSIwIDAgMTIwIDkwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iMTIwIiBoZWlnaHQ9IjkwIiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik00MCA0MEw2MCA2MEw4MCA0MEw4MCA3MEg0MFY0MFoiIGZpbGw9IiNEREREREQiLz4KPHRleHQgeD0iNjAiIHk9IjUwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5IiBmb250LXNpemU9IjEyIj7liqDovb3lpLHotKU8L3RleHQ+PC9zdmc+';
+                img.setAttribute('data-loaded', 'error');
+                img.alt = '图片加载失败';
+                console.log(`图片加载失败: ${realSrc}`);
+            };
+            
+            // 开始加载图片
+            newImg.src = realSrc;
+        }
+    });
+}
+
+// 关闭详情模态框
+function closeDetailModal() {
+    document.getElementById('detailModal').classList.remove('show');
+}
+
+// 显示图片预览模态框
+function showImageModal(imageSrc) {
+    const modal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+    
+    modalImage.src = imageSrc;
+    modal.classList.add('show');
+}
+
+// 关闭图片预览模态框
+function closeImageModal() {
+    document.getElementById('imageModal').classList.remove('show');
+}
+
+// 点击模态框外部关闭
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.classList.remove('show');
+    }
+    if (event.target.classList.contains('image-modal')) {
+        event.target.classList.remove('show');
+    }
+};
+
+// 页面加载时获取文档列表
+loadDocProcessList();
+</script>
+
+{% endblock %}

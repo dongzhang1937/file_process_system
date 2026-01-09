@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}注册 - 文件处理系统{% endblock %}
+{% block content %}
+<div class="auth-container">
+    <div class="auth-box">
+        <h2>用户注册</h2>
+        <form method="post">
+            <div class="form-group">
+                <label>用户名</label>
+                <input type="text" name="username" placeholder="请输入用户名">
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <input type="password" name="password" placeholder="请输入密码">
+            </div>
+            <button type="submit" class="submit-btn">注册</button>
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="error-msg">
+                        {% for message in messages %}
+                            {{ message }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+        </form>
+        <div class="link-row">
+            已有账号？<a href="/">返回登录</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
