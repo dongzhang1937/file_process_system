@@ -13,9 +13,10 @@ export PYTHONPATH="$PROJECT_ROOT:$PYTHONPATH"
 
 # 检查是否已有 Celery 进程运行
 if pgrep -f "celery.*file_process.models.celery_app" > /dev/null; then
-    echo "检测到已有 Celery Worker 运行"
-    echo "如需重启，请先运行: pkill -f celery"
-    exit 1
+    echo "检测到已有 Celery Worker 运行，正在停止..."
+    pkill -f "celery.*file_process.models.celery_app"
+    sleep 2
+    echo "已停止旧进程"
 fi
 
 # 启动 Celery Worker
@@ -29,7 +30,15 @@ python -m celery -A file_process.models.celery_app worker \
 
 # 获取进程ID
 CELERY_PID=$!
+echo ""
+echo "=========================================="
 echo "Celery Worker 已启动 (PID: $CELERY_PID)"
+echo "=========================================="
 echo "日志文件: $LOG_FILE"
-echo "查看日志: tail -f $LOG_FILE"
-echo "停止 Worker: kill $CELERY_PID 或 pkill -f celery"
+echo ""
+echo "查看日志命令:"
+echo "  tail -f $LOG_FILE"
+echo ""
+echo "停止 Worker:"
+echo "  kill $CELERY_PID 或 pkill -f celery"
+echo "=========================================="

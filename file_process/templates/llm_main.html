@@ -1,0 +1,1347 @@
+{% extends "base.html" %}
+
+{% block title %}智能问答 - LLM{% endblock %}
+
+{% block extra_css %}
+<style>
+    .llm-container {
+        display: flex;
+        height: calc(100vh - 60px);
+        background: #f5f7fa;
+    }
+    
+    /* 侧边栏 */
+    .sidebar {
+        width: 280px;
+        background: #fff;
+        border-right: 1px solid #e4e7ed;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .sidebar-header {
+        padding: 16px;
+        border-bottom: 1px solid #e4e7ed;
+    }
+    
+    .new-chat-btn {
+        width: 100%;
+        padding: 12px;
+        background: #409eff;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .new-chat-btn:hover {
+        background: #66b1ff;
+    }
+    
+    .session-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px;
+    }
+    
+    .session-item {
+        padding: 12px;
+        margin-bottom: 4px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .session-item:hover {
+        background: #f5f7fa;
+    }
+    
+    .session-item.active {
+        background: #ecf5ff;
+        color: #409eff;
+    }
+    
+    .session-title {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 14px;
+    }
+    
+    .session-delete {
+        opacity: 0;
+        color: #909399;
+        padding: 4px;
+    }
+    
+    .session-item:hover .session-delete {
+        opacity: 1;
+    }
+    
+    .session-delete:hover {
+        color: #f56c6c;
+    }
+    
+    /* 主聊天区域 */
+    .chat-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .chat-header {
+        padding: 16px 24px;
+        background: #fff;
+        border-bottom: 1px solid #e4e7ed;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .chat-title {
+        font-size: 16px;
+        font-weight: 500;
+    }
+    
+    .settings-btn {
+        padding: 8px 16px;
+        background: #fff;
+        border: 1px solid #dcdfe6;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    
+    .settings-btn:hover {
+        border-color: #409eff;
+        color: #409eff;
+    }
+    
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px;
+    }
+    
+    .message {
+        margin-bottom: 24px;
+        display: flex;
+        gap: 12px;
+    }
+    
+    .message.user {
+        flex-direction: row-reverse;
+    }
+    
+    .message-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #409eff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+    
+    .message.user .message-avatar {
+        background: #67c23a;
+    }
+    
+    .message-content {
+        max-width: 70%;
+        padding: 12px 16px;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        line-height: 1.6;
+    }
+    
+    .message.user .message-content {
+        background: #409eff;
+        color: #fff;
+    }
+    
+    .message-sources {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #eee;
+        font-size: 12px;
+        color: #909399;
+    }
+    
+    .source-tag {
+        display: inline-block;
+        padding: 2px 8px;
+        background: #f0f9ff;
+        color: #409eff;
+        border-radius: 4px;
+        margin-right: 8px;
+        margin-bottom: 4px;
+    }
+    
+    /* 输入区域 */
+    .chat-input-area {
+        padding: 16px 24px;
+        background: #fff;
+        border-top: 1px solid #e4e7ed;
+    }
+    
+    .input-options {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .option-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #606266;
+    }
+    
+    .input-wrapper {
+        display: flex;
+        gap: 12px;
+        align-items: flex-end;
+    }
+    
+    .input-wrapper textarea {
+        flex: 1;
+        padding: 12px;
+        border: 1px solid #dcdfe6;
+        border-radius: 8px;
+        resize: none;
+        font-size: 14px;
+        line-height: 1.5;
+        min-height: 48px;
+        max-height: 200px;
+    }
+    
+    .input-wrapper textarea:focus {
+        outline: none;
+        border-color: #409eff;
+    }
+    
+    .send-btn {
+        padding: 12px 24px;
+        background: #409eff;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+    
+    .send-btn:hover {
+        background: #66b1ff;
+    }
+    
+    .send-btn:disabled {
+        background: #a0cfff;
+        cursor: not-allowed;
+    }
+    
+    /* 设置面板 */
+    .settings-panel {
+        position: fixed;
+        top: 0;
+        right: -400px;
+        width: 400px;
+        height: 100vh;
+        background: #fff;
+        box-shadow: -2px 0 8px rgba(0,0,0,0.15);
+        transition: right 0.3s;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .settings-panel.show {
+        right: 0;
+    }
+    
+    .settings-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #e4e7ed;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .settings-header h3 {
+        margin: 0;
+        font-size: 16px;
+    }
+    
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        color: #909399;
+    }
+    
+    .settings-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+    }
+    
+    .setting-group {
+        margin-bottom: 24px;
+    }
+    
+    .setting-group h4 {
+        margin: 0 0 12px;
+        font-size: 14px;
+        color: #303133;
+    }
+    
+    .setting-group select,
+    .setting-group input,
+    .setting-group textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #dcdfe6;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    
+    .setting-group select:focus,
+    .setting-group input:focus,
+    .setting-group textarea:focus {
+        outline: none;
+        border-color: #409eff;
+    }
+    
+    .toggle-switch {
+        position: relative;
+        width: 44px;
+        height: 22px;
+        background: #dcdfe6;
+        border-radius: 11px;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+    
+    .toggle-switch.active {
+        background: #409eff;
+    }
+    
+    .toggle-switch::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 18px;
+        height: 18px;
+        background: #fff;
+        border-radius: 50%;
+        transition: left 0.3s;
+    }
+    
+    .toggle-switch.active::after {
+        left: 24px;
+    }
+    
+    /* 遮罩 */
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.3);
+        z-index: 999;
+        display: none;
+    }
+    
+    .overlay.show {
+        display: block;
+    }
+    
+    /* 空状态 */
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #909399;
+    }
+    
+    .empty-state svg {
+        width: 120px;
+        height: 120px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+    
+    /* 加载动画 */
+    .typing-indicator {
+        display: flex;
+        gap: 4px;
+        padding: 8px 0;
+    }
+    
+    .typing-indicator span {
+        width: 8px;
+        height: 8px;
+        background: #409eff;
+        border-radius: 50%;
+        animation: typing 1.4s infinite;
+    }
+    
+    .typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    
+    .typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    
+    @keyframes typing {
+        0%, 60%, 100% { transform: translateY(0); }
+        30% { transform: translateY(-8px); }
+    }
+    
+    /* LLM配置管理弹窗 */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1001;
+    }
+    
+    .modal.show {
+        display: flex;
+    }
+    
+    .modal-content {
+        background: #fff;
+        border-radius: 8px;
+        width: 600px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    
+    .modal-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #e4e7ed;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .modal-body {
+        padding: 20px;
+    }
+    
+    .modal-footer {
+        padding: 16px 20px;
+        border-top: 1px solid #e4e7ed;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+    
+    .config-list {
+        margin-bottom: 16px;
+    }
+    
+    .config-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px;
+        border: 1px solid #e4e7ed;
+        border-radius: 4px;
+        margin-bottom: 8px;
+    }
+    
+    .config-item.default {
+        border-color: #409eff;
+        background: #ecf5ff;
+    }
+    
+    .config-info {
+        flex: 1;
+    }
+    
+    .config-name {
+        font-weight: 500;
+        margin-bottom: 4px;
+    }
+    
+    .config-detail {
+        font-size: 12px;
+        color: #909399;
+    }
+    
+    .config-actions {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .btn-small {
+        padding: 4px 12px;
+        font-size: 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        border: 1px solid #dcdfe6;
+        background: #fff;
+    }
+    
+    .btn-small:hover {
+        border-color: #409eff;
+        color: #409eff;
+    }
+    
+    .btn-small.danger:hover {
+        border-color: #f56c6c;
+        color: #f56c6c;
+    }
+    
+    .btn-primary {
+        background: #409eff;
+        color: #fff;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .btn-primary:hover {
+        background: #66b1ff;
+    }
+    
+    .btn-default {
+        background: #fff;
+        border: 1px solid #dcdfe6;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .btn-default:hover {
+        border-color: #409eff;
+        color: #409eff;
+    }
+    
+    .form-group {
+        margin-bottom: 16px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 14px;
+        color: #606266;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #dcdfe6;
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+    
+    .form-row {
+        display: flex;
+        gap: 16px;
+    }
+    
+    .form-row .form-group {
+        flex: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="llm-container">
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <button class="new-chat-btn" onclick="createNewSession()">
+                <span>+</span> 新建对话
+            </button>
+        </div>
+        <div class="session-list" id="sessionList">
+            <!-- 会话列表动态加载 -->
+        </div>
+    </div>
+    
+    <!-- 主聊天区域 -->
+    <div class="chat-main">
+        <div class="chat-header">
+            <span class="chat-title" id="chatTitle">智能问答</span>
+            <button class="settings-btn" onclick="toggleSettings()">设置</button>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="empty-state" id="emptyState">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                </svg>
+                <p>开始一段新对话</p>
+                <p style="font-size: 12px;">上传的文档内容将作为回答的优先参考来源</p>
+            </div>
+        </div>
+        
+        <div class="chat-input-area">
+            <div class="input-options">
+                <div class="option-item">
+                    <input type="checkbox" id="enableWebSearch" checked>
+                    <label for="enableWebSearch">启用网络搜索</label>
+                </div>
+                <div class="option-item">
+                    <label>文档范围:</label>
+                    <select id="documentScope">
+                        <option value="all">全部文档</option>
+                        <option value="recent">最近上传</option>
+                        <option value="select">指定文档</option>
+                    </select>
+                </div>
+            </div>
+            <div class="input-wrapper">
+                <textarea id="questionInput" placeholder="输入您的问题..." rows="1" 
+                    onkeydown="handleKeyDown(event)"></textarea>
+                <button class="send-btn" id="sendBtn" onclick="sendQuestion()">发送</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 设置面板 -->
+    <div class="overlay" id="overlay" onclick="toggleSettings()"></div>
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-header">
+            <h3>设置</h3>
+            <button class="close-btn" onclick="toggleSettings()">&times;</button>
+        </div>
+        <div class="settings-body">
+            <div class="setting-group">
+                <h4>LLM配置</h4>
+                <select id="llmConfigSelect">
+                    <option value="">使用默认配置</option>
+                </select>
+                <button class="btn-small" style="margin-top: 8px;" onclick="openConfigModal()">
+                    管理配置
+                </button>
+            </div>
+            
+            <div class="setting-group">
+                <h4>网络搜索</h4>
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                    <span>启用网络搜索</span>
+                    <div class="toggle-switch active" id="webSearchToggle" onclick="toggleWebSearch()"></div>
+                </div>
+                <div id="customUrlsSection">
+                    <label style="font-size: 13px; color: #606266;">指定搜索网站（每行一个）</label>
+                    <textarea id="customUrls" rows="3" placeholder="例如：&#10;docs.python.org&#10;stackoverflow.com"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- LLM配置管理弹窗 -->
+<div class="modal" id="configModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>LLM配置管理</h3>
+            <button class="close-btn" onclick="closeConfigModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="config-list" id="configList">
+                <!-- 配置列表动态加载 -->
+            </div>
+            <button class="btn-primary" onclick="showAddConfigForm()">+ 添加新配置</button>
+            
+            <!-- 添加/编辑配置表单 -->
+            <div id="configForm" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e4e7ed;">
+                <h4 id="configFormTitle">添加配置</h4>
+                <input type="hidden" id="editConfigId">
+                
+                <div class="form-group">
+                    <label>配置名称</label>
+                    <input type="text" id="configName" placeholder="例如：我的GPT-4配置">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>模型类型</label>
+                        <select id="modelType" onchange="onModelTypeChange()">
+                            <option value="openai">OpenAI</option>
+                            <option value="qianwen">通义千问</option>
+                            <option value="wenxin">文心一言</option>
+                            <option value="zhipu">智谱GLM</option>
+                            <option value="deepseek">DeepSeek</option>
+                            <option value="custom">自定义</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>模型名称</label>
+                        <select id="modelName">
+                            <option value="gpt-4">gpt-4</option>
+                            <option value="gpt-4-turbo">gpt-4-turbo</option>
+                            <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>API Base URL（可选，留空使用默认）</label>
+                    <input type="text" id="apiBaseUrl" placeholder="https://api.openai.com/v1">
+                </div>
+                
+                <div class="form-group">
+                    <label>API Key</label>
+                    <input type="password" id="apiKey" placeholder="sk-...">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Max Tokens</label>
+                        <input type="number" id="maxTokens" value="2048">
+                    </div>
+                    <div class="form-group">
+                        <label>Temperature</label>
+                        <input type="number" id="temperature" value="0.7" step="0.1" min="0" max="2">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <input type="checkbox" id="isDefault">
+                    <label for="isDefault" style="display: inline;">设为默认配置</label>
+                </div>
+                
+                <div style="display: flex; gap: 12px; margin-top: 16px;">
+                    <button class="btn-primary" onclick="saveConfig()">保存</button>
+                    <button class="btn-default" onclick="hideConfigForm()">取消</button>
+                    <button class="btn-default" onclick="testConfig()">测试连接</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 全局状态
+    let currentSessionId = null;
+    let llmConfigs = [];
+    let modelOptions = {
+        'openai': ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo', 'gpt-4o', 'gpt-4o-mini'],
+        'qianwen': ['qwen-turbo', 'qwen-plus', 'qwen-max', 'qwen-long'],
+        'wenxin': ['ernie-bot-4', 'ernie-bot-turbo', 'ernie-bot'],
+        'zhipu': ['glm-4', 'glm-4-flash', 'glm-3-turbo'],
+        'deepseek': ['deepseek-chat', 'deepseek-coder'],
+        'custom': []
+    };
+    
+    // 初始化
+    document.addEventListener('DOMContentLoaded', function() {
+        loadSessions();
+        loadLLMConfigs();
+        autoResizeTextarea();
+    });
+    
+    // 自动调整输入框高度
+    function autoResizeTextarea() {
+        const textarea = document.getElementById('questionInput');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+        });
+    }
+    
+    // 加载会话列表
+    async function loadSessions() {
+        try {
+            const response = await fetch('/llm/sessions');
+            const data = await response.json();
+            
+            if (data.success) {
+                renderSessionList(data.data);
+            }
+        } catch (error) {
+            console.error('加载会话失败:', error);
+        }
+    }
+    
+    // 渲染会话列表
+    function renderSessionList(sessions) {
+        const container = document.getElementById('sessionList');
+        
+        if (!sessions || sessions.length === 0) {
+            container.innerHTML = '<div style="padding: 16px; color: #909399; text-align: center;">暂无会话</div>';
+            return;
+        }
+        
+        container.innerHTML = sessions.map(session => `
+            <div class="session-item ${session.id === currentSessionId ? 'active' : ''}" 
+                 onclick="selectSession(${session.id})">
+                <span class="session-title">${escapeHtml(session.title)}</span>
+                <span class="session-delete" onclick="deleteSession(${session.id}, event)">&times;</span>
+            </div>
+        `).join('');
+    }
+    
+    // 创建新会话
+    async function createNewSession() {
+        try {
+            const response = await fetch('/llm/sessions', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({})
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                currentSessionId = data.data.session_id;
+                loadSessions();
+                clearMessages();
+                document.getElementById('chatTitle').textContent = '新对话';
+            }
+        } catch (error) {
+            console.error('创建会话失败:', error);
+        }
+    }
+    
+    // 选择会话
+    async function selectSession(sessionId) {
+        currentSessionId = sessionId;
+        loadSessions();
+        await loadSessionHistory(sessionId);
+    }
+    
+    // 加载会话历史
+    async function loadSessionHistory(sessionId) {
+        try {
+            const response = await fetch(`/llm/sessions/${sessionId}/history`);
+            const data = await response.json();
+            
+            if (data.success) {
+                renderMessages(data.data);
+            }
+        } catch (error) {
+            console.error('加载历史失败:', error);
+        }
+    }
+    
+    // 渲染消息
+    function renderMessages(messages) {
+        const container = document.getElementById('chatMessages');
+        const emptyState = document.getElementById('emptyState');
+        
+        if (!messages || messages.length === 0) {
+            emptyState.style.display = 'flex';
+            container.innerHTML = '';
+            container.appendChild(emptyState);
+            return;
+        }
+        
+        emptyState.style.display = 'none';
+        container.innerHTML = messages.map(msg => `
+            <div class="message user">
+                <div class="message-avatar">我</div>
+                <div class="message-content">${escapeHtml(msg.question)}</div>
+            </div>
+            <div class="message assistant">
+                <div class="message-avatar">AI</div>
+                <div class="message-content">
+                    ${formatAnswer(msg.answer)}
+                    ${renderSources(msg)}
+                </div>
+            </div>
+        `).join('');
+        
+        container.scrollTop = container.scrollHeight;
+    }
+    
+    // 格式化回答
+    function formatAnswer(text) {
+        return escapeHtml(text).replace(/\n/g, '<br>');
+    }
+    
+    // 渲染来源信息
+    function renderSources(msg) {
+        if (!msg.source_type || msg.source_type === 'none') return '';
+        
+        let html = '<div class="message-sources">';
+        html += '<strong>参考来源：</strong>';
+        
+        if (msg.source_documents && msg.source_documents.length > 0) {
+            msg.source_documents.forEach(doc => {
+                html += `<span class="source-tag">📄 ${escapeHtml(doc.filename || '文档')}</span>`;
+            });
+        }
+        
+        if (msg.web_search_results && msg.web_search_results.length > 0) {
+            msg.web_search_results.forEach(result => {
+                html += `<span class="source-tag">🌐 ${escapeHtml(result.title)}</span>`;
+            });
+        }
+        
+        html += '</div>';
+        return html;
+    }
+    
+    // 删除会话
+    async function deleteSession(sessionId, event) {
+        event.stopPropagation();
+        
+        if (!confirm('确定要删除这个会话吗？')) return;
+        
+        try {
+            const response = await fetch(`/llm/sessions/${sessionId}`, {
+                method: 'DELETE'
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                if (currentSessionId === sessionId) {
+                    currentSessionId = null;
+                    clearMessages();
+                }
+                loadSessions();
+            }
+        } catch (error) {
+            console.error('删除会话失败:', error);
+        }
+    }
+    
+    // 清空消息
+    function clearMessages() {
+        const container = document.getElementById('chatMessages');
+        const emptyState = document.getElementById('emptyState');
+        container.innerHTML = '';
+        emptyState.style.display = 'flex';
+        container.appendChild(emptyState);
+    }
+    
+    // 发送问题
+    async function sendQuestion() {
+        const input = document.getElementById('questionInput');
+        const question = input.value.trim();
+        
+        if (!question) return;
+        
+        const sendBtn = document.getElementById('sendBtn');
+        sendBtn.disabled = true;
+        
+        // 添加用户消息
+        addMessage('user', question);
+        input.value = '';
+        input.style.height = 'auto';
+        
+        // 显示加载状态
+        const loadingId = addLoadingMessage();
+        
+        try {
+            const enableWebSearch = document.getElementById('enableWebSearch').checked;
+            const customUrls = document.getElementById('customUrls').value.trim().split('\n').filter(u => u);
+            const llmConfigId = document.getElementById('llmConfigSelect').value || null;
+            
+            const response = await fetch('/llm/qa', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    session_id: currentSessionId,
+                    question: question,
+                    enable_web_search: enableWebSearch,
+                    custom_search_urls: customUrls.length > 0 ? customUrls : null,
+                    llm_config_id: llmConfigId,
+                    stream: false
+                })
+            });
+            
+            const data = await response.json();
+            
+            // 移除加载状态
+            removeLoadingMessage(loadingId);
+            
+            if (data.success) {
+                if (!currentSessionId) {
+                    currentSessionId = data.data.session_id;
+                    loadSessions();
+                }
+                
+                addMessage('assistant', data.data.answer, data.data.sources, data.data.source_type);
+            } else {
+                addMessage('assistant', '抱歉，处理您的问题时出现错误：' + data.error);
+            }
+        } catch (error) {
+            removeLoadingMessage(loadingId);
+            addMessage('assistant', '抱歉，发生网络错误，请稍后重试。');
+            console.error('发送问题失败:', error);
+        } finally {
+            sendBtn.disabled = false;
+        }
+    }
+    
+    // 添加消息到界面
+    function addMessage(role, content, sources, sourceType) {
+        const container = document.getElementById('chatMessages');
+        const emptyState = document.getElementById('emptyState');
+        emptyState.style.display = 'none';
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${role}`;
+        
+        const avatar = role === 'user' ? '我' : 'AI';
+        let sourcesHtml = '';
+        
+        if (sources && sourceType && sourceType !== 'none') {
+            sourcesHtml = '<div class="message-sources"><strong>参考来源：</strong>';
+            if (sources.documents) {
+                sources.documents.forEach(doc => {
+                    sourcesHtml += `<span class="source-tag">📄 ${escapeHtml(doc.filename || '文档')}</span>`;
+                });
+            }
+            if (sources.web) {
+                sources.web.forEach(result => {
+                    sourcesHtml += `<span class="source-tag">🌐 ${escapeHtml(result.title)}</span>`;
+                });
+            }
+            sourcesHtml += '</div>';
+        }
+        
+        messageDiv.innerHTML = `
+            <div class="message-avatar">${avatar}</div>
+            <div class="message-content">
+                ${formatAnswer(content)}
+                ${sourcesHtml}
+            </div>
+        `;
+        
+        container.appendChild(messageDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+    
+    // 添加加载消息
+    function addLoadingMessage() {
+        const container = document.getElementById('chatMessages');
+        const id = 'loading-' + Date.now();
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.id = id;
+        messageDiv.className = 'message assistant';
+        messageDiv.innerHTML = `
+            <div class="message-avatar">AI</div>
+            <div class="message-content">
+                <div class="typing-indicator">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(messageDiv);
+        container.scrollTop = container.scrollHeight;
+        
+        return id;
+    }
+    
+    // 移除加载消息
+    function removeLoadingMessage(id) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.remove();
+        }
+    }
+    
+    // 键盘事件处理
+    function handleKeyDown(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            sendQuestion();
+        }
+    }
+    
+    // 切换设置面板
+    function toggleSettings() {
+        const panel = document.getElementById('settingsPanel');
+        const overlay = document.getElementById('overlay');
+        
+        panel.classList.toggle('show');
+        overlay.classList.toggle('show');
+    }
+    
+    // 切换网络搜索
+    function toggleWebSearch() {
+        const toggle = document.getElementById('webSearchToggle');
+        const checkbox = document.getElementById('enableWebSearch');
+        
+        toggle.classList.toggle('active');
+        checkbox.checked = toggle.classList.contains('active');
+    }
+    
+    // 加载LLM配置
+    async function loadLLMConfigs() {
+        try {
+            const response = await fetch('/llm/config');
+            const data = await response.json();
+            
+            if (data.success) {
+                llmConfigs = data.data;
+                renderConfigSelect();
+                renderConfigList();
+            }
+        } catch (error) {
+            console.error('加载LLM配置失败:', error);
+        }
+    }
+    
+    // 渲染配置选择器
+    function renderConfigSelect() {
+        const select = document.getElementById('llmConfigSelect');
+        select.innerHTML = '<option value="">使用默认配置</option>';
+        
+        llmConfigs.forEach(config => {
+            const option = document.createElement('option');
+            option.value = config.id;
+            option.textContent = config.config_name + (config.is_default ? ' (默认)' : '');
+            select.appendChild(option);
+        });
+    }
+    
+    // 渲染配置列表
+    function renderConfigList() {
+        const container = document.getElementById('configList');
+        
+        if (!llmConfigs || llmConfigs.length === 0) {
+            container.innerHTML = '<div style="padding: 16px; color: #909399; text-align: center;">暂无配置</div>';
+            return;
+        }
+        
+        container.innerHTML = llmConfigs.map(config => `
+            <div class="config-item ${config.is_default ? 'default' : ''}">
+                <div class="config-info">
+                    <div class="config-name">${escapeHtml(config.config_name)} ${config.is_default ? '<span style="color: #409eff;">(默认)</span>' : ''}</div>
+                    <div class="config-detail">${config.model_type} / ${config.model_name}</div>
+                </div>
+                <div class="config-actions">
+                    <button class="btn-small" onclick="editConfig(${config.id})">编辑</button>
+                    <button class="btn-small danger" onclick="deleteConfig(${config.id})">删除</button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    // 打开配置弹窗
+    function openConfigModal() {
+        document.getElementById('configModal').classList.add('show');
+        loadLLMConfigs();
+    }
+    
+    // 关闭配置弹窗
+    function closeConfigModal() {
+        document.getElementById('configModal').classList.remove('show');
+        hideConfigForm();
+    }
+    
+    // 显示添加配置表单
+    function showAddConfigForm() {
+        document.getElementById('configForm').style.display = 'block';
+        document.getElementById('configFormTitle').textContent = '添加配置';
+        document.getElementById('editConfigId').value = '';
+        
+        // 重置表单
+        document.getElementById('configName').value = '';
+        document.getElementById('modelType').value = 'openai';
+        document.getElementById('apiBaseUrl').value = '';
+        document.getElementById('apiKey').value = '';
+        document.getElementById('maxTokens').value = '2048';
+        document.getElementById('temperature').value = '0.7';
+        document.getElementById('isDefault').checked = false;
+        
+        onModelTypeChange();
+    }
+    
+    // 隐藏配置表单
+    function hideConfigForm() {
+        document.getElementById('configForm').style.display = 'none';
+    }
+    
+    // 模型类型变更
+    function onModelTypeChange() {
+        const modelType = document.getElementById('modelType').value;
+        const modelSelect = document.getElementById('modelName');
+        const options = modelOptions[modelType] || [];
+        
+        modelSelect.innerHTML = '';
+        
+        if (options.length === 0) {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = 'modelName';
+            input.placeholder = '输入模型名称';
+            modelSelect.parentNode.replaceChild(input, modelSelect);
+        } else {
+            options.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model;
+                option.textContent = model;
+                modelSelect.appendChild(option);
+            });
+        }
+    }
+    
+    // 编辑配置
+    function editConfig(configId) {
+        const config = llmConfigs.find(c => c.id === configId);
+        if (!config) return;
+        
+        document.getElementById('configForm').style.display = 'block';
+        document.getElementById('configFormTitle').textContent = '编辑配置';
+        document.getElementById('editConfigId').value = configId;
+        
+        document.getElementById('configName').value = config.config_name;
+        document.getElementById('modelType').value = config.model_type;
+        onModelTypeChange();
+        
+        const modelNameEl = document.getElementById('modelName');
+        if (modelNameEl.tagName === 'SELECT') {
+            modelNameEl.value = config.model_name;
+        } else {
+            modelNameEl.value = config.model_name;
+        }
+        
+        document.getElementById('apiBaseUrl').value = config.api_base_url || '';
+        document.getElementById('apiKey').value = '';  // 不显示密钥
+        document.getElementById('maxTokens').value = config.max_tokens;
+        document.getElementById('temperature').value = config.temperature;
+        document.getElementById('isDefault').checked = config.is_default;
+    }
+    
+    // 保存配置
+    async function saveConfig() {
+        const editId = document.getElementById('editConfigId').value;
+        const isEdit = !!editId;
+        
+        const data = {
+            config_name: document.getElementById('configName').value,
+            model_type: document.getElementById('modelType').value,
+            model_name: document.getElementById('modelName').value,
+            api_base_url: document.getElementById('apiBaseUrl').value || null,
+            max_tokens: parseInt(document.getElementById('maxTokens').value),
+            temperature: parseFloat(document.getElementById('temperature').value),
+            is_default: document.getElementById('isDefault').checked
+        };
+        
+        const apiKey = document.getElementById('apiKey').value;
+        if (apiKey) {
+            data.api_key = apiKey;
+        } else if (!isEdit) {
+            alert('请输入API Key');
+            return;
+        }
+        
+        try {
+            const url = isEdit ? `/llm/config/${editId}` : '/llm/config';
+            const method = isEdit ? 'PUT' : 'POST';
+            
+            const response = await fetch(url, {
+                method: method,
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(isEdit ? '配置更新成功' : '配置创建成功');
+                hideConfigForm();
+                loadLLMConfigs();
+            } else {
+                alert('保存失败: ' + result.error);
+            }
+        } catch (error) {
+            console.error('保存配置失败:', error);
+            alert('保存失败，请稍后重试');
+        }
+    }
+    
+    // 删除配置
+    async function deleteConfig(configId) {
+        if (!confirm('确定要删除这个配置吗？')) return;
+        
+        try {
+            const response = await fetch(`/llm/config/${configId}`, {
+                method: 'DELETE'
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                loadLLMConfigs();
+            } else {
+                alert('删除失败: ' + data.error);
+            }
+        } catch (error) {
+            console.error('删除配置失败:', error);
+        }
+    }
+    
+    // 测试配置
+    async function testConfig() {
+        const editId = document.getElementById('editConfigId').value;
+        
+        if (!editId) {
+            alert('请先保存配置后再测试');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/llm/test', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({config_id: parseInt(editId)})
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('测试成功！\n回复: ' + data.data.response);
+            } else {
+                alert('测试失败: ' + data.error);
+            }
+        } catch (error) {
+            console.error('测试失败:', error);
+            alert('测试失败，请检查网络连接');
+        }
+    }
+    
+    // HTML转义
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+{% endblock %}

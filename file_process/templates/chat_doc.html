@@ -225,10 +225,55 @@
     .result-chapter {
         padding: 15px;
         border-bottom: 1px solid #eee;
+        position: relative;
     }
 
     .result-chapter:last-child {
         border-bottom: none;
+    }
+
+    /* 章节选择复选框 */
+    .chapter-select-wrapper {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .chapter-select-checkbox {
+        margin-top: 3px;
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: #667eea;
+    }
+
+    .chapter-select-content {
+        flex: 1;
+    }
+
+    /* 全选控制栏 */
+    .select-all-bar {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 8px 15px;
+        background: #e8f0fe;
+        border-bottom: 1px solid #667eea;
+    }
+
+    .select-all-bar label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .select-count {
+        font-size: 12px;
+        color: #666;
     }
 
     .chapter-path {
@@ -644,6 +689,10 @@
                         <label style="display: flex; align-items: center; gap: 5px; font-size: 13px;">
                             <input type="checkbox" id="includeChildren" checked> 包含子章节
                         </label>
+                        <select id="searchScope" style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 13px; background: white;">
+                            <option value="title">只查询标题</option>
+                            <option value="content">内容匹配(标题+内容)</option>
+                        </select>
                         <button class="btn btn-primary" id="btnExact" onclick="doSearch('exact')">完全匹配</button>
                         <button class="btn btn-secondary" id="btnFuzzy" onclick="doSearch('fuzzy')">模糊查询</button>
                         <button class="btn btn-success" id="btnExport" onclick="exportToWord()" disabled>导出Word</button>
@@ -812,6 +861,7 @@ async function doSearch(matchType) {
     const query = input.value.trim();
     const txtFile = document.getElementById('txtFile');
     const includeChildren = document.getElementById('includeChildren').checked;
+    const searchScope = document.getElementById('searchScope').value;  // 获取搜索范围
     
     // 检查是否有TXT文件上传
     if (txtFile.files.length > 0) {
@@ -825,7 +875,8 @@ async function doSearch(matchType) {
     }
     
     // 添加用户消息
-    addMessage('user', query);
+    const scopeText = searchScope === 'content' ? '(内容匹配)' : '(标题匹配)';
+    addMessage('user', `${query} ${scopeText}`);
     input.value = '';
     
     // 显示加载状态
@@ -840,7 +891,8 @@ async function doSearch(matchType) {
                 query: query,
                 match_type: matchType,
                 document_ids: selectedDocuments,
-                include_children: includeChildren
+                include_children: includeChildren,
+                search_scope: searchScope  // 传递搜索范围参数
             })
         });
         
@@ -854,16 +906,12 @@ async function doSearch(matchType) {
                 match_count: result.data.total_matches
             }];
             
-            // 检查是否有多个文档匹配
-            if (result.data.document_count > 1) {
-                showConflictDialog(query, matchType, result.data.results);
-            } else {
-                displaySearchResult(result.data);
-                
-                // 显示查询完成提示
-                if (result.data.total_matches > 0) {
-                    addMessage('system', `✅ 查询完成！找到 <strong>${result.data.total_matches}</strong> 个匹配结果。<br>您可以点击 <strong>"导出Word"</strong> 按钮将结果导出为文档。`, true);
-                }
+            // 直接显示所有匹配结果（不再弹出选择对话框，用户可以通过复选框选择要导出的内容）
+            displaySearchResult(result.data);
+            
+            // 显示查询完成提示
+            if (result.data.total_matches > 0) {
+                addMessage('system', `✅ 查询完成！找到 <strong>${result.data.total_matches}</strong> 个匹配结果。<br>您可以通过复选框选择要导出的内容，然后点击 <strong>"导出Word"</strong> 按钮导出。`, true);
             }
             
             // 启用导出按钮
@@ -883,6 +931,7 @@ async function doSearch(matchType) {
 async function doBatchSearch(matchType) {
     const txtFile = document.getElementById('txtFile');
     const includeChildren = document.getElementById('includeChildren').checked;
+    const searchScope = document.getElementById('searchScope').value;  // 获取搜索范围
     
     if (txtFile.files.length === 0) {
         alert('请先上传TXT文件');
@@ -893,7 +942,8 @@ async function doBatchSearch(matchType) {
     formData.append('file', txtFile.files[0]);
     
     // 先上传文件获取查询列表
-    addMessage('user', `批量查询文件: ${txtFile.files[0].name}`);
+    const scopeText = searchScope === 'content' ? '(内容匹配)' : '(标题匹配)';
+    addMessage('user', `批量查询文件: ${txtFile.files[0].name} ${scopeText}`);
     const loadingId = addLoadingMessage();
     
     try {
@@ -924,7 +974,8 @@ async function doBatchSearch(matchType) {
                 queries: queries,
                 match_type: matchType,
                 document_ids: selectedDocuments,
-                include_children: includeChildren
+                include_children: includeChildren,
+                search_scope: searchScope  // 传递搜索范围参数
             })
         });
         
@@ -961,17 +1012,20 @@ async function doBatchSearch(matchType) {
 // 显示搜索结果
 function displaySearchResult(data) {
     const matchType = data.match_type === 'exact' ? '完全匹配' : '模糊匹配';
+    const scopeType = data.search_scope === 'content' ? '标题+内容' : '仅标题';
     
     if (data.results.length === 0) {
-        addMessage('system', `未找到匹配的内容（${matchType}）`);
+        addMessage('system', `未找到匹配的内容（${matchType}，${scopeType}）`);
         return;
     }
     
     let html = `<div class="search-result">`;
-    html += `<p>找到 <strong>${data.total_matches}</strong> 个匹配项（${matchType}），来自 <strong>${data.document_count}</strong> 个文档：</p>`;
+    html += `<p>找到 <strong>${data.total_matches}</strong> 个匹配项（${matchType}，${scopeType}），来自 <strong>${data.document_count}</strong> 个文档：</p>`;
     
+    let docIndex = 0;
     for (const docResult of data.results) {
-        html += renderDocResult(docResult);
+        html += renderDocResult(docResult, docIndex);
+        docIndex++;
     }
     
     html += `</div>`;
@@ -983,6 +1037,7 @@ function displayBatchResults(data) {
     let html = `<div class="search-result">`;
     html += `<p>批量查询完成，共 ${data.total_queries} 条查询：</p>`;
     
+    let globalDocIndex = 0;
     for (const queryResult of data.batch_results) {
         html += `<h4 style="margin: 15px 0 10px 0; color: #667eea;">查询: "${escapeHtml(queryResult.query)}"</h4>`;
         
@@ -990,7 +1045,8 @@ function displayBatchResults(data) {
             html += `<p style="color: #999;">未找到匹配结果</p>`;
         } else {
             for (const docResult of queryResult.results) {
-                html += renderDocResult(docResult);
+                html += renderDocResult(docResult, globalDocIndex);
+                globalDocIndex++;
             }
         }
     }
@@ -1000,15 +1056,27 @@ function displayBatchResults(data) {
 }
 
 // 渲染文档结果
-function renderDocResult(docResult) {
-    let html = `<div class="result-doc">`;
+function renderDocResult(docResult, docIndex) {
+    const docKey = `doc_${docIndex}`;
+    let html = `<div class="result-doc" data-doc-key="${docKey}">`;
     html += `<div class="result-doc-header">
         <span>📄 ${escapeHtml(docResult.filename)}</span>
         <span>${docResult.chapters.length} 个章节</span>
     </div>`;
     
+    // 全选控制栏
+    html += `<div class="select-all-bar">
+        <label>
+            <input type="checkbox" class="select-all-checkbox" data-doc-key="${docKey}" onchange="toggleSelectAll(this)" checked>
+            全选
+        </label>
+        <span class="select-count" id="count_${docKey}">已选 ${docResult.chapters.length}/${docResult.chapters.length}</span>
+    </div>`;
+    
+    let chapterIndex = 0;
     for (const chapter of docResult.chapters) {
-        html += renderChapter(chapter);
+        html += renderChapter(chapter, false, docKey, chapterIndex);
+        chapterIndex++;
     }
     
     html += `</div>`;
@@ -1016,8 +1084,18 @@ function renderDocResult(docResult) {
 }
 
 // 渲染章节
-function renderChapter(chapter, isChild = false) {
-    let html = `<div class="result-chapter${isChild ? ' chapter-child' : ''}">`;
+function renderChapter(chapter, isChild = false, docKey = '', chapterIndex = 0) {
+    const chapterId = chapter.id || `${docKey}_ch_${chapterIndex}`;
+    const checkboxId = `chk_${docKey}_${chapterIndex}`;
+    
+    let html = `<div class="result-chapter${isChild ? ' chapter-child' : ''}" data-chapter-id="${chapterId}" data-doc-key="${docKey}">`;
+    
+    // 非子章节时显示复选框
+    if (!isChild) {
+        html += `<div class="chapter-select-wrapper">`;
+        html += `<input type="checkbox" class="chapter-select-checkbox" id="${checkboxId}" data-doc-key="${docKey}" data-chapter-id="${chapterId}" onchange="onChapterCheckChange('${docKey}')" checked>`;
+        html += `<div class="chapter-select-content">`;
+    }
     
     // 显示层级路径（只在非子章节时显示，显示完整路径包括当前章节）
     if (!isChild && chapter.path && chapter.path.length > 0) {
@@ -1025,9 +1103,15 @@ function renderChapter(chapter, isChild = false) {
         html += `<div class="chapter-path">${pathTitles.join(' -> ')}</div>`;
     }
     
+    // 显示匹配来源标签
+    const matchFieldLabel = chapter.match_field === 'content' ? 
+        '<span style="background:#ff9800;color:white;padding:2px 6px;border-radius:3px;font-size:11px;margin-left:8px;">内容匹配</span>' : 
+        '<span style="background:#4caf50;color:white;padding:2px 6px;border-radius:3px;font-size:11px;margin-left:8px;">标题匹配</span>';
+    
     html += `<div class="chapter-title">
         <span class="chapter-level">L${chapter.level}</span>
         ${escapeHtml(chapter.title || '(无标题)')}
+        ${!isChild && chapter.match_field ? matchFieldLabel : ''}
     </div>`;
     
     if (chapter.content) {
@@ -1050,10 +1134,17 @@ function renderChapter(chapter, isChild = false) {
     // 显示子章节
     if (chapter.children && chapter.children.length > 0) {
         html += `<div class="chapter-children">`;
+        let childIndex = 0;
         for (const child of chapter.children) {
-            html += renderChapter(child, true);
+            html += renderChapter(child, true, docKey, childIndex);
+            childIndex++;
         }
         html += `</div>`;
+    }
+    
+    // 关闭复选框包装
+    if (!isChild) {
+        html += `</div></div>`;  // 关闭 chapter-select-content 和 chapter-select-wrapper
     }
     
     html += `</div>`;
@@ -1067,6 +1158,22 @@ async function exportToWord() {
         return;
     }
     
+    // 获取所有选中的章节ID
+    const selectedChapterIds = getSelectedChapterIds();
+    
+    if (selectedChapterIds.length === 0) {
+        alert('请至少选择一个章节进行导出');
+        return;
+    }
+    
+    // 过滤出选中的章节
+    const filteredResults = filterSelectedChapters(lastSearchResults, selectedChapterIds);
+    
+    if (filteredResults.length === 0) {
+        alert('没有选中的章节可导出');
+        return;
+    }
+    
     const btn = document.getElementById('btnExport');
     btn.disabled = true;
     btn.textContent = '导出中...';
@@ -1077,7 +1184,7 @@ async function exportToWord() {
             headers: {'Content-Type': 'application/json'},
             credentials: 'same-origin',
             body: JSON.stringify({
-                results: lastSearchResults,
+                results: filteredResults,
                 title: '文档查询结果'
             })
         });
@@ -1093,7 +1200,7 @@ async function exportToWord() {
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
             
-            addMessage('system', 'Word文档已下载');
+            addMessage('system', `Word文档已下载（共导出 ${selectedChapterIds.length} 个章节）`);
         } else {
             const result = await response.json();
             addMessage('system', `导出失败: ${result.error}`);
@@ -1103,6 +1210,104 @@ async function exportToWord() {
     } finally {
         btn.disabled = false;
         btn.textContent = '导出Word';
+    }
+}
+
+// 获取所有选中的章节ID
+function getSelectedChapterIds() {
+    const checkboxes = document.querySelectorAll('.chapter-select-checkbox:checked');
+    const ids = [];
+    checkboxes.forEach(cb => {
+        ids.push(cb.dataset.chapterId);
+    });
+    return ids;
+}
+
+// 过滤出选中的章节
+function filterSelectedChapters(results, selectedIds) {
+    const selectedSet = new Set(selectedIds);
+    const filtered = [];
+    
+    for (const queryResult of results) {
+        const filteredQueryResult = {
+            query: queryResult.query,
+            results: [],
+            match_count: 0
+        };
+        
+        for (const docResult of queryResult.results) {
+            const filteredChapters = docResult.chapters.filter(chapter => {
+                const chapterId = String(chapter.id);
+                return selectedSet.has(chapterId);
+            });
+            
+            if (filteredChapters.length > 0) {
+                filteredQueryResult.results.push({
+                    document_id: docResult.document_id,
+                    filename: docResult.filename,
+                    chapters: filteredChapters
+                });
+                filteredQueryResult.match_count += filteredChapters.length;
+            }
+        }
+        
+        if (filteredQueryResult.results.length > 0) {
+            filtered.push(filteredQueryResult);
+        }
+    }
+    
+    return filtered;
+}
+
+// 全选/取消全选
+function toggleSelectAll(checkbox) {
+    const docKey = checkbox.dataset.docKey;
+    const isChecked = checkbox.checked;
+    
+    // 找到该文档下的所有章节复选框
+    const chapterCheckboxes = document.querySelectorAll(`.chapter-select-checkbox[data-doc-key="${docKey}"]`);
+    chapterCheckboxes.forEach(cb => {
+        cb.checked = isChecked;
+    });
+    
+    // 更新计数
+    updateSelectCount(docKey);
+}
+
+// 章节复选框变化时更新状态
+function onChapterCheckChange(docKey) {
+    updateSelectCount(docKey);
+    updateSelectAllState(docKey);
+}
+
+// 更新选中计数
+function updateSelectCount(docKey) {
+    const allCheckboxes = document.querySelectorAll(`.chapter-select-checkbox[data-doc-key="${docKey}"]`);
+    const checkedCheckboxes = document.querySelectorAll(`.chapter-select-checkbox[data-doc-key="${docKey}"]:checked`);
+    
+    const countEl = document.getElementById(`count_${docKey}`);
+    if (countEl) {
+        countEl.textContent = `已选 ${checkedCheckboxes.length}/${allCheckboxes.length}`;
+    }
+}
+
+// 更新全选复选框状态
+function updateSelectAllState(docKey) {
+    const allCheckboxes = document.querySelectorAll(`.chapter-select-checkbox[data-doc-key="${docKey}"]`);
+    const checkedCheckboxes = document.querySelectorAll(`.chapter-select-checkbox[data-doc-key="${docKey}"]:checked`);
+    const selectAllCheckbox = document.querySelector(`.select-all-checkbox[data-doc-key="${docKey}"]`);
+    
+    if (selectAllCheckbox) {
+        if (checkedCheckboxes.length === 0) {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
+        } else if (checkedCheckboxes.length === allCheckboxes.length) {
+            selectAllCheckbox.checked = true;
+            selectAllCheckbox.indeterminate = false;
+        } else {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = true;
+        }
     }
 }
 

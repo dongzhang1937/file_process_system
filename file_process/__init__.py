@@ -83,13 +83,15 @@ def myapp():
     from .models.prodetail import doc_proc, recover_orphaned_tasks
     from .models.static_files import static_bp  # 添加静态文件蓝图
     from .models.chat_db_doc import chatdoc
+    from .models.llm_routes import llm_bp  # LLM功能蓝图
     app.register_blueprint(au)
     app.register_blueprint(docu)
     app.register_blueprint(docp)
     app.register_blueprint(upload_bp)
     app.register_blueprint(doc_proc)
     app.register_blueprint(static_bp)  # 注册静态文件蓝图
-    app.register_blueprint(chatdoc) 
+    app.register_blueprint(chatdoc)
+    app.register_blueprint(llm_bp)  # 注册LLM功能蓝图 
     app.before_request(auth_required)
 
     # 应用启动时恢复孤儿任务

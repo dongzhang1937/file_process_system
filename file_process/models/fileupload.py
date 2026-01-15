@@ -26,11 +26,11 @@ upload_bp = Blueprint('upload', __name__)
 
 # 文件上传配置信息
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# 文件上传配置信息（使用绝对路径 + 归一化，避免历史目录结构变化导致路径错误）
-UPLOAD_FOLDER = os.path.abspath(os.path.join(BASE_DIR, '../../uploads/temp'))
-FINAL_FOLDER = os.path.abspath(os.path.join(BASE_DIR, '../../uploads/final'))
-# UPLOAD_FOLDER = 'uploads/temp'
-# FINAL_FOLDER = 'uploads/final'
+# 项目根目录（file_process/models -> file_process -> 项目根目录）
+PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, '../../'))
+# 文件上传配置信息（使用绝对路径，与 prodetail.py 保持一致）
+UPLOAD_FOLDER = os.path.abspath(os.path.join(PROJECT_ROOT, 'uploads/temp'))
+FINAL_FOLDER = os.path.abspath(os.path.join(PROJECT_ROOT, 'uploads/final'))
 CHUNK_SIZE = 1024 * 1024 * 20  # 20MB
 MAX_FILE_SIZE = 1024 * 1024 * 5000  # 5000MB
 ALLOWED_EXTENSIONS = {'docx', 'pdf', 'txt'}
@@ -565,6 +565,8 @@ def merge_chunks_task(self, upload_id):
     """合并分片文件"""
     try:
         logger.info(f"开始合并: {upload_id}")
+        logger.info(f"UPLOAD_FOLDER路径: {UPLOAD_FOLDER}")
+        logger.info(f"FINAL_FOLDER路径: {FINAL_FOLDER}")
         
         # 从数据库获取会话信息
         sql='''SELECT upload_id, filename, filesize, total_chunks, uploaded_chunks, 

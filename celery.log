@@ -36,3 +36,144 @@ User information: uid=0 euid=0 gid=0 egid=0
 2026-01-09 11:16:05.332 | INFO     | file_process.models.prodetail:process_document_task:790 - 直接调用WordParser处理Word文档: /mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/华能点对点-0419.docx
 2026-01-09 11:16:20.602 | INFO     | file_process.models.prodetail:process_document_task:950 - Word文档处理成功: doc_id=719df31327598804d6f9cdd3aca0b3bd, chapters=321, images=558
 [2026-01-09 11:16:20,626: INFO/MainProcess] Task file_process.models.prodetail.process_document_task[c8ae8d9b-240a-4dae-aca6-aef43aa225cc] succeeded in 15.294731724003213s: {'metadata': {'chapter_count': 321, 'image_count': 558}, 'process_time': '2026-01-09 11:16:20', 'status': 'success'}
+[2026-01-15 20:37:44,354: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[82369973-44ca-4952-8b86-f9567cadbcee] received
+2026-01-15 20:37:44.355 | INFO     | file_process.models.fileupload:merge_chunks_task:567 - 开始合并: 62b3235fc40dd3c31a20d4de3c7ed269
+2026-01-15 20:37:44.365 | ERROR    | file_process.models.fileupload:merge_chunks_task:648 - 合并失败: 62b3235fc40dd3c31a20d4de3c7ed269 - 缺少分片: [0, 1]
+2026-01-15 20:37:44.372 | INFO     | file_process.models.fileupload:merge_chunks_task:654 - 更新失败状态: 62b3235fc40dd3c31a20d4de3c7ed269, result=1
+[2026-01-15 20:37:44,427: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[82369973-44ca-4952-8b86-f9567cadbcee] retry: Retry in 60s: Exception('缺少分片: [0, 1]')
+[2026-01-15 20:37:44,430: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[82369973-44ca-4952-8b86-f9567cadbcee] received
+[2026-01-15 20:37:54,575: INFO/MainProcess] Task file_process.models.prodetail.process_document_task[b9e4d28f-3c16-47c4-afe3-826c5c5e8259] received
+2026-01-15 20:37:54.576 | INFO     | file_process.models.prodetail:process_document_task:785 - 开始处理文档: doc_id=90a66aba91b816bb9621ccd2d2f2eba0, file_path=/mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/山东黄金分布式点对点应答1212V1.docx
+2026-01-15 20:37:54.577 | INFO     | file_process.models.prodetail:process_document_task:790 - 直接调用WordParser处理Word文档: /mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/山东黄金分布式点对点应答1212V1.docx
+2026-01-15 20:38:45.210 | INFO     | file_process.models.prodetail:process_document_task:950 - Word文档处理成功: doc_id=90a66aba91b816bb9621ccd2d2f2eba0, chapters=149, images=763
+[2026-01-15 20:38:45,224: INFO/MainProcess] Task file_process.models.prodetail.process_document_task[b9e4d28f-3c16-47c4-afe3-826c5c5e8259] succeeded in 50.64858574105892s: {'metadata': {'chapter_count': 149, 'image_count': 763}, 'process_time': '2026-01-15 20:38:45', 'status': 'success'}
+2026-01-15 20:38:45.227 | INFO     | file_process.models.fileupload:merge_chunks_task:567 - 开始合并: 62b3235fc40dd3c31a20d4de3c7ed269
+2026-01-15 20:38:45.229 | ERROR    | file_process.models.fileupload:merge_chunks_task:648 - 合并失败: 62b3235fc40dd3c31a20d4de3c7ed269 - 上传会话不存在: 62b3235fc40dd3c31a20d4de3c7ed269
+2026-01-15 20:38:45.230 | INFO     | file_process.models.fileupload:merge_chunks_task:654 - 更新失败状态: 62b3235fc40dd3c31a20d4de3c7ed269, result=0
+[2026-01-15 20:38:45,258: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[82369973-44ca-4952-8b86-f9567cadbcee] retry: Retry in 60s: Exception('上传会话不存在: 62b3235fc40dd3c31a20d4de3c7ed269')
+[2026-01-15 20:38:45,261: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[82369973-44ca-4952-8b86-f9567cadbcee] received
+[2026-01-15 20:38:53,593: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[42f473f6-d3b9-47a2-821e-9d6773378ae2] received
+2026-01-15 20:38:53.594 | INFO     | file_process.models.fileupload:merge_chunks_task:567 - 开始合并: 62b3235fc40dd3c31a20d4de3c7ed269
+2026-01-15 20:38:53.604 | ERROR    | file_process.models.fileupload:merge_chunks_task:648 - 合并失败: 62b3235fc40dd3c31a20d4de3c7ed269 - 缺少分片: [0, 1]
+2026-01-15 20:38:53.610 | INFO     | file_process.models.fileupload:merge_chunks_task:654 - 更新失败状态: 62b3235fc40dd3c31a20d4de3c7ed269, result=1
+[2026-01-15 20:38:53,639: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[42f473f6-d3b9-47a2-821e-9d6773378ae2] retry: Retry in 60s: Exception('缺少分片: [0, 1]')
+[2026-01-15 20:38:53,642: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[42f473f6-d3b9-47a2-821e-9d6773378ae2] received
+2026-01-15 20:39:45.233 | INFO     | file_process.models.fileupload:merge_chunks_task:567 - 开始合并: 62b3235fc40dd3c31a20d4de3c7ed269
+2026-01-15 20:39:45.244 | ERROR    | file_process.models.fileupload:merge_chunks_task:648 - 合并失败: 62b3235fc40dd3c31a20d4de3c7ed269 - 缺少分片: [0, 1]
+2026-01-15 20:39:45.246 | INFO     | file_process.models.fileupload:merge_chunks_task:654 - 更新失败状态: 62b3235fc40dd3c31a20d4de3c7ed269, result=0
+[2026-01-15 20:39:45,276: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[82369973-44ca-4952-8b86-f9567cadbcee] retry: Retry in 60s: Exception('缺少分片: [0, 1]')
+[2026-01-15 20:39:45,278: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[82369973-44ca-4952-8b86-f9567cadbcee] received
+2026-01-15 20:39:53.612 | INFO     | file_process.models.fileupload:merge_chunks_task:567 - 开始合并: 62b3235fc40dd3c31a20d4de3c7ed269
+2026-01-15 20:39:53.620 | ERROR    | file_process.models.fileupload:merge_chunks_task:648 - 合并失败: 62b3235fc40dd3c31a20d4de3c7ed269 - 缺少分片: [0, 1]
+2026-01-15 20:39:53.622 | INFO     | file_process.models.fileupload:merge_chunks_task:654 - 更新失败状态: 62b3235fc40dd3c31a20d4de3c7ed269, result=0
+[2026-01-15 20:39:53,643: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[42f473f6-d3b9-47a2-821e-9d6773378ae2] retry: Retry in 60s: Exception('缺少分片: [0, 1]')
+[2026-01-15 20:39:53,645: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[42f473f6-d3b9-47a2-821e-9d6773378ae2] received
+2026-01-15 20:40:45.248 | INFO     | file_process.models.fileupload:merge_chunks_task:567 - 开始合并: 62b3235fc40dd3c31a20d4de3c7ed269
+2026-01-15 20:40:45.250 | ERROR    | file_process.models.fileupload:merge_chunks_task:648 - 合并失败: 62b3235fc40dd3c31a20d4de3c7ed269 - 上传会话不存在: 62b3235fc40dd3c31a20d4de3c7ed269
+2026-01-15 20:40:45.252 | INFO     | file_process.models.fileupload:merge_chunks_task:654 - 更新失败状态: 62b3235fc40dd3c31a20d4de3c7ed269, result=0
+2026-01-15 20:40:45.253 | ERROR    | file_process.models.fileupload:merge_chunks_task:660 - 任务已达到最大重试次数: 62b3235fc40dd3c31a20d4de3c7ed269
+[2026-01-15 20:40:45,274: ERROR/MainProcess] Task file_process.models.fileupload.merge_chunks_task[82369973-44ca-4952-8b86-f9567cadbcee] raised unexpected: Exception('上传会话不存在: 62b3235fc40dd3c31a20d4de3c7ed269')
+Traceback (most recent call last):
+  File "/mnt/e/codebuddy/data/tencentcode/lib/python3.12/site-packages/celery/app/trace.py", line 479, in trace_task
+    R = retval = fun(*args, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/e/codebuddy/data/tencentcode/lib/python3.12/site-packages/celery/app/trace.py", line 779, in __protected_call__
+    return self.run(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/e/codebuddy/data/tencentcode/data/file_process/models/fileupload.py", line 578, in merge_chunks_task
+    raise Exception(f'上传会话不存在: {upload_id}')
+Exception: 上传会话不存在: 62b3235fc40dd3c31a20d4de3c7ed269
+[2026-01-15 20:40:50,114: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[a6d60e54-f98e-49c2-b449-0e3c81ef3299] received
+2026-01-15 20:40:50.115 | INFO     | file_process.models.fileupload:merge_chunks_task:567 - 开始合并: 62b3235fc40dd3c31a20d4de3c7ed269
+2026-01-15 20:40:50.123 | ERROR    | file_process.models.fileupload:merge_chunks_task:648 - 合并失败: 62b3235fc40dd3c31a20d4de3c7ed269 - 缺少分片: [0, 1]
+2026-01-15 20:40:50.129 | INFO     | file_process.models.fileupload:merge_chunks_task:654 - 更新失败状态: 62b3235fc40dd3c31a20d4de3c7ed269, result=1
+[2026-01-15 20:40:50,163: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[a6d60e54-f98e-49c2-b449-0e3c81ef3299] retry: Retry in 60s: Exception('缺少分片: [0, 1]')
+[2026-01-15 20:40:50,166: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[a6d60e54-f98e-49c2-b449-0e3c81ef3299] received
+2026-01-15 20:40:53.624 | INFO     | file_process.models.fileupload:merge_chunks_task:567 - 开始合并: 62b3235fc40dd3c31a20d4de3c7ed269
+2026-01-15 20:40:53.632 | ERROR    | file_process.models.fileupload:merge_chunks_task:648 - 合并失败: 62b3235fc40dd3c31a20d4de3c7ed269 - 缺少分片: [0, 1]
+2026-01-15 20:40:53.633 | INFO     | file_process.models.fileupload:merge_chunks_task:654 - 更新失败状态: 62b3235fc40dd3c31a20d4de3c7ed269, result=0
+[2026-01-15 20:40:53,653: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[42f473f6-d3b9-47a2-821e-9d6773378ae2] retry: Retry in 60s: Exception('缺少分片: [0, 1]')
+[2026-01-15 20:40:53,655: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[42f473f6-d3b9-47a2-821e-9d6773378ae2] received
+2026-01-15 20:41:50.132 | INFO     | file_process.models.fileupload:merge_chunks_task:567 - 开始合并: 62b3235fc40dd3c31a20d4de3c7ed269
+2026-01-15 20:41:50.139 | ERROR    | file_process.models.fileupload:merge_chunks_task:648 - 合并失败: 62b3235fc40dd3c31a20d4de3c7ed269 - 缺少分片: [0, 1]
+2026-01-15 20:41:50.140 | INFO     | file_process.models.fileupload:merge_chunks_task:654 - 更新失败状态: 62b3235fc40dd3c31a20d4de3c7ed269, result=0
+[2026-01-15 20:41:50,162: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[a6d60e54-f98e-49c2-b449-0e3c81ef3299] retry: Retry in 60s: Exception('缺少分片: [0, 1]')
+[2026-01-15 20:41:50,165: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[a6d60e54-f98e-49c2-b449-0e3c81ef3299] received
+2026-01-15 20:41:53.636 | INFO     | file_process.models.fileupload:merge_chunks_task:567 - 开始合并: 62b3235fc40dd3c31a20d4de3c7ed269
+2026-01-15 20:41:53.643 | ERROR    | file_process.models.fileupload:merge_chunks_task:648 - 合并失败: 62b3235fc40dd3c31a20d4de3c7ed269 - 缺少分片: [0, 1]
+2026-01-15 20:41:53.644 | INFO     | file_process.models.fileupload:merge_chunks_task:654 - 更新失败状态: 62b3235fc40dd3c31a20d4de3c7ed269, result=0
+2026-01-15 20:41:53.645 | ERROR    | file_process.models.fileupload:merge_chunks_task:660 - 任务已达到最大重试次数: 62b3235fc40dd3c31a20d4de3c7ed269
+[2026-01-15 20:41:53,667: ERROR/MainProcess] Task file_process.models.fileupload.merge_chunks_task[42f473f6-d3b9-47a2-821e-9d6773378ae2] raised unexpected: Exception('缺少分片: [0, 1]')
+Traceback (most recent call last):
+  File "/mnt/e/codebuddy/data/tencentcode/lib/python3.12/site-packages/celery/app/trace.py", line 479, in trace_task
+    R = retval = fun(*args, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/e/codebuddy/data/tencentcode/lib/python3.12/site-packages/celery/app/trace.py", line 779, in __protected_call__
+    return self.run(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/e/codebuddy/data/tencentcode/data/file_process/models/fileupload.py", line 599, in merge_chunks_task
+    raise Exception(f'缺少分片: {missing_chunks}')
+Exception: 缺少分片: [0, 1]
+2026-01-15 20:42:50.143 | INFO     | file_process.models.fileupload:merge_chunks_task:567 - 开始合并: 62b3235fc40dd3c31a20d4de3c7ed269
+2026-01-15 20:42:50.150 | ERROR    | file_process.models.fileupload:merge_chunks_task:648 - 合并失败: 62b3235fc40dd3c31a20d4de3c7ed269 - 缺少分片: [0, 1]
+2026-01-15 20:42:50.152 | INFO     | file_process.models.fileupload:merge_chunks_task:654 - 更新失败状态: 62b3235fc40dd3c31a20d4de3c7ed269, result=0
+[2026-01-15 20:42:50,186: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[a6d60e54-f98e-49c2-b449-0e3c81ef3299] retry: Retry in 60s: Exception('缺少分片: [0, 1]')
+[2026-01-15 20:42:50,188: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[a6d60e54-f98e-49c2-b449-0e3c81ef3299] received
+2026-01-15 20:43:50.155 | INFO     | file_process.models.fileupload:merge_chunks_task:567 - 开始合并: 62b3235fc40dd3c31a20d4de3c7ed269
+2026-01-15 20:43:50.164 | ERROR    | file_process.models.fileupload:merge_chunks_task:648 - 合并失败: 62b3235fc40dd3c31a20d4de3c7ed269 - 缺少分片: [0, 1]
+2026-01-15 20:43:50.166 | INFO     | file_process.models.fileupload:merge_chunks_task:654 - 更新失败状态: 62b3235fc40dd3c31a20d4de3c7ed269, result=0
+2026-01-15 20:43:50.167 | ERROR    | file_process.models.fileupload:merge_chunks_task:660 - 任务已达到最大重试次数: 62b3235fc40dd3c31a20d4de3c7ed269
+[2026-01-15 20:43:50,198: ERROR/MainProcess] Task file_process.models.fileupload.merge_chunks_task[a6d60e54-f98e-49c2-b449-0e3c81ef3299] raised unexpected: Exception('缺少分片: [0, 1]')
+Traceback (most recent call last):
+  File "/mnt/e/codebuddy/data/tencentcode/lib/python3.12/site-packages/celery/app/trace.py", line 479, in trace_task
+    R = retval = fun(*args, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/e/codebuddy/data/tencentcode/lib/python3.12/site-packages/celery/app/trace.py", line 779, in __protected_call__
+    return self.run(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/e/codebuddy/data/tencentcode/data/file_process/models/fileupload.py", line 599, in merge_chunks_task
+Exception: 缺少分片: [0, 1]
+/mnt/e/codebuddy/data/tencentcode/lib/python3.12/site-packages/celery/platforms.py:841: SecurityWarning: You're running the worker with superuser privileges: this is
+absolutely not recommended!
+
+Please specify a different user using the --uid option.
+
+User information: uid=0 euid=0 gid=0 egid=0
+
+  warnings.warn(SecurityWarning(ROOT_DISCOURAGED.format(
+ 
+ -------------- worker1@XIANZHECHU-PC1 v5.6.2 (recovery)
+--- ***** ----- 
+-- ******* ---- Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.28 2026-01-15 20:49:42
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         file_process:0x7e0bc1384710
+- ** ---------- .> transport:   redis://127.0.0.1:6379/0
+- ** ---------- .> results:     mysql+pymysql://test:**@127.0.0.1:3306/t11
+- *** --- * --- .> concurrency: 1 (solo)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . file_process.models.fileupload.merge_chunks_task
+  . file_process.models.prodetail.process_document_task
+  . file_process.models.word_parser.process_word_task
+
+[2026-01-15 20:49:43,171: INFO/MainProcess] Connected to redis://127.0.0.1:6379/0
+[2026-01-15 20:49:43,175: INFO/MainProcess] mingle: searching for neighbors
+[2026-01-15 20:49:44,185: INFO/MainProcess] mingle: all alone
+[2026-01-15 20:49:44,210: INFO/MainProcess] worker1@XIANZHECHU-PC1 ready.
+[2026-01-15 20:50:34,870: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[eb633945-b7e7-4ea5-bf05-9364d2796b58] received
+2026-01-15 20:50:34.871 | INFO     | file_process.models.fileupload:merge_chunks_task:567 - 开始合并: 62b3235fc40dd3c31a20d4de3c7ed269
+2026-01-15 20:50:34.872 | INFO     | file_process.models.fileupload:merge_chunks_task:568 - UPLOAD_FOLDER路径: /mnt/e/codebuddy/data/tencentcode/data/uploads/temp
+2026-01-15 20:50:34.873 | INFO     | file_process.models.fileupload:merge_chunks_task:569 - FINAL_FOLDER路径: /mnt/e/codebuddy/data/tencentcode/data/uploads/final
+2026-01-15 20:50:35.363 | INFO     | file_process.models.fileupload:merge_chunks_task:640 - 合并完成: 62b3235fc40dd3c31a20d4de3c7ed269 - /mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/中冶南方自主可控数据库招标技术要求-点对点.docx
+[2026-01-15 20:50:35,376: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[eb633945-b7e7-4ea5-bf05-9364d2796b58] succeeded in 0.505352919921279s: {'status': 'completed', 'filename': '中冶南方自主可控数据库招标技术要求-点对点.docx', 'path': '/mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/中冶南方自主可控数据库招标技术要求-点对点.docx', 'size': 25930089}
+[2026-01-15 20:50:48,696: INFO/MainProcess] Task file_process.models.prodetail.process_document_task[a7b72ca2-1553-4a53-af60-a764ffbabe85] received
+2026-01-15 20:50:48.698 | INFO     | file_process.models.prodetail:process_document_task:785 - 开始处理文档: doc_id=62b3235fc40dd3c31a20d4de3c7ed269, file_path=/mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/中冶南方自主可控数据库招标技术要求-点对点.docx
+2026-01-15 20:50:48.699 | INFO     | file_process.models.prodetail:process_document_task:790 - 直接调用WordParser处理Word文档: /mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/中冶南方自主可控数据库招标技术要求-点对点.docx
+2026-01-15 20:50:50.816 | INFO     | file_process.models.prodetail:process_document_task:950 - Word文档处理成功: doc_id=62b3235fc40dd3c31a20d4de3c7ed269, chapters=42, images=76
+[2026-01-15 20:50:50,833: INFO/MainProcess] Task file_process.models.prodetail.process_document_task[a7b72ca2-1553-4a53-af60-a764ffbabe85] succeeded in 2.135325910989195s: {'metadata': {'chapter_count': 42, 'image_count': 76}, 'process_time': '2026-01-15 20:50:50', 'status': 'success'}

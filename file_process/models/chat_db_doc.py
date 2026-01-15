@@ -102,41 +102,82 @@ def get_chapter_images(chapter_id):
     return fetch_all(sql, (chapter_id,))
 
 
-def search_chapters_exact(query, document_ids=None):
+def search_chapters_exact(query, document_ids=None, search_scope='title'):
     """
-    精确匹配搜索章节 - 只匹配 title 字段
+    精确匹配搜索章节
+    
+    Args:
+        query: 查询关键词
+        document_ids: 文档ID列表（可选）
+        search_scope: 搜索范围 - 'title'(只匹配标题) 或 'content'(匹配标题和内容)
     """
-    if document_ids:
-        placeholders = ','.join(['%s'] * len(document_ids))
-        sql = f"""
-            SELECT c.id, c.document_id, c.parent_id, c.level, c.order_index,
-                   c.title, c.content, c.style_name, c.font_size, c.is_bold, c.paragraph_index,
-                   dpr.filename as doc_filename
-            FROM chapters c
-            LEFT JOIN doc_process_records dpr ON c.document_id = dpr.doc_id
-            WHERE c.title = %s AND c.document_id IN ({placeholders})
-            ORDER BY c.document_id, c.level, c.order_index
-        """
-        params = [query] + list(document_ids)
+    if search_scope == 'content':
+        # 同时匹配 title 和 content
+        if document_ids:
+            placeholders = ','.join(['%s'] * len(document_ids))
+            sql = f"""
+                SELECT c.id, c.document_id, c.parent_id, c.level, c.order_index,
+                       c.title, c.content, c.style_name, c.font_size, c.is_bold, c.paragraph_index,
+                       dpr.filename as doc_filename,
+                       CASE WHEN c.title = %s THEN 'title' ELSE 'content' END as match_field
+                FROM chapters c
+                LEFT JOIN doc_process_records dpr ON c.document_id = dpr.doc_id
+                WHERE (c.title = %s OR c.content LIKE %s) AND c.document_id IN ({placeholders})
+                ORDER BY c.document_id, c.level, c.order_index
+            """
+            params = [query, query, f'%{query}%'] + list(document_ids)
+        else:
+            sql = """
+                SELECT c.id, c.document_id, c.parent_id, c.level, c.order_index,
+                       c.title, c.content, c.style_name, c.font_size, c.is_bold, c.paragraph_index,
+                       dpr.filename as doc_filename,
+                       CASE WHEN c.title = %s THEN 'title' ELSE 'content' END as match_field
+                FROM chapters c
+                LEFT JOIN doc_process_records dpr ON c.document_id = dpr.doc_id
+                WHERE c.title = %s OR c.content LIKE %s
+                ORDER BY c.document_id, c.level, c.order_index
+            """
+            params = [query, query, f'%{query}%']
     else:
-        sql = """
-            SELECT c.id, c.document_id, c.parent_id, c.level, c.order_index,
-                   c.title, c.content, c.style_name, c.font_size, c.is_bold, c.paragraph_index,
-                   dpr.filename as doc_filename
-            FROM chapters c
-            LEFT JOIN doc_process_records dpr ON c.document_id = dpr.doc_id
-            WHERE c.title = %s
-            ORDER BY c.document_id, c.level, c.order_index
-        """
-        params = [query]
+        # 只匹配 title
+        if document_ids:
+            placeholders = ','.join(['%s'] * len(document_ids))
+            sql = f"""
+                SELECT c.id, c.document_id, c.parent_id, c.level, c.order_index,
+                       c.title, c.content, c.style_name, c.font_size, c.is_bold, c.paragraph_index,
+                       dpr.filename as doc_filename,
+                       'title' as match_field
+                FROM chapters c
+                LEFT JOIN doc_process_records dpr ON c.document_id = dpr.doc_id
+                WHERE c.title = %s AND c.document_id IN ({placeholders})
+                ORDER BY c.document_id, c.level, c.order_index
+            """
+            params = [query] + list(document_ids)
+        else:
+            sql = """
+                SELECT c.id, c.document_id, c.parent_id, c.level, c.order_index,
+                       c.title, c.content, c.style_name, c.font_size, c.is_bold, c.paragraph_index,
+                       dpr.filename as doc_filename,
+                       'title' as match_field
+                FROM chapters c
+                LEFT JOIN doc_process_records dpr ON c.document_id = dpr.doc_id
+                WHERE c.title = %s
+                ORDER BY c.document_id, c.level, c.order_index
+            """
+            params = [query]
     
     return fetch_all(sql, params)
 
 
-def search_chapters_fuzzy(query, document_ids=None):
+def search_chapters_fuzzy(query, document_ids=None, search_scope='title'):
     """
-    模糊匹配搜索章节 - 只匹配 title 字段
+    模糊匹配搜索章节
     去掉标点符号和特殊字符后进行匹配
+    
+    Args:
+        query: 查询关键词
+        document_ids: 文档ID列表（可选）
+        search_scope: 搜索范围 - 'title'(只匹配标题) 或 'content'(匹配标题和内容)
     """
     cleaned_query = clean_text_for_fuzzy(query)
     if not cleaned_query:
@@ -166,12 +207,25 @@ def search_chapters_fuzzy(query, document_ids=None):
         """
         chapters = fetch_all(sql)
     
-    # 只匹配 title
+    # 根据搜索范围进行匹配
     results = []
     for chapter in chapters:
         cleaned_title = clean_text_for_fuzzy(chapter.get('title', ''))
-        if cleaned_query in cleaned_title:
-            results.append(chapter)
+        
+        if search_scope == 'content':
+            # 同时匹配 title 和 content
+            cleaned_content = clean_text_for_fuzzy(chapter.get('content', ''))
+            if cleaned_query in cleaned_title:
+                chapter['match_field'] = 'title'
+                results.append(chapter)
+            elif cleaned_query in cleaned_content:
+                chapter['match_field'] = 'content'
+                results.append(chapter)
+        else:
+            # 只匹配 title
+            if cleaned_query in cleaned_title:
+                chapter['match_field'] = 'title'
+                results.append(chapter)
     
     return results
 
@@ -214,6 +268,7 @@ def search_content():
     """
     搜索章节内容
     支持精确匹配和模糊匹配
+    支持只查询标题或内容匹配（标题+内容）
     """
     try:
         data = request.json
@@ -221,6 +276,7 @@ def search_content():
         match_type = data.get('match_type', 'exact')  # exact 或 fuzzy
         document_ids = data.get('document_ids', [])  # 可选，指定文档范围
         include_children = data.get('include_children', True)  # 是否包含子章节
+        search_scope = data.get('search_scope', 'title')  # title 或 content
         
         if not query:
             return jsonify({
@@ -230,9 +286,9 @@ def search_content():
         
         # 根据匹配类型搜索
         if match_type == 'exact':
-            chapters = search_chapters_exact(query, document_ids if document_ids else None)
+            chapters = search_chapters_exact(query, document_ids if document_ids else None, search_scope)
         else:
-            chapters = search_chapters_fuzzy(query, document_ids if document_ids else None)
+            chapters = search_chapters_fuzzy(query, document_ids if document_ids else None, search_scope)
         
         if not chapters:
             return jsonify({
@@ -240,6 +296,7 @@ def search_content():
                 'data': {
                     'query': query,
                     'match_type': match_type,
+                    'search_scope': search_scope,
                     'results': [],
                     'message': '未找到匹配的内容'
                 }
@@ -277,6 +334,7 @@ def search_content():
             'data': {
                 'query': query,
                 'match_type': match_type,
+                'search_scope': search_scope,
                 'results': list(doc_results.values()),
                 'total_matches': len(chapters),
                 'document_count': len(doc_results)
@@ -303,6 +361,7 @@ def batch_search():
         match_type = data.get('match_type', 'exact')
         document_ids = data.get('document_ids', [])
         include_children = data.get('include_children', True)
+        search_scope = data.get('search_scope', 'title')  # title 或 content
         
         if not queries:
             return jsonify({
@@ -319,9 +378,9 @@ def batch_search():
             
             # 根据匹配类型搜索
             if match_type == 'exact':
-                chapters = search_chapters_exact(query, document_ids if document_ids else None)
+                chapters = search_chapters_exact(query, document_ids if document_ids else None, search_scope)
             else:
-                chapters = search_chapters_fuzzy(query, document_ids if document_ids else None)
+                chapters = search_chapters_fuzzy(query, document_ids if document_ids else None, search_scope)
             
             # 按文档分组
             doc_results = {}
@@ -359,6 +418,7 @@ def batch_search():
             'success': True,
             'data': {
                 'match_type': match_type,
+                'search_scope': search_scope,
                 'batch_results': all_results,
                 'total_queries': len(queries)
             }
