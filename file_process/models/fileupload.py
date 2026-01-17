@@ -360,7 +360,7 @@ def get_upload_list():
 
 @upload_bp.route('/upload/delete/<upload_id>', methods=['DELETE'])
 def delete_upload(upload_id):
-    """删除上传记录"""
+    """删除上传记录及其关联的文档处理数据"""
     try:
         user_info = session.get('user')
         username = user_info.get('username') if user_info else 'anonymous'
@@ -376,7 +376,70 @@ def delete_upload(upload_id):
         if not upload_record:
             return jsonify({'error': '记录不存在或无权限'}), 404
         
-        # 删除物理文件
+        # ========== 1. 删除关联的文档处理记录 ==========
+        # 检查是否有关联的处理记录
+        doc_check_sql = "SELECT doc_id FROM doc_process_records WHERE doc_id = %s AND username = %s"
+        doc_record = fetch_one(doc_check_sql, parameters=(upload_id, username))
+        
+        deleted_images_count = 0
+        if doc_record:
+            doc_id = doc_record['doc_id']
+            logger.info(f"发现关联的文档处理记录: doc_id={doc_id}, 开始级联删除")
+            
+            # 1.1 获取所有图片路径，用于后续删除文件
+            get_images_sql = "SELECT image_path FROM document_images WHERE document_id = %s"
+            image_records = fetch_all(get_images_sql, parameters=(doc_id,))
+            image_paths = [img['image_path'] for img in image_records] if image_records else []
+            
+            # 1.2 删除章节-图片关联表
+            delete_chapter_images_sql = """
+                DELETE ci FROM chapter_images ci
+                INNER JOIN chapters c ON ci.chapter_id = c.id
+                WHERE c.document_id = %s
+            """
+            dml_sql(delete_chapter_images_sql, parameters=(doc_id,))
+            logger.info(f"删除章节-图片关联: document_id={doc_id}")
+            
+            # 1.3 删除文档图片记录
+            delete_images_sql = "DELETE FROM document_images WHERE document_id = %s"
+            dml_sql(delete_images_sql, parameters=(doc_id,))
+            logger.info(f"删除文档图片记录: document_id={doc_id}")
+            
+            # 1.4 删除章节记录
+            delete_chapters_sql = "DELETE FROM chapters WHERE document_id = %s"
+            dml_sql(delete_chapters_sql, parameters=(doc_id,))
+            logger.info(f"删除章节记录: document_id={doc_id}")
+            
+            # 1.5 删除处理记录
+            delete_doc_sql = "DELETE FROM doc_process_records WHERE doc_id = %s AND username = %s"
+            dml_sql(delete_doc_sql, parameters=(doc_id, username))
+            logger.info(f"删除文档处理记录: doc_id={doc_id}")
+            
+            # 1.6 删除图片文件
+            images_dir = None
+            if image_paths:
+                images_dir = os.path.dirname(image_paths[0])
+            
+            for img_path in image_paths:
+                try:
+                    if img_path and os.path.exists(img_path):
+                        os.remove(img_path)
+                        deleted_images_count += 1
+                        logger.info(f"删除图片文件: {img_path}")
+                except Exception as e:
+                    logger.warning(f"删除图片文件失败 {img_path}: {e}")
+            
+            # 1.7 删除图片目录（如果目录为空）
+            if images_dir:
+                try:
+                    import shutil
+                    if os.path.exists(images_dir) and not os.listdir(images_dir):
+                        shutil.rmtree(images_dir)
+                        logger.info(f"删除空的图片目录: {images_dir}")
+                except Exception as e:
+                    logger.warning(f"删除图片目录失败: {e}")
+        
+        # ========== 2. 删除原始上传文件 ==========
         if upload_record['final_path'] and os.path.exists(upload_record['final_path']):
             try:
                 os.remove(upload_record['final_path'])
@@ -384,7 +447,7 @@ def delete_upload(upload_id):
             except Exception as e:
                 logger.warning(f"删除文件失败: {e}")
         
-        # 删除临时分片目录
+        # ========== 3. 删除临时分片目录 ==========
         upload_dir = os.path.join(UPLOAD_FOLDER, upload_id)
         if os.path.exists(upload_dir):
             try:
@@ -394,13 +457,21 @@ def delete_upload(upload_id):
             except Exception as e:
                 logger.warning(f"删除临时目录失败: {e}")
         
-        # 删除数据库记录
+        # ========== 4. 删除上传会话记录 ==========
         delete_sql = "DELETE FROM upload_sessions WHERE upload_id = %s AND username = %s"
         result = dml_sql(delete_sql, (upload_id, username))
         
-        logger.info(f"删除上传记录: {upload_id}")
+        logger.info(f"删除上传记录完成: upload_id={upload_id}, 删除了 {deleted_images_count} 个图片文件")
         
-        return jsonify({'success': True, 'message': '删除成功'})
+        return jsonify({
+            'success': True, 
+            'message': '删除成功',
+            'details': {
+                'upload_id': upload_id,
+                'deleted_doc_record': doc_record is not None,
+                'deleted_images_count': deleted_images_count
+            }
+        })
         
     except Exception as e:
         logger.error(f"删除上传记录失败: {upload_id} - {e}")

@@ -117,6 +117,60 @@
             margin-left: 10px;
             color: #666;
         }
+
+        .selected-files-list {
+            margin-top: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            display: none;
+        }
+
+        .selected-files-list.show {
+            display: block;
+        }
+
+        .selected-file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 5px 10px;
+            margin-bottom: 5px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .selected-file-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .selected-file-item .file-info {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .selected-file-item .file-size {
+            color: #999;
+            margin-left: 10px;
+            font-size: 12px;
+        }
+
+        .selected-file-item .remove-file {
+            color: #dc3545;
+            cursor: pointer;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+
+        .selected-file-item .remove-file:hover {
+            color: #c82333;
+        }
         
         .upload-btn {
             padding: 10px 30px;
@@ -136,6 +190,17 @@
         .upload-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+        }
+        
+        .upload-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .upload-actions {
+            margin-top: 15px;
         }
         
         .delete-btn {
@@ -170,16 +235,20 @@
             
             <div class="upload-form">
                 <form id="uploadForm" action="/upload">
-                    <div class="file-input-wrapper">
-                        <input type="file" id="fileInput" name="file" accept=".docx,.pdf,.txt" required>
-                        <label for="fileInput" class="file-input-label">选择文件</label>
+                    <div class="upload-controls">
+                        <div class="file-input-wrapper">
+                            <input type="file" id="fileInput" name="file" accept=".docx,.pdf,.txt" multiple required>
+                            <label for="fileInput" class="file-input-label">选择文件（可多选）</label>
+                        </div>
+                        <span class="selected-file" id="selectedFileName">未选择文件</span>
                     </div>
-                    <span class="selected-file" id="selectedFileName">未选择文件</span>
-                    <br><br>
-                    <button type="submit" class="upload-btn" id="uploadBtn">开始上传</button>
+                    <div class="selected-files-list" id="selectedFilesList"></div>
+                    <div class="upload-actions">
+                        <button type="submit" class="upload-btn" id="uploadBtn">开始上传</button>
+                    </div>
                 </form>
-                <p style="color: #666; margin-top: 10px; font-size: 14px;">
-                    ⚠️ 支持的文件格式: .docx, .pdf, .txt | 最大文件大小: 500MB
+                <p style="color: #666; margin-top: 15px; font-size: 14px;">
+                    支持的文件格式: .docx, .pdf, .txt | 最大文件大小: 500MB | 支持批量上传
                 </p>
             </div>
 
@@ -221,9 +290,13 @@
         // DOM元素
         const fileInput = document.getElementById('fileInput');
         const selectedFileName = document.getElementById('selectedFileName');
+        const selectedFilesList = document.getElementById('selectedFilesList');
         const uploadForm = document.getElementById('uploadForm');
         const uploadTableBody = document.getElementById('uploadTableBody');
         const emptyMessage = document.getElementById('emptyMessage');
+        
+        // 存储选中的文件列表
+        let selectedFiles = [];
         
         // 页面加载时从数据库加载上传列表
         document.addEventListener('DOMContentLoaded', () => {
@@ -236,6 +309,8 @@
             // 重置文件选择器
             fileInput.value = '';
             selectedFileName.textContent = '未选择文件';
+            selectedFiles = [];
+            selectedFilesList.classList.remove('show');
 
             // 加载上传列表
             loadUploadList();
@@ -420,49 +495,109 @@
         
         // 文件选择事件
         fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                // 检查文件类型
-                const allowedTypes = ['.docx', '.pdf', '.txt'];
+            const files = Array.from(e.target.files);
+            if (files.length === 0) {
+                selectedFileName.textContent = '未选择文件';
+                selectedFiles = [];
+                selectedFilesList.classList.remove('show');
+                return;
+            }
+            
+            const allowedTypes = ['.docx', '.pdf', '.txt'];
+            const validFiles = [];
+            const invalidFiles = [];
+            
+            files.forEach(file => {
                 const fileExt = '.' + file.name.split('.').pop().toLowerCase();
                 
                 if (!allowedTypes.includes(fileExt)) {
-                    alert('不支持的文件格式！仅支持: .docx, .pdf, .txt');
-                    fileInput.value = '';
-                    selectedFileName.textContent = '未选择文件';
-                    return;
+                    invalidFiles.push(`${file.name} (不支持的格式)`);
+                } else if (file.size > MAX_FILE_SIZE) {
+                    invalidFiles.push(`${file.name} (文件过大)`);
+                } else {
+                    validFiles.push(file);
                 }
-                
-                // 检查文件大小
-                if (file.size > MAX_FILE_SIZE) {
-                    alert('文件过大！最大支持500MB');
-                    fileInput.value = '';
-                    selectedFileName.textContent = '未选择文件';
-                    return;
-                }
-                
-                selectedFileName.textContent = `${file.name} (${formatFileSize(file.size)})`;
-            } else {
+            });
+            
+            if (invalidFiles.length > 0) {
+                alert('以下文件无法上传：\n' + invalidFiles.join('\n'));
+            }
+            
+            selectedFiles = validFiles;
+            
+            if (selectedFiles.length === 0) {
                 selectedFileName.textContent = '未选择文件';
+                selectedFilesList.classList.remove('show');
+            } else if (selectedFiles.length === 1) {
+                selectedFileName.textContent = `${selectedFiles[0].name} (${formatFileSize(selectedFiles[0].size)})`;
+                selectedFilesList.classList.remove('show');
+            } else {
+                selectedFileName.textContent = `已选择 ${selectedFiles.length} 个文件`;
+                renderSelectedFilesList();
+                selectedFilesList.classList.add('show');
             }
         });
+        
+        // 渲染选中文件列表
+        function renderSelectedFilesList() {
+            selectedFilesList.innerHTML = selectedFiles.map((file, index) => `
+                <div class="selected-file-item" data-index="${index}">
+                    <span class="file-info" title="${file.name}">${truncateFileName(file.name, 40)}</span>
+                    <span class="file-size">${formatFileSize(file.size)}</span>
+                    <span class="remove-file" onclick="removeSelectedFile(${index})">✕</span>
+                </div>
+            `).join('');
+        }
+        
+        // 移除选中的文件
+        function removeSelectedFile(index) {
+            selectedFiles.splice(index, 1);
+            
+            if (selectedFiles.length === 0) {
+                selectedFileName.textContent = '未选择文件';
+                selectedFilesList.classList.remove('show');
+                fileInput.value = '';
+            } else if (selectedFiles.length === 1) {
+                selectedFileName.textContent = `${selectedFiles[0].name} (${formatFileSize(selectedFiles[0].size)})`;
+                selectedFilesList.classList.remove('show');
+            } else {
+                selectedFileName.textContent = `已选择 ${selectedFiles.length} 个文件`;
+                renderSelectedFilesList();
+            }
+        }
         
         // 表单提交事件
         uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const file = fileInput.files[0];
-            if (!file) {
+            if (selectedFiles.length === 0) {
                 alert('请先选择文件！');
                 return;
             }
             
-            // 创建上传任务
-            await createUploadTask(file);
+            // 禁用上传按钮
+            const uploadBtn = document.getElementById('uploadBtn');
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = '上传中...';
+            
+            // 批量创建上传任务
+            const uploadPromises = [];
+            for (const file of selectedFiles) {
+                uploadPromises.push(createUploadTask(file));
+            }
+            
+            // 等待所有上传任务启动完成
+            await Promise.allSettled(uploadPromises);
             
             // 清空文件选择
             fileInput.value = '';
             selectedFileName.textContent = '未选择文件';
+            selectedFiles = [];
+            selectedFilesList.classList.remove('show');
+            
+            // 恢复上传按钮
+            uploadBtn.disabled = false;
+            uploadBtn.textContent = '开始上传';
         });
         
         // 格式化文件大小

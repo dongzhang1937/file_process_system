@@ -50,6 +50,15 @@ These commands will be automatically translated to their PostgreSQL equivalents.
 				user = "postgres"
 			}
 		}
+		
+		// 为 PostgreSQL 设置默认数据库名称
+		if database == "" {
+			if dbType == "pg" || dbType == "postgresql" {
+				database = "postgres"  // PostgreSQL 默认数据库
+			} else if dbType == "mysql" {
+				database = "mysql"     // MySQL 默认数据库
+			}
+		}
 
 		cfg := &client.Config{
 			Host:     host,

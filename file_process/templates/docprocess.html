@@ -526,12 +526,16 @@
             <button class="btn btn-primary" onclick="openAddModal()">
                 添加文档
             </button>
+            <button class="btn btn-success" id="batchProcessBtn" onclick="batchProcessDocs()" disabled>
+                批量处理
+            </button>
             <button class="btn btn-info" onclick="loadDocProcessList()">
                 刷新列表
             </button>
             <button class="btn btn-warning" onclick="recoverOrphanedTasks()" title="恢复系统重启后丢失的处理任务">
                 恢复任务
             </button>
+            <span id="selectedProcessCount" style="color: #666; font-size: 13px; margin-left: 10px;">已选 0 个</span>
         </div>
 
         <!-- 文档列表 -->
@@ -543,13 +547,23 @@
 
 <!-- 添加文档模态框 -->
 <div id="addModal" class="modal">
-    <div class="modal-content" style="max-width: 600px;">
+    <div class="modal-content" style="max-width: 700px;">
         <div class="modal-header">
             <h3 class="modal-title">添加文档到处理列表</h3>
             <span class="modal-close" onclick="closeAddModal()">&times;</span>
         </div>
         <div class="modal-body">
-            <p style="margin-bottom: 15px; color: #666;">请从文档上传列表中选择要处理的文档:</p>
+            <p style="margin-bottom: 15px; color: #666;">请从文档上传列表中选择要处理的文档（支持多选）:</p>
+            <div class="batch-action-bar" style="margin-bottom: 15px; padding: 10px; background: #e8f4f8; border-radius: 5px; display: flex; align-items: center; gap: 15px;">
+                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                    <input type="checkbox" id="selectAllDocs" onchange="toggleSelectAllDocs()">
+                    <span>全选</span>
+                </label>
+                <span id="selectedDocsCount" style="color: #666; font-size: 13px;">已选 0 个</span>
+                <button class="btn btn-success btn-sm" id="batchAddBtn" onclick="batchAddDocs()" disabled style="margin-left: auto;">
+                    批量添加
+                </button>
+            </div>
             <div id="uploadDocList" style="max-height: 400px; overflow-y: auto;">
                 <div class="loading">加载中...</div>
             </div>
@@ -662,6 +676,7 @@ function renderDocList(documents) {
                 <p style="font-size: 14px; margin-top: 10px;">点击"添加文档"按钮开始</p>
             </div>
         `;
+        updateProcessSelectedCount();
         return;
     }
 
@@ -669,20 +684,32 @@ function renderDocList(documents) {
         <table class="doc-table">
             <thead>
                 <tr>
+                    <th style="width: 40px;">
+                        <input type="checkbox" id="selectAllProcess" onchange="toggleSelectAllProcess()">
+                    </th>
                     <th style="width: 5%;">序号</th>
-                    <th style="width: 25%;">文件名</th>
+                    <th style="width: 22%;">文件名</th>
                     <th style="width: 10%;">状态</th>
-                    <th style="width: 15%;">添加时间</th>
-                    <th style="width: 15%;">处理时间</th>
-                    <th style="width: 35%;">操作</th>
+                    <th style="width: 13%;">添加时间</th>
+                    <th style="width: 13%;">处理时间</th>
+                    <th style="width: 32%;">操作</th>
                 </tr>
             </thead>
             <tbody>
     `;
 
     documents.forEach((doc, index) => {
+        // 只有 pending 和 failed 状态的文档可以被选中批量处理
+        const canSelect = doc.status === 'pending' || doc.status === 'failed';
         html += `
             <tr data-doc-id="${doc.doc_id}">
+                <td>
+                    <input type="checkbox" class="process-checkbox" 
+                           data-doc-id="${doc.doc_id}" 
+                           data-status="${doc.status}"
+                           onchange="onProcessCheckChange()"
+                           ${canSelect ? '' : 'disabled'}>
+                </td>
                 <td>${index + 1}</td>
                 <td>${escapeHtml(doc.filename)}</td>
                 <td><span class="status-cell status-badge status-${doc.status}">${getStatusText(doc.status)}</span></td>
@@ -722,6 +749,7 @@ function renderDocList(documents) {
     `;
 
     container.innerHTML = html;
+    updateProcessSelectedCount();
 }
 
 // 获取状态文本
@@ -795,14 +823,38 @@ function renderUploadDocList(documents) {
                 <p>暂无可添加的文档</p>
             </div>
         `;
+        // 隐藏批量操作栏
+        document.querySelector('.batch-action-bar').style.display = 'none';
         return;
     }
 
-    let html = '<table class="doc-table"><thead><tr><th>文件名</th><th>上传时间</th><th>操作</th></tr></thead><tbody>';
+    // 显示批量操作栏
+    document.querySelector('.batch-action-bar').style.display = 'flex';
+    
+    // 重置全选状态
+    document.getElementById('selectAllDocs').checked = false;
+    updateSelectedDocsCount();
+
+    let html = `<table class="doc-table">
+        <thead>
+            <tr>
+                <th style="width: 40px;"></th>
+                <th>文件名</th>
+                <th style="width: 150px;">上传时间</th>
+                <th style="width: 80px;">操作</th>
+            </tr>
+        </thead>
+        <tbody>`;
 
     documents.forEach(doc => {
         html += `
-            <tr>
+            <tr data-upload-id="${doc.upload_id}">
+                <td>
+                    <input type="checkbox" class="doc-checkbox" 
+                           data-upload-id="${doc.upload_id}" 
+                           data-filename="${escapeHtml(doc.filename)}"
+                           onchange="onDocCheckChange()">
+                </td>
                 <td>${escapeHtml(doc.filename)}</td>
                 <td>${formatDate(doc.created_at)}</td>
                 <td>
@@ -841,6 +893,106 @@ async function addDoc(uploadId, filename) {
         console.error('添加文档失败:', error);
         alert(`添加失败: ${error.message}`);
     }
+}
+
+// 全选/取消全选文档
+function toggleSelectAllDocs() {
+    const selectAll = document.getElementById('selectAllDocs');
+    const checkboxes = document.querySelectorAll('.doc-checkbox');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    updateSelectedDocsCount();
+}
+
+// 文档复选框变化时
+function onDocCheckChange() {
+    const checkboxes = document.querySelectorAll('.doc-checkbox');
+    const checkedBoxes = document.querySelectorAll('.doc-checkbox:checked');
+    const selectAll = document.getElementById('selectAllDocs');
+    
+    if (checkedBoxes.length === 0) {
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
+    } else if (checkedBoxes.length === checkboxes.length) {
+        selectAll.checked = true;
+        selectAll.indeterminate = false;
+    } else {
+        selectAll.checked = false;
+        selectAll.indeterminate = true;
+    }
+    
+    updateSelectedDocsCount();
+}
+
+// 更新已选文档数量显示
+function updateSelectedDocsCount() {
+    const checkedBoxes = document.querySelectorAll('.doc-checkbox:checked');
+    const countEl = document.getElementById('selectedDocsCount');
+    const batchBtn = document.getElementById('batchAddBtn');
+    
+    countEl.textContent = `已选 ${checkedBoxes.length} 个`;
+    batchBtn.disabled = checkedBoxes.length === 0;
+}
+
+// 批量添加文档
+async function batchAddDocs() {
+    const checkedBoxes = document.querySelectorAll('.doc-checkbox:checked');
+    if (checkedBoxes.length === 0) {
+        alert('请至少选择一个文档');
+        return;
+    }
+    
+    const selectedDocs = [];
+    checkedBoxes.forEach(cb => {
+        selectedDocs.push({
+            upload_id: cb.dataset.uploadId,
+            filename: cb.dataset.filename
+        });
+    });
+    
+    if (!confirm(`确定要添加 ${selectedDocs.length} 个文档到处理列表吗？`)) {
+        return;
+    }
+    
+    const batchBtn = document.getElementById('batchAddBtn');
+    batchBtn.disabled = true;
+    batchBtn.textContent = '添加中...';
+    
+    let successCount = 0;
+    let failedDocs = [];
+    
+    // 逐个添加（也可以改为后端批量接口）
+    for (const doc of selectedDocs) {
+        try {
+            const response = await fetch(`${API_BASE}/add`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({upload_id: doc.upload_id}),
+                credentials: 'same-origin'
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                successCount++;
+            } else {
+                failedDocs.push(`${doc.filename}: ${result.error}`);
+            }
+        } catch (error) {
+            failedDocs.push(`${doc.filename}: ${error.message}`);
+        }
+    }
+    
+    batchBtn.disabled = false;
+    batchBtn.textContent = '批量添加';
+    
+    if (failedDocs.length === 0) {
+        alert(`成功添加 ${successCount} 个文档！`);
+    } else {
+        alert(`成功添加 ${successCount} 个文档\n\n以下文档添加失败：\n${failedDocs.join('\n')}`);
+    }
+    
+    closeAddModal();
+    loadDocProcessList();
 }
 
 // 处理文档
@@ -1462,6 +1614,120 @@ window.onclick = function(event) {
 
 // 页面加载时获取文档列表
 loadDocProcessList();
+
+// 全选/取消全选处理列表
+function toggleSelectAllProcess() {
+    const selectAll = document.getElementById('selectAllProcess');
+    const checkboxes = document.querySelectorAll('.process-checkbox:not(:disabled)');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    updateProcessSelectedCount();
+}
+
+// 处理列表复选框变化时
+function onProcessCheckChange() {
+    const checkboxes = document.querySelectorAll('.process-checkbox:not(:disabled)');
+    const checkedBoxes = document.querySelectorAll('.process-checkbox:checked');
+    const selectAll = document.getElementById('selectAllProcess');
+    
+    if (!selectAll) return;
+    
+    if (checkedBoxes.length === 0) {
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
+    } else if (checkedBoxes.length === checkboxes.length && checkboxes.length > 0) {
+        selectAll.checked = true;
+        selectAll.indeterminate = false;
+    } else {
+        selectAll.checked = false;
+        selectAll.indeterminate = true;
+    }
+    
+    updateProcessSelectedCount();
+}
+
+// 更新已选处理文档数量显示
+function updateProcessSelectedCount() {
+    const checkedBoxes = document.querySelectorAll('.process-checkbox:checked');
+    const countEl = document.getElementById('selectedProcessCount');
+    const batchBtn = document.getElementById('batchProcessBtn');
+    
+    if (countEl) {
+        countEl.textContent = `已选 ${checkedBoxes.length} 个`;
+    }
+    if (batchBtn) {
+        batchBtn.disabled = checkedBoxes.length === 0;
+    }
+}
+
+// 批量处理文档
+async function batchProcessDocs() {
+    const checkedBoxes = document.querySelectorAll('.process-checkbox:checked');
+    if (checkedBoxes.length === 0) {
+        alert('请至少选择一个文档');
+        return;
+    }
+    
+    const selectedDocs = [];
+    checkedBoxes.forEach(cb => {
+        selectedDocs.push({
+            doc_id: cb.dataset.docId,
+            status: cb.dataset.status
+        });
+    });
+    
+    if (!confirm(`确定要批量处理 ${selectedDocs.length} 个文档吗？`)) {
+        return;
+    }
+    
+    const batchBtn = document.getElementById('batchProcessBtn');
+    batchBtn.disabled = true;
+    batchBtn.textContent = '处理中...';
+    
+    let successCount = 0;
+    let failedDocs = [];
+    
+    // 逐个提交处理任务
+    for (const doc of selectedDocs) {
+        try {
+            const response = await fetch(`${API_BASE}/process`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({doc_id: doc.doc_id, reprocess: doc.status === 'completed'}),
+                credentials: 'same-origin'
+            });
+            
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                failedDocs.push(`${doc.doc_id}: 服务器返回非JSON响应`);
+                continue;
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                successCount++;
+                // 启动轮询
+                pollDocStatus(doc.doc_id);
+            } else {
+                failedDocs.push(`${doc.doc_id}: ${result.error}`);
+            }
+        } catch (error) {
+            failedDocs.push(`${doc.doc_id}: ${error.message}`);
+        }
+    }
+    
+    batchBtn.disabled = false;
+    batchBtn.textContent = '批量处理';
+    
+    if (failedDocs.length === 0) {
+        alert(`成功提交 ${successCount} 个文档处理任务！`);
+    } else {
+        alert(`成功提交 ${successCount} 个任务\n\n以下文档提交失败：\n${failedDocs.join('\n')}`);
+    }
+    
+    // 刷新列表
+    loadDocProcessList();
+}
 </script>
 
 {% endblock %}

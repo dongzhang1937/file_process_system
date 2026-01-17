@@ -1,0 +1,31 @@
+# Go 编译产物
+mygo
+/mygo-*
+*.exe
+
+# 分发的二进制文件（现在允许上传到仓库）
+# dist/*.tar.gz
+# dist/*.zip
+# dist/checksums.sha256
+
+# Go 安装包
+go*.tar.gz
+go*.linux-*.tar.gz
+
+# 临时文件
+*.tmp
+*.log
+
+# IDE 文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 测试覆盖率文件
+*.out
+coverage.html

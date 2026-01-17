@@ -227,6 +227,12 @@ func (c *Client) handleSpecialCommand(result *translator.TranslationResult) erro
 		}
 		return c.showCreateTable(result.Args[0])
 
+	case "show_create_database":
+		if len(result.Args) < 1 {
+			return fmt.Errorf("database name required")
+		}
+		return c.showCreateDatabase(result.Args[0])
+
 	case "cross_db_query":
 		// For cross-database queries, we need to handle specially
 		// For now, just execute the query in current database
@@ -236,6 +242,22 @@ func (c *Client) handleSpecialCommand(result *translator.TranslationResult) erro
 		}
 		defer rows.Close()
 		return c.printResults(rows)
+
+	case "show_help":
+		c.printShowHelp()
+		return nil
+
+	case "show_create_help":
+		c.printShowCreateHelp()
+		return nil
+
+	case "show_tables_help":
+		c.printShowTablesHelp()
+		return nil
+
+	case "show_columns_help":
+		c.printShowColumnsHelp()
+		return nil
 
 	default:
 		return fmt.Errorf("unknown special command: %s", result.SpecialType)
@@ -282,6 +304,46 @@ func (c *Client) showCreateTable(tableName string) error {
 
 	// Print table name and create statement
 	fmt.Printf("Table: %s\n", tableName)
+	return c.printResults(rows)
+}
+
+func (c *Client) showCreateDatabase(dbName string) error {
+	if c.conn.Config.DBType == db.MySQL {
+		rows, err := c.conn.Query("SHOW CREATE DATABASE " + dbName)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		return c.printResults(rows)
+	}
+
+	// PostgreSQL: Generate CREATE DATABASE statement
+	query := fmt.Sprintf(`
+		SELECT 
+			'CREATE DATABASE ' || datname || 
+			' WITH OWNER = ' || pg_catalog.pg_get_userbyid(datdba) ||
+			' ENCODING = ''' || pg_encoding_to_char(encoding) || '''' ||
+			CASE 
+				WHEN datcollate IS NOT NULL THEN ' LC_COLLATE = ''' || datcollate || ''''
+				ELSE ''
+			END ||
+			CASE 
+				WHEN datctype IS NOT NULL THEN ' LC_CTYPE = ''' || datctype || ''''
+				ELSE ''
+			END ||
+			';' AS "Create Database"
+		FROM pg_database 
+		WHERE datname = '%s'
+	`, dbName)
+
+	rows, err := c.conn.Query(query)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	// Print database name and create statement
+	fmt.Printf("Database: %s\n", dbName)
 	return c.printResults(rows)
 }
 
@@ -424,6 +486,133 @@ Standard SQL:
 
 Note: When connected to PostgreSQL, MySQL-style commands are
 automatically translated to their PostgreSQL equivalents.
+`
+	fmt.Println(help)
+}
+
+func (c *Client) printShowHelp() {
+	help := `
+SHOW Command Help
+=================
+
+Available SHOW commands:
+
+Database and Schema:
+  SHOW DATABASES;                   List all databases
+  SHOW SCHEMAS;                     List all schemas
+
+Tables and Structure:
+  SHOW TABLES;                      List tables in current database
+  SHOW TABLES FROM db;              List tables in specified database
+  SHOW FULL TABLES;                 List tables with type
+  SHOW TABLE STATUS;                Show table status info
+
+Column and Index Information:
+  SHOW COLUMNS FROM table;          Show table columns
+  SHOW FULL COLUMNS FROM table;     Show detailed column info
+  SHOW INDEX FROM table;            Show table indexes
+  SHOW CREATE TABLE table;          Show CREATE TABLE statement
+
+Server Information:
+  SHOW STATUS;                      Show server status
+  SHOW VARIABLES;                   Show server variables
+  SHOW VARIABLES LIKE 'pattern';    Show matching variables
+  SHOW PROCESSLIST;                 Show active connections
+
+User and Security:
+  SHOW GRANTS;                      Show current user grants
+  SHOW GRANTS FOR user;             Show grants for user
+
+Other:
+  SHOW TRIGGERS;                    Show triggers
+  SHOW FUNCTION STATUS;             Show functions
+  SHOW ENGINES;                     Show storage engines
+  SHOW CHARSET;                     Show character sets
+  SHOW COLLATION;                   Show collations
+
+Usage: 
+  - Use 'SHOW <command> --help' for specific command help
+  - Example: SHOW CREATE --help, SHOW TABLES --help
+`
+	fmt.Println(help)
+}
+
+func (c *Client) printShowCreateHelp() {
+	help := `
+SHOW CREATE Command Help
+========================
+
+SHOW CREATE TABLE table_name;
+SHOW CREATE DATABASE database_name;
+
+Description:
+  - SHOW CREATE TABLE: Shows the CREATE TABLE statement for the specified table
+  - SHOW CREATE DATABASE: Shows the CREATE DATABASE statement for the specified database
+  
+Examples:
+  SHOW CREATE TABLE users;
+  SHOW CREATE TABLE categories;
+  SHOW CREATE TABLE products;
+  
+  SHOW CREATE DATABASE mydb;
+  SHOW CREATE DATABASE t11;
+  SHOW CREATE DATABASE postgres;
+
+Note:
+  - Replace 'table_name' with the actual name of your table
+  - Replace 'database_name' with the actual name of your database
+  - The table/database must exist
+  - For PostgreSQL, this generates equivalent CREATE statements
+`
+	fmt.Println(help)
+}
+
+func (c *Client) printShowTablesHelp() {
+	help := `
+SHOW TABLES Command Help
+========================
+
+SHOW TABLES;                      List tables in current database
+SHOW TABLES FROM database_name;   List tables in specified database
+SHOW FULL TABLES;                 List tables with type information
+
+Examples:
+  SHOW TABLES;
+  SHOW TABLES FROM mydb;
+  SHOW FULL TABLES;
+
+Description:
+  - SHOW TABLES: Lists all tables in the current database
+  - SHOW TABLES FROM db: Lists tables in the specified database
+  - SHOW FULL TABLES: Shows tables with additional type information
+`
+	fmt.Println(help)
+}
+
+func (c *Client) printShowColumnsHelp() {
+	help := `
+SHOW COLUMNS Command Help
+=========================
+
+SHOW COLUMNS FROM table_name;
+SHOW FULL COLUMNS FROM table_name;
+DESC table_name;
+DESCRIBE table_name;
+
+Examples:
+  SHOW COLUMNS FROM users;
+  SHOW FULL COLUMNS FROM products;
+  DESC categories;
+  DESCRIBE orders;
+
+Description:
+  - SHOW COLUMNS FROM: Shows basic column information (name, type, null, key, default, extra)
+  - SHOW FULL COLUMNS FROM: Shows detailed column information including collation and privileges
+  - DESC/DESCRIBE: Shorthand for SHOW COLUMNS FROM
+
+Note:
+  - Replace 'table_name' with the actual name of your table
+  - The table must exist in the current database
 `
 	fmt.Println(help)
 }

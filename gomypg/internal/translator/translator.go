@@ -44,6 +44,11 @@ func (t *Translator) translateForPostgres(input string) (*TranslationResult, err
 	trimmedInput := strings.TrimSuffix(input, ";")
 	upperTrimmed := strings.ToUpper(trimmedInput)
 
+	// Handle help commands
+	if result := t.handleHelpCommands(trimmedInput); result != nil {
+		return result, nil
+	}
+
 	// SHOW DATABASES -> SELECT datname FROM pg_database
 	if upperTrimmed == "SHOW DATABASES" {
 		return &TranslationResult{
@@ -140,6 +145,17 @@ func (t *Translator) translateForPostgres(input string) (*TranslationResult, err
 			IsSpecial:   true,
 			SpecialType: "show_create_table",
 			Args:        []string{tableName},
+		}, nil
+	}
+
+	// SHOW CREATE DATABASE database
+	showCreateDatabaseRe := regexp.MustCompile(`(?i)^SHOW\s+CREATE\s+DATABASE\s+(\w+)$`)
+	if matches := showCreateDatabaseRe.FindStringSubmatch(trimmedInput); matches != nil {
+		dbName := matches[1]
+		return &TranslationResult{
+			IsSpecial:   true,
+			SpecialType: "show_create_database",
+			Args:        []string{dbName},
 		}, nil
 	}
 
@@ -486,4 +502,43 @@ func (t *Translator) translateBackslashCommand(input string) (*TranslationResult
 	default:
 		return nil, fmt.Errorf("unknown command: %s", cmd)
 	}
+}
+
+// handleHelpCommands handles --help syntax for various commands
+func (t *Translator) handleHelpCommands(input string) *TranslationResult {
+	upperInput := strings.ToUpper(strings.TrimSpace(input))
+	
+	// SHOW --help
+	if upperInput == "SHOW --HELP" {
+		return &TranslationResult{
+			IsSpecial:   true,
+			SpecialType: "show_help",
+		}
+	}
+	
+	// SHOW CREATE --help
+	if upperInput == "SHOW CREATE --HELP" {
+		return &TranslationResult{
+			IsSpecial:   true,
+			SpecialType: "show_create_help",
+		}
+	}
+	
+	// SHOW TABLES --help
+	if upperInput == "SHOW TABLES --HELP" {
+		return &TranslationResult{
+			IsSpecial:   true,
+			SpecialType: "show_tables_help",
+		}
+	}
+	
+	// SHOW COLUMNS --help or DESC --help
+	if upperInput == "SHOW COLUMNS --HELP" || upperInput == "DESC --HELP" || upperInput == "DESCRIBE --HELP" {
+		return &TranslationResult{
+			IsSpecial:   true,
+			SpecialType: "show_columns_help",
+		}
+	}
+	
+	return nil
 }
