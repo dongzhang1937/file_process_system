@@ -948,6 +948,27 @@ def process_document_task(self, doc_id, file_path, username, filename):
                 task_dml_sql(update_sql, parameters=(json.dumps(process_result, ensure_ascii=False), doc_id))
 
                 logger.info(f"Word文档处理成功: doc_id={doc_id}, chapters={result.get('chapters')}, images={result.get('images')}")
+                
+                # 异步执行文档向量化（用于语义搜索）
+                try:
+                    from .embedding_service import get_vector_store
+                    vector_store = get_vector_store()
+                    
+                    # 获取文档的所有章节
+                    chapters_sql = """
+                        SELECT id, title, content, level, parent_id
+                        FROM chapters
+                        WHERE document_id = %s
+                    """
+                    chapters = query_sql(chapters_sql, (doc_id,))
+                    
+                    if chapters:
+                        embed_count = vector_store.add_document_embeddings(doc_id, chapters)
+                        logger.info(f"文档向量化完成: doc_id={doc_id}, 向量数={embed_count}")
+                except Exception as embed_error:
+                    # 向量化失败不影响主流程
+                    logger.warning(f"文档向量化失败（不影响主流程）: {embed_error}")
+                
                 return process_result
             else:
                 # 处理失败

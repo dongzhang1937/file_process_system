@@ -181,6 +181,10 @@ class WebSearchConfigManager:
     """网络搜索配置管理器"""
     
     SUPPORTED_ENGINES = {
+        'duckduckgo': {
+            'name': 'DuckDuckGo（免费）',
+            'default_url': ''
+        },
         'google': {
             'name': 'Google搜索',
             'default_url': 'https://www.googleapis.com/customsearch/v1'

@@ -563,6 +563,58 @@
     }
 
     /* LLM Tab 样式 */
+    .llm-options-bar {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 12px 20px;
+        background: #f0f4ff;
+        border-bottom: 1px solid #ddd;
+        flex-wrap: wrap;
+    }
+    
+    .llm-options-bar .option-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+    }
+    
+    .llm-options-bar select {
+        padding: 6px 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 13px;
+        background: white;
+    }
+    
+    .llm-status {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: auto;
+        font-size: 12px;
+    }
+    
+    .llm-status .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #999;
+    }
+    
+    .llm-status.ready .status-dot {
+        background: #28a745;
+    }
+    
+    .llm-status.error .status-dot {
+        background: #dc3545;
+    }
+    
+    .llm-status .status-text {
+        color: #666;
+    }
+
     .llm-placeholder {
         flex: 1;
         display: flex;
@@ -606,6 +658,192 @@
     .llm-features li {
         margin-bottom: 8px;
     }
+    
+    /* LLM结果样式 */
+    .llm-result {
+        margin-top: 10px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .llm-result-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 15px;
+        background: #667eea;
+        color: white;
+    }
+    
+    .match-type-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: bold;
+    }
+    
+    .match-type-badge.exact {
+        background: #28a745;
+    }
+    
+    .match-type-badge.semantic {
+        background: #17a2b8;
+    }
+    
+    .match-type-badge.web {
+        background: #fd7e14;
+    }
+    
+    .match-type-badge.llm_generated {
+        background: #6f42c1;
+    }
+    
+    .match-type-badge.none, .match-type-badge.error {
+        background: #dc3545;
+    }
+    
+    .llm-result-body {
+        padding: 15px;
+    }
+    
+    .llm-source-info {
+        font-size: 12px;
+        color: #666;
+        padding: 8px 12px;
+        background: #e9ecef;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+    
+    .llm-answer {
+        padding: 10px;
+        background: white;
+        border-radius: 5px;
+        line-height: 1.8;
+        white-space: pre-wrap;
+    }
+    
+    .confidence-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 10px;
+        font-size: 12px;
+        color: #666;
+    }
+    
+    .confidence-bar .bar {
+        flex: 1;
+        height: 6px;
+        background: #e9ecef;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    
+    .confidence-bar .bar-fill {
+        height: 100%;
+        background: #667eea;
+        border-radius: 3px;
+        transition: width 0.3s;
+    }
+    
+    /* 批量分析结果样式 */
+    .batch-results {
+        margin-top: 15px;
+    }
+    
+    .batch-summary {
+        display: flex;
+        gap: 15px;
+        padding: 12px 15px;
+        background: #e8f4f8;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+    }
+    
+    .batch-summary .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 13px;
+    }
+    
+    .batch-summary .stat-count {
+        font-weight: bold;
+        color: #667eea;
+    }
+    
+    .requirement-item {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        overflow: hidden;
+    }
+    
+    .requirement-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 15px;
+        background: #f8f9fa;
+        cursor: pointer;
+    }
+    
+    .requirement-header:hover {
+        background: #e9ecef;
+    }
+    
+    .requirement-index {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        background: #667eea;
+        color: white;
+        border-radius: 50%;
+        font-size: 12px;
+        font-weight: bold;
+        margin-right: 10px;
+    }
+    
+    .requirement-title {
+        flex: 1;
+        font-weight: 500;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .requirement-body {
+        padding: 15px;
+        display: none;
+    }
+    
+    .requirement-body.show {
+        display: block;
+    }
+    
+    .req-section {
+        margin-bottom: 12px;
+    }
+    
+    .req-section-title {
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 5px;
+        font-size: 13px;
+    }
+    
+    .req-section-content {
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 5px;
+        line-height: 1.6;
+    }
 
     /* 加载动画 */
     .loading {
@@ -628,6 +866,452 @@
         align-items: center;
         gap: 10px;
         color: #666;
+    }
+    
+    /* LLM配置弹窗样式 */
+    .llm-config-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .llm-config-modal.show {
+        display: flex;
+    }
+    
+    .llm-modal-content {
+        background: #fff;
+        border-radius: 10px;
+        width: 650px;
+        max-width: 90%;
+        max-height: 85vh;
+        overflow-y: auto;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    }
+    
+    .llm-modal-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #e4e7ed;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .llm-modal-header h3 {
+        margin: 0;
+        font-size: 18px;
+        color: #333;
+    }
+    
+    .llm-modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #909399;
+        line-height: 1;
+    }
+    
+    .llm-modal-close:hover {
+        color: #333;
+    }
+    
+    .llm-modal-body {
+        padding: 20px;
+    }
+    
+    .llm-config-list {
+        margin-bottom: 16px;
+    }
+    
+    .llm-config-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 15px;
+        border: 1px solid #e4e7ed;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        transition: all 0.2s;
+    }
+    
+    .llm-config-item:hover {
+        border-color: #667eea;
+    }
+    
+    .llm-config-item.default {
+        border-color: #667eea;
+        background: #f0f4ff;
+    }
+    
+    .llm-config-info {
+        flex: 1;
+    }
+    
+    .llm-config-name {
+        font-weight: 600;
+        margin-bottom: 4px;
+        color: #333;
+    }
+    
+    .llm-config-detail {
+        font-size: 12px;
+        color: #909399;
+    }
+    
+    .llm-config-actions {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .llm-config-actions button {
+        padding: 5px 12px;
+        font-size: 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        border: 1px solid #dcdfe6;
+        background: #fff;
+        transition: all 0.2s;
+    }
+    
+    .llm-config-actions button:hover {
+        border-color: #667eea;
+        color: #667eea;
+    }
+    
+    .llm-config-actions button.danger:hover {
+        border-color: #dc3545;
+        color: #dc3545;
+    }
+    
+    .llm-form-group {
+        margin-bottom: 15px;
+    }
+    
+    .llm-form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        color: #606266;
+        font-weight: 500;
+    }
+    
+    .llm-form-group input,
+    .llm-form-group select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #dcdfe6;
+        border-radius: 5px;
+        font-size: 14px;
+        box-sizing: border-box;
+        transition: border-color 0.2s;
+    }
+    
+    .llm-form-group input:focus,
+    .llm-form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    .llm-form-row {
+        display: flex;
+        gap: 15px;
+    }
+    
+    .llm-form-row .llm-form-group {
+        flex: 1;
+    }
+    
+    /* 招标作答样式 */
+    .bid-preview {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+    }
+    
+    .bid-preview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e4e7ed;
+    }
+    
+    .bid-preview-header h4 {
+        margin: 0;
+        color: #333;
+    }
+    
+    .bid-section-item {
+        background: #fff;
+        border: 1px solid #e4e7ed;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        overflow: hidden;
+    }
+    
+    .bid-section-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 15px;
+        background: #f5f7fa;
+    }
+    
+    .bid-section-header .section-number {
+        background: #667eea;
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .bid-section-header .section-title {
+        flex: 1;
+        font-weight: 500;
+    }
+    
+    .bid-section-header .section-count {
+        color: #909399;
+        font-size: 12px;
+    }
+    
+    .bid-requirements-list {
+        padding: 10px 15px;
+    }
+    
+    .bid-req-item {
+        display: flex;
+        gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1px dashed #eee;
+    }
+    
+    .bid-req-item:last-child {
+        border-bottom: none;
+    }
+    
+    .bid-req-item .req-idx {
+        color: #667eea;
+        font-weight: 600;
+        min-width: 25px;
+    }
+    
+    .bid-req-item .req-text {
+        color: #606266;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+    
+    .bid-req-more {
+        color: #909399;
+        font-size: 12px;
+        padding: 8px 0;
+        text-align: center;
+    }
+    
+    .bid-warning {
+        background: #fff3cd;
+        color: #856404;
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+        font-size: 13px;
+    }
+    
+    .bid-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #e4e7ed;
+    }
+    
+    /* 招标作答结果样式 */
+    .bid-results {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+    }
+    
+    .bid-results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .bid-results-header h4 {
+        margin: 0;
+        color: #333;
+    }
+    
+    .bid-results-header .doc-info {
+        color: #909399;
+        font-size: 13px;
+    }
+    
+    .bid-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        padding: 15px;
+        background: #fff;
+        border-radius: 6px;
+        margin-bottom: 15px;
+    }
+    
+    .bid-summary .summary-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 70px;
+    }
+    
+    .bid-summary .summary-item span {
+        font-size: 12px;
+        color: #909399;
+    }
+    
+    .bid-summary .summary-item strong {
+        font-size: 20px;
+        font-weight: 600;
+    }
+    
+    .bid-export-actions {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        padding: 10px 15px;
+        background: #e8f4f8;
+        border-radius: 6px;
+    }
+    
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+    
+    .bid-section-result {
+        background: #fff;
+        border: 1px solid #e4e7ed;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        overflow: hidden;
+    }
+    
+    .section-result-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 15px;
+        background: #f5f7fa;
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .section-result-header:hover {
+        background: #eef1f6;
+    }
+    
+    .section-result-header .section-num {
+        background: #667eea;
+        color: #fff;
+        padding: 3px 10px;
+        border-radius: 4px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+    
+    .section-result-header .section-title {
+        flex: 1;
+        font-weight: 500;
+    }
+    
+    .section-result-header .section-toggle {
+        color: #909399;
+        transition: transform 0.2s;
+    }
+    
+    .section-result-body {
+        padding: 10px 15px;
+    }
+    
+    .bid-answer-item {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .bid-answer-item:last-child {
+        border-bottom: none;
+    }
+    
+    .answer-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .answer-header .answer-idx {
+        background: #e8f4fd;
+        color: #1890ff;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .answer-header .match-badge {
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+    
+    .answer-requirement {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+    
+    .answer-requirement em {
+        color: #909399;
+        display: block;
+        margin-top: 5px;
+    }
+    
+    .answer-content {
+        font-size: 13px;
+        line-height: 1.6;
+    }
+    
+    .answer-content .answer-text {
+        background: #f0fff4;
+        border-left: 3px solid #28a745;
+        padding: 10px;
+        margin-top: 8px;
+        border-radius: 0 4px 4px 0;
+        white-space: pre-wrap;
+    }
+    
+    .answer-source {
+        margin-top: 8px;
+        font-size: 12px;
+        color: #909399;
     }
 </style>
 
@@ -667,7 +1351,7 @@
                         <div class="message-content">
                             欢迎使用文档对话功能！您可以：
                             <br>1. 输入关键词进行精确匹配或模糊匹配
-                            <br>2. 上传TXT文件批量查询（每行一个关键词）
+                            <br>2. 上传TXT/DOCX文件批量查询（TXT每行一个关键词，DOCX自动解析）
                             <br>3. 查询结果可导出为Word文档
                         </div>
                         <div class="message-time">系统消息</div>
@@ -681,8 +1365,8 @@
                     </div>
                     <div class="input-row">
                         <div class="file-upload-area">
-                            <input type="file" id="txtFile" class="file-input" accept=".txt">
-                            <label for="txtFile" class="file-label">📄 上传TXT批量查询</label>
+                            <input type="file" id="txtFile" class="file-input" accept=".txt,.docx">
+                            <label for="txtFile" class="file-label">📄 上传批量查询文件</label>
                             <span class="file-name" id="fileName"></span>
                         </div>
                         <div style="flex: 1;"></div>
@@ -703,26 +1387,76 @@
 
         <!-- LLM匹配 Tab -->
         <div id="tab-llm" class="tab-content">
-            <div class="llm-placeholder">
-                <h2>🤖 LLM智能匹配</h2>
-                <p>LLM匹配功能正在开发中，该功能将使用大语言模型进行智能语义匹配，能够理解自然语言查询并返回最相关的文档内容。</p>
-                
-                <div class="llm-features">
-                    <h4>计划实现的功能：</h4>
-                    <ul>
-                        <li><strong>语义理解</strong>：理解用户的自然语言查询意图</li>
-                        <li><strong>智能检索</strong>：使用向量相似度检索最相关的章节</li>
-                        <li><strong>上下文对话</strong>：支持多轮对话，理解上下文</li>
-                        <li><strong>答案生成</strong>：基于检索内容生成准确的回答</li>
-                        <li><strong>来源引用</strong>：标注答案来源的具体章节</li>
-                    </ul>
-                    
-                    <h4 style="margin-top: 20px;">技术方案：</h4>
-                    <ul>
-                        <li>RAG（检索增强生成）架构</li>
-                        <li>向量数据库存储文档嵌入</li>
-                        <li>支持多种LLM（GPT-4、Claude、文心一言等）</li>
-                    </ul>
+            <!-- 文档选择区 -->
+            <div class="doc-selector">
+                <h4>选择查询范围（不选则查询所有文档）:</h4>
+                <div class="doc-list" id="llmDocList">
+                    <span style="color: #999;">加载中...</span>
+                </div>
+            </div>
+            
+            <!-- LLM配置和选项区 -->
+            <div class="llm-options-bar">
+                <div class="option-group">
+                    <label>LLM配置：</label>
+                    <select id="llmConfigSelect">
+                        <option value="">使用默认配置</option>
+                    </select>
+                    <a href="javascript:void(0)" onclick="openLLMConfigModal()" style="margin-left: 10px; color: #667eea; font-size: 13px;">管理配置</a>
+                </div>
+                <div class="option-group">
+                    <label>Embedding：</label>
+                    <select id="embeddingConfigSelect">
+                        <option value="">使用默认配置</option>
+                    </select>
+                    <a href="javascript:void(0)" onclick="openEmbeddingConfigModal()" style="margin-left: 10px; color: #667eea; font-size: 13px;">配置</a>
+                </div>
+                <div class="option-group">
+                    <label>
+                        <input type="checkbox" id="enableWebSearchLLM" checked> 启用网络搜索
+                    </label>
+                    <select id="searchEngineSelect" style="margin-left: 5px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                        <option value="">无配置</option>
+                    </select>
+                    <a href="javascript:void(0)" onclick="openSearchConfigModal()" style="margin-left: 5px; color: #667eea; font-size: 12px;">配置</a>
+                </div>
+                <div class="llm-status" id="llmStatus">
+                    <span class="status-dot"></span>
+                    <span class="status-text">检查配置中...</span>
+                </div>
+            </div>
+            
+            <!-- 对话区 -->
+            <div class="chat-area">
+                <div class="chat-messages" id="llmChatMessages">
+                    <div class="message system">
+                        <div class="message-content">
+                            欢迎使用LLM智能匹配功能！您可以：
+                            <br>1. <b>招标应答模式</b>：输入指令如 "针对文档中的1.4.1,1.4.2作答"，系统将自动定位章节并逐项回答技术要求
+                            <br>2. <b>单条匹配模式</b>：直接输入需求内容进行智能匹配
+                            <br>3. <b>批量分析模式</b>：上传需求文档（.docx/.txt）批量分析
+                            <br>4. 匹配优先级：精确匹配 → 语义匹配 → 网络搜索 → LLM生成
+                        </div>
+                        <div class="message-time">系统消息</div>
+                    </div>
+                </div>
+
+                <!-- 输入区 -->
+                <div class="input-area">
+                    <div class="input-row">
+                        <textarea class="chat-input" id="llmQueryInput" placeholder="输入指令，如：针对文档中的1.4.1,1.4.2作答..." rows="1"></textarea>
+                    </div>
+                    <div class="input-row">
+                        <div class="file-upload-area">
+                            <input type="file" id="reqFile" class="file-input" accept=".docx,.txt">
+                            <label for="reqFile" class="file-label">📄 上传需求文档</label>
+                            <span class="file-name" id="reqFileName"></span>
+                        </div>
+                        <div style="flex: 1;"></div>
+                        <button class="btn btn-primary" id="btnLLMSearch" onclick="doLLMSearch()">智能匹配</button>
+                        <button class="btn btn-secondary" id="btnAnalyzeFile" onclick="analyzeUploadedFile()" style="display:none;">分析文档</button>
+                        <button class="btn btn-success" id="btnExportLLM" onclick="exportLLMResults()" disabled>导出Word</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -746,6 +1480,235 @@
 <div class="image-modal" id="imageModal" onclick="closeImageModal()">
     <span class="image-modal-close">&times;</span>
     <img id="modalImage" src="" alt="图片预览">
+</div>
+
+<!-- LLM配置管理弹窗 -->
+<div class="llm-config-modal" id="llmConfigModal">
+    <div class="llm-modal-content">
+        <div class="llm-modal-header">
+            <h3>LLM配置管理</h3>
+            <button class="llm-modal-close" onclick="closeLLMConfigModal()">&times;</button>
+        </div>
+        <div class="llm-modal-body">
+            <div class="llm-config-list" id="llmConfigList">
+                <!-- 配置列表动态加载 -->
+            </div>
+            <button class="btn btn-primary" onclick="showAddLLMConfigForm()" style="margin-top: 15px;">+ 添加新配置</button>
+            
+            <!-- 添加/编辑配置表单 -->
+            <div id="llmConfigForm" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e4e7ed;">
+                <h4 id="llmConfigFormTitle" style="margin-bottom: 15px;">添加配置</h4>
+                <input type="hidden" id="editLLMConfigId">
+                
+                <div class="llm-form-group">
+                    <label>配置名称</label>
+                    <input type="text" id="llmConfigName" placeholder="例如：我的GPT-4配置">
+                </div>
+                
+                <div class="llm-form-row">
+                    <div class="llm-form-group">
+                        <label>模型类型</label>
+                        <select id="llmModelType" onchange="onLLMModelTypeChange()">
+                            <option value="openai">OpenAI</option>
+                            <option value="qianwen">通义千问</option>
+                            <option value="wenxin">文心一言</option>
+                            <option value="zhipu">智谱GLM</option>
+                            <option value="deepseek">DeepSeek</option>
+                            <option value="custom">自定义</option>
+                        </select>
+                    </div>
+                    <div class="llm-form-group">
+                        <label>模型名称</label>
+                        <select id="llmModelName">
+                            <option value="gpt-4">gpt-4</option>
+                            <option value="gpt-4-turbo">gpt-4-turbo</option>
+                            <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="llm-form-group">
+                    <label>API Base URL（可选，留空使用默认）</label>
+                    <input type="text" id="llmApiBaseUrl" placeholder="https://api.openai.com/v1">
+                </div>
+                
+                <div class="llm-form-group">
+                    <label>API Key</label>
+                    <input type="password" id="llmApiKey" placeholder="sk-...">
+                </div>
+                
+                <div class="llm-form-row">
+                    <div class="llm-form-group">
+                        <label>Max Tokens</label>
+                        <input type="number" id="llmMaxTokens" value="2048">
+                    </div>
+                    <div class="llm-form-group">
+                        <label>Temperature</label>
+                        <input type="number" id="llmTemperature" value="0.7" step="0.1" min="0" max="2">
+                    </div>
+                </div>
+                
+                <div class="llm-form-group">
+                    <label style="display: inline-flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="llmIsDefault">
+                        设为默认配置
+                    </label>
+                </div>
+                
+                <div style="display: flex; gap: 12px; margin-top: 16px;">
+                    <button class="btn btn-primary" onclick="saveLLMConfig()">保存</button>
+                    <button class="btn btn-secondary" onclick="hideLLMConfigForm()">取消</button>
+                    <button class="btn btn-outline" onclick="testLLMConfig()">测试连接</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 搜索引擎配置弹窗 -->
+<div class="llm-config-modal" id="searchConfigModal">
+    <div class="llm-modal-content" style="width: 550px;">
+        <div class="llm-modal-header">
+            <h3>网络搜索引擎配置</h3>
+            <button class="llm-modal-close" onclick="closeSearchConfigModal()">&times;</button>
+        </div>
+        <div class="llm-modal-body">
+            <div class="llm-config-list" id="searchConfigList">
+                <!-- 配置列表动态加载 -->
+            </div>
+            <button class="btn btn-primary" onclick="showAddSearchConfigForm()" style="margin-top: 15px;">+ 添加搜索引擎</button>
+            
+            <!-- 添加/编辑搜索配置表单 -->
+            <div id="searchConfigForm" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e4e7ed;">
+                <h4 id="searchConfigFormTitle" style="margin-bottom: 15px;">添加搜索引擎</h4>
+                <input type="hidden" id="editSearchConfigId">
+                
+                <div class="llm-form-group">
+                    <label>搜索引擎</label>
+                    <select id="searchEngineType" onchange="onSearchEngineTypeChange()">
+                        <option value="duckduckgo">DuckDuckGo（免费，无需API Key）</option>
+                        <option value="google">Google 自定义搜索</option>
+                        <option value="bing">Bing 搜索</option>
+                        <option value="baidu">百度搜索</option>
+                        <option value="custom">自定义搜索引擎</option>
+                    </select>
+                </div>
+                
+                <div class="llm-form-group" id="searchApiUrlGroup">
+                    <label>API URL</label>
+                    <input type="text" id="searchApiUrl" placeholder="https://www.googleapis.com/customsearch/v1">
+                </div>
+                
+                <div class="llm-form-group" id="searchApiKeyGroup">
+                    <label>API Key</label>
+                    <input type="password" id="searchApiKey" placeholder="输入API密钥">
+                </div>
+                
+                <div class="llm-form-group" id="searchExtraParamsGroup">
+                    <label>额外参数（JSON格式，如Google的cx参数）</label>
+                    <textarea id="searchExtraParams" rows="3" placeholder='{"cx": "你的搜索引擎ID"}'></textarea>
+                </div>
+                
+                <div class="llm-form-group">
+                    <label style="display: inline-flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="searchIsDefault">
+                        设为默认搜索引擎
+                    </label>
+                </div>
+                
+                <div style="display: flex; gap: 12px; margin-top: 16px;">
+                    <button class="btn btn-primary" onclick="saveSearchConfig()">保存</button>
+                    <button class="btn btn-secondary" onclick="hideSearchConfigForm()">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Embedding 配置管理弹窗 -->
+<div class="llm-config-modal" id="embeddingConfigModal">
+    <div class="llm-modal-content" style="width: 600px;">
+        <div class="llm-modal-header">
+            <h3>Embedding 向量模型配置</h3>
+            <button class="llm-modal-close" onclick="closeEmbeddingConfigModal()">&times;</button>
+        </div>
+        <div class="llm-modal-body">
+            <!-- Embedding 状态提示 -->
+            <div id="embeddingStatusInfo" style="padding: 12px 15px; border-radius: 6px; margin-bottom: 15px; font-size: 13px; background: #e6f7ff; border: 1px solid #91d5ff;">
+                检查配置中...
+            </div>
+            
+            <div class="llm-config-list" id="embeddingConfigList">
+                <!-- 配置列表动态加载 -->
+            </div>
+            <button class="btn btn-primary" onclick="showAddEmbeddingConfigForm()" style="margin-top: 15px;">+ 添加配置</button>
+            
+            <!-- 添加/编辑配置表单 -->
+            <div id="embeddingConfigForm" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e4e7ed;">
+                <h4 id="embeddingConfigFormTitle" style="margin-bottom: 15px;">添加 Embedding 配置</h4>
+                <input type="hidden" id="editEmbeddingConfigId">
+                
+                <div class="llm-form-group">
+                    <label>配置名称</label>
+                    <input type="text" id="embeddingConfigName" placeholder="例如：混元Embedding">
+                </div>
+                
+                <div class="llm-form-row">
+                    <div class="llm-form-group">
+                        <label>提供商</label>
+                        <select id="embeddingProvider" onchange="onEmbeddingProviderChange()">
+                            <option value="">-- 请选择 --</option>
+                            <option value="hunyuan">腾讯混元</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="huggingface">HuggingFace 本地模型</option>
+                        </select>
+                    </div>
+                    <div class="llm-form-group">
+                        <label>模型名称</label>
+                        <select id="embeddingModelName">
+                            <option value="">-- 请先选择提供商 --</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="llm-form-group" id="embeddingApiKeyGroup">
+                    <label>API Key / Secret ID</label>
+                    <input type="password" id="embeddingApiKey" placeholder="腾讯云 SecretId 或 OpenAI API Key">
+                </div>
+                
+                <div class="llm-form-group" id="embeddingApiBaseGroup" style="display: none;">
+                    <label>API Base URL（可选）</label>
+                    <input type="text" id="embeddingApiBase" placeholder="留空使用默认地址">
+                </div>
+                
+                <div class="llm-form-row">
+                    <div class="llm-form-group">
+                        <label>向量维度</label>
+                        <input type="number" id="embeddingDimensions" value="1024" readonly style="background: #f5f7fa;">
+                    </div>
+                    <div class="llm-form-group" id="embeddingSecretKeyGroup">
+                        <label>Secret Key（腾讯云）</label>
+                        <input type="password" id="embeddingSecretKey" placeholder="腾讯云 SecretKey">
+                    </div>
+                </div>
+                
+                <div class="llm-form-group">
+                    <label style="display: inline-flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="embeddingIsDefault">
+                        设为默认配置
+                    </label>
+                </div>
+                
+                <div id="embeddingTestResult" style="display: none; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 13px;"></div>
+                
+                <div style="display: flex; gap: 12px; margin-top: 16px;">
+                    <button class="btn btn-primary" onclick="saveEmbeddingConfig()">保存</button>
+                    <button class="btn btn-secondary" onclick="hideEmbeddingConfigForm()">取消</button>
+                    <button class="btn btn-outline" onclick="testEmbeddingConfig()">测试连接</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -1497,6 +2460,1993 @@ document.getElementById('queryInput').addEventListener('keydown', function(e) {
 
 // 初始化
 loadDocuments();
+loadLLMDocuments();
+loadLLMConfigs();
+loadSearchConfigs();
+loadEmbeddingConfigs();
+checkLLMConfig();
+
+// ============== LLM匹配功能 ==============
+
+let llmSelectedDocuments = [];
+let llmSearchResults = null;
+let parsedRequirements = null;
+let tempFilePath = null;
+
+// 加载LLM Tab的文档列表
+async function loadLLMDocuments() {
+    try {
+        const response = await fetch(`${API_BASE}/documents`, {
+            credentials: 'same-origin'
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            renderLLMDocList(result.data);
+        } else {
+            document.getElementById('llmDocList').innerHTML = '<span style="color: #dc3545;">加载失败</span>';
+        }
+    } catch (error) {
+        console.error('加载文档列表失败:', error);
+        document.getElementById('llmDocList').innerHTML = '<span style="color: #dc3545;">加载失败</span>';
+    }
+}
+
+function renderLLMDocList(documents) {
+    const container = document.getElementById('llmDocList');
+    
+    if (!documents || documents.length === 0) {
+        container.innerHTML = '<span style="color: #999;">暂无已处理的文档</span>';
+        return;
+    }
+    
+    container.innerHTML = documents.map(doc => `
+        <label class="doc-checkbox" data-doc-id="${doc.doc_id}">
+            <input type="checkbox" value="${doc.doc_id}" onchange="toggleLLMDocument('${doc.doc_id}')">
+            ${escapeHtml(doc.filename)}
+        </label>
+    `).join('');
+}
+
+function toggleLLMDocument(docId) {
+    const index = llmSelectedDocuments.indexOf(docId);
+    const checkbox = document.querySelector(`#llmDocList .doc-checkbox[data-doc-id="${docId}"]`);
+    
+    if (index === -1) {
+        llmSelectedDocuments.push(docId);
+        checkbox.classList.add('selected');
+    } else {
+        llmSelectedDocuments.splice(index, 1);
+        checkbox.classList.remove('selected');
+    }
+}
+
+// 加载LLM配置列表
+async function loadLLMConfigs() {
+    try {
+        const response = await fetch(`${API_BASE}/llm-configs`, {
+            credentials: 'same-origin'
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            const select = document.getElementById('llmConfigSelect');
+            select.innerHTML = '<option value="">使用默认配置</option>';
+            
+            result.data.forEach(config => {
+                const option = document.createElement('option');
+                option.value = config.id;
+                option.textContent = config.config_name + (config.is_default ? ' (默认)' : '');
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('加载LLM配置失败:', error);
+    }
+}
+
+// ============== 搜索引擎配置功能 ==============
+
+let searchConfigs = [];
+
+// 加载搜索引擎配置
+async function loadSearchConfigs() {
+    try {
+        const response = await fetch('/llm/search-config', {
+            credentials: 'same-origin'
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            searchConfigs = result.data;
+            renderSearchEngineSelect();
+            renderSearchConfigList();
+        }
+    } catch (error) {
+        console.error('加载搜索配置失败:', error);
+    }
+}
+
+// 渲染搜索引擎选择器
+function renderSearchEngineSelect() {
+    const select = document.getElementById('searchEngineSelect');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">无配置</option>';
+    
+    searchConfigs.forEach(config => {
+        const option = document.createElement('option');
+        option.value = config.id;
+        option.textContent = getSearchEngineLabel(config.search_engine) + (config.is_default ? ' (默认)' : '');
+        if (config.is_default) option.selected = true;
+        select.appendChild(option);
+    });
+}
+
+// 获取搜索引擎标签
+function getSearchEngineLabel(engine) {
+    const labels = {
+        'google': 'Google',
+        'bing': 'Bing',
+        'baidu': '百度',
+        'custom': '自定义'
+    };
+    return labels[engine] || engine;
+}
+
+// 渲染搜索配置列表
+function renderSearchConfigList() {
+    const container = document.getElementById('searchConfigList');
+    if (!container) return;
+    
+    if (!searchConfigs || searchConfigs.length === 0) {
+        container.innerHTML = '<div style="padding: 16px; color: #909399; text-align: center;">暂无搜索引擎配置<br><small>配置后可启用网络搜索功能</small></div>';
+        return;
+    }
+    
+    container.innerHTML = searchConfigs.map(config => `
+        <div class="llm-config-item ${config.is_default ? 'default' : ''}">
+            <div class="llm-config-info">
+                <div class="llm-config-name">${getSearchEngineLabel(config.search_engine)} ${config.is_default ? '<span style="color: #409eff;">(默认)</span>' : ''}</div>
+                <div class="llm-config-detail">${config.api_url || '默认URL'}</div>
+            </div>
+            <div class="llm-config-actions">
+                <button class="btn btn-small" onclick="editSearchConfig(${config.id})">编辑</button>
+                <button class="btn btn-small btn-danger" onclick="deleteSearchConfig(${config.id})">删除</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// 打开搜索配置弹窗
+function openSearchConfigModal() {
+    document.getElementById('searchConfigModal').classList.add('show');
+    loadSearchConfigs();
+}
+
+// 关闭搜索配置弹窗
+function closeSearchConfigModal() {
+    document.getElementById('searchConfigModal').classList.remove('show');
+    hideSearchConfigForm();
+}
+
+// 显示添加搜索配置表单
+function showAddSearchConfigForm() {
+    document.getElementById('searchConfigForm').style.display = 'block';
+    document.getElementById('searchConfigFormTitle').textContent = '添加搜索引擎';
+    document.getElementById('editSearchConfigId').value = '';
+    document.getElementById('searchEngineType').value = 'duckduckgo';
+    document.getElementById('searchApiUrl').value = '';
+    document.getElementById('searchApiKey').value = '';
+    document.getElementById('searchExtraParams').value = '';
+    document.getElementById('searchIsDefault').checked = true;
+    onSearchEngineTypeChange();
+}
+
+// 隐藏搜索配置表单
+function hideSearchConfigForm() {
+    document.getElementById('searchConfigForm').style.display = 'none';
+}
+
+// 搜索引擎类型变化
+function onSearchEngineTypeChange() {
+    const engine = document.getElementById('searchEngineType').value;
+    const urlInput = document.getElementById('searchApiUrl');
+    const extraGroup = document.getElementById('searchExtraParamsGroup');
+    const apiUrlGroup = document.getElementById('searchApiUrlGroup');
+    const apiKeyGroup = document.getElementById('searchApiKeyGroup');
+    
+    const defaultUrls = {
+        'google': 'https://www.googleapis.com/customsearch/v1',
+        'bing': 'https://api.bing.microsoft.com/v7.0/search',
+        'baidu': '',
+        'duckduckgo': '',
+        'custom': ''
+    };
+    
+    if (!urlInput.value || Object.values(defaultUrls).includes(urlInput.value)) {
+        urlInput.value = defaultUrls[engine] || '';
+    }
+    
+    // DuckDuckGo不需要API URL和Key
+    if (engine === 'duckduckgo') {
+        apiUrlGroup.style.display = 'none';
+        apiKeyGroup.style.display = 'none';
+        extraGroup.style.display = 'none';
+    } else {
+        apiUrlGroup.style.display = 'block';
+        apiKeyGroup.style.display = 'block';
+        
+        // Google需要额外的cx参数
+        if (engine === 'google') {
+            extraGroup.style.display = 'block';
+            document.getElementById('searchExtraParams').placeholder = '{"cx": "你的搜索引擎ID"}';
+        } else {
+            extraGroup.style.display = engine === 'custom' ? 'block' : 'none';
+        }
+    }
+}
+
+// 编辑搜索配置
+function editSearchConfig(configId) {
+    const config = searchConfigs.find(c => c.id === configId);
+    if (!config) return;
+    
+    document.getElementById('searchConfigForm').style.display = 'block';
+    document.getElementById('searchConfigFormTitle').textContent = '编辑搜索引擎';
+    document.getElementById('editSearchConfigId').value = configId;
+    document.getElementById('searchEngineType').value = config.search_engine;
+    document.getElementById('searchApiUrl').value = config.api_url || '';
+    document.getElementById('searchApiKey').value = '';  // 安全考虑不显示密钥
+    document.getElementById('searchExtraParams').value = config.extra_params ? JSON.stringify(config.extra_params, null, 2) : '';
+    document.getElementById('searchIsDefault').checked = config.is_default;
+    onSearchEngineTypeChange();
+}
+
+// 保存搜索配置
+async function saveSearchConfig() {
+    const editId = document.getElementById('editSearchConfigId').value;
+    const isEdit = !!editId;
+    
+    const engine = document.getElementById('searchEngineType').value;
+    const apiUrl = document.getElementById('searchApiUrl').value.trim();
+    const apiKey = document.getElementById('searchApiKey').value.trim();
+    const extraParams = document.getElementById('searchExtraParams').value.trim();
+    const isDefault = document.getElementById('searchIsDefault').checked;
+    
+    // DuckDuckGo 不需要 API Key，其他引擎需要
+    if (engine !== 'duckduckgo' && !apiKey && !isEdit) {
+        alert('请输入API Key');
+        return;
+    }
+    
+    let parsedExtraParams = null;
+    if (extraParams) {
+        try {
+            parsedExtraParams = JSON.parse(extraParams);
+        } catch (e) {
+            alert('额外参数格式错误，请输入有效的JSON');
+            return;
+        }
+    }
+    
+    try {
+        const url = isEdit ? `/llm/search-config/${editId}` : '/llm/search-config';
+        const method = isEdit ? 'PUT' : 'POST';
+        
+        const body = {
+            search_engine: engine,
+            api_url: apiUrl || null,
+            is_default: isDefault
+        };
+        
+        // DuckDuckGo 不需要 api_key，可以传空或不传
+        if (apiKey) body.api_key = apiKey;
+        if (parsedExtraParams) body.extra_params = parsedExtraParams;
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(isEdit ? '配置更新成功' : '配置创建成功');
+            hideSearchConfigForm();
+            loadSearchConfigs();
+        } else {
+            alert('保存失败: ' + result.error);
+        }
+    } catch (error) {
+        console.error('保存搜索配置失败:', error);
+        alert('保存失败: ' + error.message);
+    }
+}
+
+// 删除搜索配置
+async function deleteSearchConfig(configId) {
+    if (!confirm('确定要删除这个搜索引擎配置吗？')) return;
+    
+    try {
+        const response = await fetch(`/llm/search-config/${configId}`, {
+            method: 'DELETE'
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            loadSearchConfigs();
+        } else {
+            alert('删除失败: ' + result.error);
+        }
+    } catch (error) {
+        console.error('删除搜索配置失败:', error);
+        alert('删除失败: ' + error.message);
+    }
+}
+
+// ============== Embedding 配置功能 ==============
+
+let embeddingConfigs = [];
+let embeddingProviders = {};
+
+// 加载 Embedding 配置列表
+async function loadEmbeddingConfigs() {
+    try {
+        const response = await fetch(`${API_BASE}/embedding-configs`, {
+            credentials: 'same-origin'
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            embeddingConfigs = result.data;
+            renderEmbeddingConfigSelect();
+            renderEmbeddingConfigList();
+        }
+    } catch (error) {
+        console.error('加载Embedding配置失败:', error);
+    }
+}
+
+// 加载 Embedding 提供商信息
+async function loadEmbeddingProviders() {
+    try {
+        const response = await fetch(`${API_BASE}/embedding-providers`, {
+            credentials: 'same-origin'
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            embeddingProviders = result.data;
+        }
+    } catch (error) {
+        console.error('加载Embedding提供商失败:', error);
+    }
+}
+
+// 渲染 Embedding 配置选择器
+function renderEmbeddingConfigSelect() {
+    const select = document.getElementById('embeddingConfigSelect');
+    select.innerHTML = '<option value="">使用默认配置</option>';
+    
+    embeddingConfigs.forEach(config => {
+        const option = document.createElement('option');
+        option.value = config.id;
+        option.textContent = config.name + (config.is_default ? ' (默认)' : '');
+        select.appendChild(option);
+    });
+}
+
+// 渲染 Embedding 配置列表
+function renderEmbeddingConfigList() {
+    const listEl = document.getElementById('embeddingConfigList');
+    
+    if (embeddingConfigs.length === 0) {
+        listEl.innerHTML = '<div style="color: #999; text-align: center; padding: 20px;">暂无配置，请添加</div>';
+        return;
+    }
+    
+    listEl.innerHTML = embeddingConfigs.map(config => `
+        <div class="llm-config-item ${config.is_default ? 'default' : ''}">
+            <div class="llm-config-info">
+                <div class="llm-config-name">
+                    ${escapeHtml(config.name)}
+                    ${config.is_default ? '<span style="color: #667eea; font-size: 12px; margin-left: 8px;">默认</span>' : ''}
+                </div>
+                <div class="llm-config-detail">
+                    ${escapeHtml(config.provider)} / ${escapeHtml(config.model_name)} | 维度: ${config.dimensions}
+                </div>
+            </div>
+            <div class="llm-config-actions">
+                ${!config.is_default ? `<button onclick="setDefaultEmbeddingConfig(${config.id})">设为默认</button>` : ''}
+                <button onclick="testEmbeddingConfigById(${config.id})">测试</button>
+                <button class="danger" onclick="deleteEmbeddingConfig(${config.id})">删除</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// 打开 Embedding 配置弹窗
+function openEmbeddingConfigModal() {
+    document.getElementById('embeddingConfigModal').classList.add('show');
+    loadEmbeddingConfigs();
+    loadEmbeddingProviders();
+    checkEmbeddingStatus();
+}
+
+// 关闭 Embedding 配置弹窗
+function closeEmbeddingConfigModal() {
+    document.getElementById('embeddingConfigModal').classList.remove('show');
+    hideEmbeddingConfigForm();
+}
+
+// 检查 Embedding 配置状态
+async function checkEmbeddingStatus() {
+    const statusEl = document.getElementById('embeddingStatusInfo');
+    
+    try {
+        const response = await fetch(`${API_BASE}/embedding-config/check`, {
+            credentials: 'same-origin'
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            const data = result.data;
+            if (data.has_working_provider) {
+                statusEl.style.background = '#f6ffed';
+                statusEl.style.borderColor = '#b7eb8f';
+                statusEl.innerHTML = `✅ 已配置: <b>${data.config_name}</b> (${data.provider}/${data.model_name})`;
+            } else if (data.has_config) {
+                statusEl.style.background = '#fffbe6';
+                statusEl.style.borderColor = '#ffe58f';
+                statusEl.innerHTML = `⚠️ 配置存在但无法使用，当前使用简单词向量方案（效果有限）`;
+            } else {
+                statusEl.style.background = '#fff2f0';
+                statusEl.style.borderColor = '#ffccc7';
+                statusEl.innerHTML = `❌ 未配置 Embedding 模型，使用简单词向量方案（效果有限）<br>
+                    <small>建议配置腾讯混元或 OpenAI 以获得更好的语义搜索效果</small>`;
+            }
+        }
+    } catch (error) {
+        statusEl.style.background = '#fff2f0';
+        statusEl.style.borderColor = '#ffccc7';
+        statusEl.innerHTML = '❌ 检查配置失败';
+    }
+}
+
+// 显示添加 Embedding 配置表单
+function showAddEmbeddingConfigForm() {
+    document.getElementById('embeddingConfigForm').style.display = 'block';
+    document.getElementById('embeddingConfigFormTitle').textContent = '添加 Embedding 配置';
+    document.getElementById('editEmbeddingConfigId').value = '';
+    
+    // 清空表单
+    document.getElementById('embeddingConfigName').value = '';
+    document.getElementById('embeddingProvider').value = '';
+    document.getElementById('embeddingModelName').innerHTML = '<option value="">-- 请先选择提供商 --</option>';
+    document.getElementById('embeddingApiKey').value = '';
+    document.getElementById('embeddingApiBase').value = '';
+    document.getElementById('embeddingDimensions').value = '1024';
+    document.getElementById('embeddingSecretKey').value = '';
+    document.getElementById('embeddingIsDefault').checked = false;
+    
+    document.getElementById('embeddingTestResult').style.display = 'none';
+}
+
+// 隐藏 Embedding 配置表单
+function hideEmbeddingConfigForm() {
+    document.getElementById('embeddingConfigForm').style.display = 'none';
+}
+
+// 当提供商改变时更新模型列表
+function onEmbeddingProviderChange() {
+    const provider = document.getElementById('embeddingProvider').value;
+    const modelSelect = document.getElementById('embeddingModelName');
+    const apiKeyGroup = document.getElementById('embeddingApiKeyGroup');
+    const apiBaseGroup = document.getElementById('embeddingApiBaseGroup');
+    const secretKeyGroup = document.getElementById('embeddingSecretKeyGroup');
+    const dimensionsInput = document.getElementById('embeddingDimensions');
+    
+    // 重置模型选择
+    modelSelect.innerHTML = '<option value="">-- 请选择模型 --</option>';
+    
+    if (!provider || !embeddingProviders[provider]) {
+        return;
+    }
+    
+    const providerInfo = embeddingProviders[provider];
+    
+    // 填充模型选项
+    providerInfo.models.forEach(model => {
+        const option = document.createElement('option');
+        option.value = model.name;
+        option.textContent = model.name;
+        option.dataset.dimensions = model.dimensions;
+        modelSelect.appendChild(option);
+    });
+    
+    // 自动选择第一个模型
+    if (providerInfo.models.length > 0) {
+        modelSelect.value = providerInfo.models[0].name;
+        dimensionsInput.value = providerInfo.models[0].dimensions;
+    }
+    
+    // 根据提供商调整表单
+    if (provider === 'hunyuan') {
+        apiKeyGroup.style.display = 'block';
+        apiBaseGroup.style.display = 'none';
+        secretKeyGroup.style.display = 'block';
+        document.querySelector('#embeddingApiKeyGroup label').textContent = 'Secret ID（腾讯云）';
+    } else if (provider === 'openai') {
+        apiKeyGroup.style.display = 'block';
+        apiBaseGroup.style.display = 'block';
+        secretKeyGroup.style.display = 'none';
+        document.querySelector('#embeddingApiKeyGroup label').textContent = 'API Key';
+    } else if (provider === 'huggingface') {
+        apiKeyGroup.style.display = 'none';
+        apiBaseGroup.style.display = 'none';
+        secretKeyGroup.style.display = 'none';
+    }
+    
+    // 模型选择变化时更新维度
+    modelSelect.onchange = function() {
+        const selectedOption = modelSelect.options[modelSelect.selectedIndex];
+        if (selectedOption && selectedOption.dataset.dimensions) {
+            dimensionsInput.value = selectedOption.dataset.dimensions;
+        }
+    };
+}
+
+// 测试 Embedding 配置
+async function testEmbeddingConfig() {
+    const testResultEl = document.getElementById('embeddingTestResult');
+    testResultEl.style.display = 'block';
+    testResultEl.style.background = '#e6f7ff';
+    testResultEl.style.borderColor = '#91d5ff';
+    testResultEl.textContent = '测试中...';
+    
+    const provider = document.getElementById('embeddingProvider').value;
+    const modelName = document.getElementById('embeddingModelName').value;
+    const apiKey = document.getElementById('embeddingApiKey').value;
+    const apiBase = document.getElementById('embeddingApiBase').value;
+    const dimensions = parseInt(document.getElementById('embeddingDimensions').value);
+    const secretKey = document.getElementById('embeddingSecretKey').value;
+    
+    if (!provider || !modelName) {
+        testResultEl.style.background = '#fff2f0';
+        testResultEl.style.borderColor = '#ffccc7';
+        testResultEl.textContent = '请先选择提供商和模型';
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/embedding-config/test`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                provider: provider,
+                model_name: modelName,
+                api_key: apiKey,
+                api_base: apiBase || null,
+                dimensions: dimensions,
+                extra_config: provider === 'hunyuan' ? {secret_key: secretKey, region: 'ap-guangzhou'} : null
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            testResultEl.style.background = '#f6ffed';
+            testResultEl.style.borderColor = '#b7eb8f';
+            testResultEl.innerHTML = `✅ ${result.message}<br>向量维度: ${result.dimensions}`;
+        } else {
+            testResultEl.style.background = '#fff2f0';
+            testResultEl.style.borderColor = '#ffccc7';
+            testResultEl.textContent = '❌ ' + result.message;
+        }
+    } catch (error) {
+        testResultEl.style.background = '#fff2f0';
+        testResultEl.style.borderColor = '#ffccc7';
+        testResultEl.textContent = '❌ 测试失败: ' + error.message;
+    }
+}
+
+// 根据ID测试已保存的配置
+async function testEmbeddingConfigById(configId) {
+    try {
+        const response = await fetch(`${API_BASE}/embedding-config/test`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin',
+            body: JSON.stringify({ config_id: configId })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(`✅ 测试成功！\n${result.message}\n向量维度: ${result.dimensions}`);
+        } else {
+            alert('❌ 测试失败: ' + result.message);
+        }
+    } catch (error) {
+        alert('❌ 测试失败: ' + error.message);
+    }
+}
+
+// 保存 Embedding 配置
+async function saveEmbeddingConfig() {
+    const configId = document.getElementById('editEmbeddingConfigId').value;
+    const isEdit = !!configId;
+    
+    const name = document.getElementById('embeddingConfigName').value.trim();
+    const provider = document.getElementById('embeddingProvider').value;
+    const modelName = document.getElementById('embeddingModelName').value;
+    const apiKey = document.getElementById('embeddingApiKey').value.trim();
+    const apiBase = document.getElementById('embeddingApiBase').value.trim();
+    const dimensions = parseInt(document.getElementById('embeddingDimensions').value);
+    const secretKey = document.getElementById('embeddingSecretKey').value.trim();
+    const isDefault = document.getElementById('embeddingIsDefault').checked;
+    
+    if (!name) {
+        alert('请输入配置名称');
+        return;
+    }
+    if (!provider) {
+        alert('请选择提供商');
+        return;
+    }
+    if (!modelName) {
+        alert('请选择模型');
+        return;
+    }
+    
+    // 构建额外配置
+    let extraConfig = null;
+    if (provider === 'hunyuan' && secretKey) {
+        extraConfig = { secret_key: secretKey, region: 'ap-guangzhou' };
+    }
+    
+    const data = {
+        name: name,
+        provider: provider,
+        model_name: modelName,
+        api_key: apiKey || null,
+        api_base: apiBase || null,
+        dimensions: dimensions,
+        is_default: isDefault,
+        extra_config: extraConfig
+    };
+    
+    try {
+        const url = isEdit ? `${API_BASE}/embedding-config/${configId}` : `${API_BASE}/embedding-config`;
+        const method = isEdit ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin',
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(isEdit ? '配置更新成功' : '配置创建成功');
+            hideEmbeddingConfigForm();
+            loadEmbeddingConfigs();
+            checkEmbeddingStatus();
+        } else {
+            alert('保存失败: ' + result.error);
+        }
+    } catch (error) {
+        console.error('保存Embedding配置失败:', error);
+        alert('保存失败: ' + error.message);
+    }
+}
+
+// 设置默认 Embedding 配置
+async function setDefaultEmbeddingConfig(configId) {
+    try {
+        const response = await fetch(`${API_BASE}/embedding-config/${configId}/set-default`, {
+            method: 'POST',
+            credentials: 'same-origin'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            loadEmbeddingConfigs();
+            checkEmbeddingStatus();
+        } else {
+            alert('设置失败: ' + result.error);
+        }
+    } catch (error) {
+        alert('设置失败: ' + error.message);
+    }
+}
+
+// 删除 Embedding 配置
+async function deleteEmbeddingConfig(configId) {
+    if (!confirm('确定要删除这个配置吗？')) return;
+    
+    try {
+        const response = await fetch(`${API_BASE}/embedding-config/${configId}`, {
+            method: 'DELETE',
+            credentials: 'same-origin'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            loadEmbeddingConfigs();
+            checkEmbeddingStatus();
+        } else {
+            alert('删除失败: ' + result.error);
+        }
+    } catch (error) {
+        alert('删除失败: ' + error.message);
+    }
+}
+
+// 检查LLM配置状态
+async function checkLLMConfig() {
+    const statusEl = document.getElementById('llmStatus');
+    const statusText = statusEl.querySelector('.status-text');
+    
+    try {
+        const response = await fetch(`${API_BASE}/llm-config/check`, {
+            credentials: 'same-origin'
+        });
+        const result = await response.json();
+        
+        if (result.success && result.data.has_config) {
+            statusEl.classList.add('ready');
+            statusEl.classList.remove('error');
+            statusText.textContent = `已配置: ${result.data.model_type}/${result.data.model_name}`;
+        } else {
+            statusEl.classList.add('error');
+            statusEl.classList.remove('ready');
+            statusText.textContent = '未配置LLM，请先配置';
+        }
+    } catch (error) {
+        statusEl.classList.add('error');
+        statusEl.classList.remove('ready');
+        statusText.textContent = '配置检查失败';
+    }
+}
+
+// LLM单条查询
+async function doLLMSearch() {
+    const input = document.getElementById('llmQueryInput');
+    const query = input.value.trim();
+    const reqFile = document.getElementById('reqFile');
+    
+    // 如果有上传文件，先解析文件
+    if (reqFile.files.length > 0) {
+        await analyzeUploadedFile();
+        return;
+    }
+    
+    if (!query) {
+        alert('请输入查询内容');
+        return;
+    }
+    
+    // 检查是否是招标作答指令（包含章节编号如 1.4.1, 1.4.2）
+    const sectionPattern = /(\d+(?:\.\d+)+)/g;
+    const sectionMatches = query.match(sectionPattern);
+    const isBidInstruction = sectionMatches && sectionMatches.length > 0 && 
+        (query.includes('作答') || query.includes('回答') || query.includes('针对') || query.includes('章节'));
+    
+    if (isBidInstruction) {
+        // 招标作答模式
+        await processBidInstruction(query);
+        return;
+    }
+    
+    // 普通查询模式
+    // 添加用户消息
+    addLLMMessage('user', query);
+    input.value = '';
+    
+    // 显示加载状态
+    const loadingId = addLLMLoadingMessage();
+    
+    try {
+        const llmConfigId = document.getElementById('llmConfigSelect').value;
+        const enableWebSearch = document.getElementById('enableWebSearchLLM').checked;
+        
+        const response = await fetch(`${API_BASE}/llm-search`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                query: query,
+                document_ids: llmSelectedDocuments,
+                enable_web_search: enableWebSearch,
+                llm_config_id: llmConfigId || null
+            })
+        });
+        
+        const result = await response.json();
+        removeLLMMessage(loadingId);
+        
+        if (result.success) {
+            llmSearchResults = [result.data];
+            displayLLMResult(result.data);
+            document.getElementById('btnExportLLM').disabled = false;
+        } else {
+            addLLMMessage('system', `查询失败: ${result.error}`);
+        }
+    } catch (error) {
+        removeLLMMessage(loadingId);
+        addLLMMessage('system', `查询出错: ${error.message}`);
+    }
+}
+
+// 显示LLM单条结果
+function displayLLMResult(data) {
+    const matchTypeLabels = {
+        'exact': '精确匹配',
+        'semantic': '语义匹配',
+        'web': '网络搜索',
+        'llm_generated': 'LLM生成',
+        'none': '未匹配',
+        'error': '分析失败'
+    };
+    
+    const matchType = data.match_type || 'none';
+    const confidence = data.confidence || 0;
+    const source = data.source || {};
+    const images = source.images || [];
+    const answerHtml = renderContentWithImages(data.answer || '无答案', images);
+    
+    let sourceInfo = '';
+    if (source.type === 'document') {
+        const pathStr = (source.path || []).map(p => p.title).join(' → ');
+        sourceInfo = `
+            <div class="llm-source-info">
+                📄 来源：${escapeHtml(source.filename || '未知文档')}
+                ${pathStr ? `<br>📍 路径：${escapeHtml(pathStr)}` : ''}
+            </div>
+        `;
+    } else if (source.type === 'web') {
+        const webLinks = (source.search_results || []).slice(0, 3).map(r => 
+            `<a href="${escapeHtml(r.url)}" target="_blank">${escapeHtml(r.title)}</a>`
+        ).join(' | ');
+        sourceInfo = `
+            <div class="llm-source-info">
+                🌐 网络搜索结果：${webLinks}
+            </div>
+        `;
+    }
+    
+    const html = `
+        <div class="llm-result">
+            <div class="llm-result-header">
+                <span>智能匹配结果</span>
+                <span class="match-type-badge ${matchType}">${matchTypeLabels[matchType]}</span>
+            </div>
+            <div class="llm-result-body">
+                ${sourceInfo}
+                <div class="llm-answer">${answerHtml}</div>
+                <div class="confidence-bar">
+                    <span>置信度：</span>
+                    <div class="bar">
+                        <div class="bar-fill" style="width: ${confidence * 100}%"></div>
+                    </div>
+                    <span>${(confidence * 100).toFixed(0)}%</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    addLLMMessage('system', html, true);
+}
+
+// 分析上传的需求文件
+async function analyzeUploadedFile() {
+    const reqFile = document.getElementById('reqFile');
+    const queryInput = document.getElementById('llmQueryInput');
+    const queryText = queryInput ? queryInput.value.trim() : '';
+    
+    if (reqFile.files.length === 0) {
+        alert('请先选择需求文档');
+        return;
+    }
+    
+    const file = reqFile.files[0];
+    
+    // 从查询输入中提取章节过滤（如果有）
+    let sectionFilter = '';
+    const sectionPattern = /(\d+(?:\.\d+)+)/g;
+    const matches = queryText.match(sectionPattern);
+    if (matches && matches.length > 0) {
+        sectionFilter = matches.join(',');
+        addLLMMessage('user', `分析需求文档: ${file.name} (过滤章节: ${sectionFilter})`);
+    } else {
+        addLLMMessage('user', `分析需求文档: ${file.name}`);
+    }
+    
+    const loadingId = addLLMLoadingMessage('正在解析文档...');
+    
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        llmSelectedDocuments.forEach(id => {
+            formData.append('document_ids[]', id);
+        });
+        
+        const llmConfigId = document.getElementById('llmConfigSelect').value;
+        if (llmConfigId) {
+            formData.append('llm_config_id', llmConfigId);
+        }
+        
+        const enableWebSearch = document.getElementById('enableWebSearchLLM').checked;
+        formData.append('enable_web_search', enableWebSearch);
+        
+        // 添加章节过滤参数
+        if (sectionFilter) {
+            formData.append('section_filter', sectionFilter);
+        }
+        
+        const response = await fetch(`${API_BASE}/analyze-file`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: formData
+        });
+        
+        const result = await response.json();
+        removeLLMMessage(loadingId);
+        
+        if (result.success) {
+            parsedRequirements = result.data.requirements;
+            tempFilePath = result.data.temp_file;
+            
+            // 显示解析结果，让用户确认
+            displayParsedRequirements(result.data);
+        } else {
+            addLLMMessage('system', `文档解析失败: ${result.error}`);
+        }
+    } catch (error) {
+        removeLLMMessage(loadingId);
+        addLLMMessage('system', `解析出错: ${error.message}`);
+    }
+    
+    // 清除文件
+    reqFile.value = '';
+    document.getElementById('reqFileName').textContent = '';
+}
+
+// 显示解析出的需求列表
+function displayParsedRequirements(data) {
+    // 按章节分组
+    const sectionGroups = {};
+    data.requirements.forEach((req, i) => {
+        const sectionNum = req.section?.number || '未分类';
+        const sectionTitle = req.section?.title || '';
+        const key = sectionNum;
+        if (!sectionGroups[key]) {
+            sectionGroups[key] = {
+                number: sectionNum,
+                title: sectionTitle,
+                requirements: []
+            };
+        }
+        sectionGroups[key].requirements.push({...req, globalIndex: i + 1});
+    });
+    
+    // 生成分组显示
+    let reqListHtml = '';
+    for (const [key, group] of Object.entries(sectionGroups)) {
+        reqListHtml += `
+            <div style="margin-bottom: 15px;">
+                <div style="background: #e9ecef; padding: 8px 12px; border-radius: 5px; font-weight: bold; margin-bottom: 8px;">
+                    📑 ${escapeHtml(group.number)} ${escapeHtml(group.title)} 
+                    <span style="color: #666; font-weight: normal;">(${group.requirements.length} 条)</span>
+                </div>
+                ${group.requirements.map(req => `
+                    <div style="padding: 6px 12px; border-bottom: 1px solid #eee; margin-left: 10px;">
+                        <strong>${req.globalIndex}.</strong> ${escapeHtml(req.title || req.content?.substring(0, 100) || '')}
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+    
+    const html = `
+        <div class="parsed-requirements">
+            <h4 style="margin-bottom: 10px;">从文档 "${escapeHtml(data.filename)}" 解析出 ${data.count} 条需求：</h4>
+            <div style="max-height: 350px; overflow-y: auto; border: 1px solid #ddd; border-radius: 5px; padding: 10px; background: #f8f9fa;">
+                ${reqListHtml}
+            </div>
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="startBatchAnalysis()">开始分析</button>
+                <button class="btn btn-secondary" onclick="cancelBatchAnalysis()">取消</button>
+            </div>
+        </div>
+    `;
+    
+    addLLMMessage('system', html, true);
+}
+
+// 开始批量分析
+async function startBatchAnalysis() {
+    if (!parsedRequirements || parsedRequirements.length === 0) {
+        alert('没有待分析的需求');
+        return;
+    }
+    
+    const loadingId = addLLMLoadingMessage(`正在分析 ${parsedRequirements.length} 条需求，请稍候...`);
+    
+    try {
+        const llmConfigId = document.getElementById('llmConfigSelect').value;
+        const enableWebSearch = document.getElementById('enableWebSearchLLM').checked;
+        
+        const response = await fetch(`${API_BASE}/analyze-requirements`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                requirements: parsedRequirements,
+                document_ids: llmSelectedDocuments,
+                enable_web_search: enableWebSearch,
+                llm_config_id: llmConfigId || null,
+                temp_file: tempFilePath
+            })
+        });
+        
+        const result = await response.json();
+        removeLLMMessage(loadingId);
+        
+        if (result.success) {
+            llmSearchResults = result.data.results;
+            displayBatchAnalysisResults(result.data);
+            document.getElementById('btnExportLLM').disabled = false;
+        } else {
+            addLLMMessage('system', `批量分析失败: ${result.error}`);
+        }
+    } catch (error) {
+        removeLLMMessage(loadingId);
+        addLLMMessage('system', `分析出错: ${error.message}`);
+    }
+    
+    // 清理
+    parsedRequirements = null;
+    tempFilePath = null;
+}
+
+// 取消批量分析
+function cancelBatchAnalysis() {
+    parsedRequirements = null;
+    tempFilePath = null;
+    addLLMMessage('system', '已取消批量分析');
+}
+
+// 显示批量分析结果
+function displayBatchAnalysisResults(data) {
+    const matchTypeLabels = {
+        'exact': '精确匹配',
+        'semantic': '语义匹配',
+        'web': '网络搜索',
+        'llm_generated': 'LLM生成',
+        'none': '未匹配',
+        'error': '分析失败'
+    };
+    
+    const summary = data.summary;
+    
+    let html = `
+        <div class="batch-results">
+            <div class="batch-summary">
+                <div class="stat-item">
+                    <span>总计：</span>
+                    <span class="stat-count">${data.total}</span>
+                </div>
+                <div class="stat-item">
+                    <span>精确匹配：</span>
+                    <span class="stat-count" style="color: #28a745;">${summary.exact}</span>
+                </div>
+                <div class="stat-item">
+                    <span>语义匹配：</span>
+                    <span class="stat-count" style="color: #17a2b8;">${summary.semantic}</span>
+                </div>
+                <div class="stat-item">
+                    <span>网络搜索：</span>
+                    <span class="stat-count" style="color: #fd7e14;">${summary.web}</span>
+                </div>
+                <div class="stat-item">
+                    <span>LLM生成：</span>
+                    <span class="stat-count" style="color: #6f42c1;">${summary.llm_generated}</span>
+                </div>
+                <div class="stat-item">
+                    <span>未匹配：</span>
+                    <span class="stat-count" style="color: #dc3545;">${summary.none}</span>
+                </div>
+            </div>
+    `;
+    
+    data.results.forEach((result, i) => {
+        const matchType = result.match_type || 'none';
+        const confidence = result.confidence || 0;
+        const source = result.source || {};
+        const images = source.images || [];
+        const answerHtml = renderContentWithImages(result.answer || '无答案', images);
+        
+        let sourceText = '';
+        if (source.type === 'document') {
+            sourceText = `📄 ${source.filename || '文档'}`;
+        } else if (source.type === 'web') {
+            sourceText = '🌐 网络搜索';
+        } else if (source.type === 'llm') {
+            sourceText = '🤖 LLM生成';
+        }
+        
+        html += `
+            <div class="requirement-item" data-index="${i}">
+                <div class="requirement-header" onclick="toggleRequirementBody(${i})">
+                    <div style="display: flex; align-items: center;">
+                        <span class="requirement-index">${result.index || i + 1}</span>
+                        <span class="requirement-title">${escapeHtml(result.requirement_title || result.requirement?.substring(0, 50) || '需求')}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        ${sourceText ? `<span style="font-size: 12px; color: #666;">${sourceText}</span>` : ''}
+                        <span class="match-type-badge ${matchType}">${matchTypeLabels[matchType]}</span>
+                    </div>
+                </div>
+                <div class="requirement-body" id="reqBody_${i}">
+                    <div class="req-section">
+                        <div class="req-section-title">需求内容</div>
+                        <div class="req-section-content">${escapeHtml(result.requirement || '')}</div>
+                    </div>
+                    <div class="req-section">
+                        <div class="req-section-title">答案 (置信度: ${(confidence * 100).toFixed(0)}%)</div>
+                        <div class="req-section-content">${answerHtml}</div>
+                    </div>
+                    ${source.type === 'document' && source.path ? `
+                        <div class="req-section">
+                            <div class="req-section-title">来源路径</div>
+                            <div class="req-section-content">${escapeHtml((source.path || []).map(p => p.title).join(' → '))}</div>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    
+    addLLMMessage('system', html, true);
+    addLLMMessage('system', `✅ 批量分析完成！共 ${data.total} 条需求。您可以点击 <strong>"导出Word"</strong> 按钮将结果导出为文档。`, true);
+}
+
+// 切换需求详情显示
+function toggleRequirementBody(index) {
+    const body = document.getElementById(`reqBody_${index}`);
+    if (body) {
+        body.classList.toggle('show');
+    }
+}
+
+// 导出LLM分析结果
+async function exportLLMResults() {
+    if (!llmSearchResults || llmSearchResults.length === 0) {
+        alert('没有可导出的结果');
+        return;
+    }
+    
+    const btn = document.getElementById('btnExportLLM');
+    btn.disabled = true;
+    btn.textContent = '导出中...';
+    
+    try {
+        const response = await fetch(`${API_BASE}/export-llm-results`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                results: llmSearchResults,
+                title: '需求分析报告'
+            })
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `需求分析报告_${new Date().toISOString().slice(0,10)}.docx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            addLLMMessage('system', 'Word文档已下载');
+        } else {
+            const result = await response.json();
+            addLLMMessage('system', `导出失败: ${result.error}`);
+        }
+    } catch (error) {
+        addLLMMessage('system', `导出出错: ${error.message}`);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '导出Word';
+    }
+}
+
+// LLM消息相关函数
+let llmMessageId = 0;
+
+function addLLMMessage(type, content, isHtml = false) {
+    const container = document.getElementById('llmChatMessages');
+    const id = 'llm-msg-' + (++llmMessageId);
+    
+    const div = document.createElement('div');
+    div.className = `message ${type}`;
+    div.id = id;
+    
+    const time = new Date().toLocaleTimeString('zh-CN');
+    
+    div.innerHTML = `
+        <div class="message-content">${isHtml ? content : escapeHtml(content)}</div>
+        <div class="message-time">${time}</div>
+    `;
+    
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    
+    return id;
+}
+
+function addLLMLoadingMessage(text = '正在处理...') {
+    const container = document.getElementById('llmChatMessages');
+    const id = 'llm-msg-' + (++llmMessageId);
+    
+    const div = document.createElement('div');
+    div.className = 'message system';
+    div.id = id;
+    div.innerHTML = `
+        <div class="message-content">
+            <div class="loading-message">
+                <div class="loading"></div>
+                <span>${escapeHtml(text)}</span>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    
+    return id;
+}
+
+function removeLLMMessage(id) {
+    const msg = document.getElementById(id);
+    if (msg) msg.remove();
+}
+
+// ============== 招标作答功能 ==============
+
+// 存储当前招标作答的数据
+let currentBidData = {
+    docId: null,
+    sectionNumbers: [],
+    sections: {},
+    results: []
+};
+
+// 处理招标作答指令
+async function processBidInstruction(instruction) {
+    const input = document.getElementById('llmQueryInput');
+    input.value = '';
+    
+    // 添加用户消息
+    addLLMMessage('user', instruction);
+    
+    // 检查是否选择了文档
+    if (!llmSelectedDocuments || llmSelectedDocuments.length === 0) {
+        addLLMMessage('system', '⚠️ 请先在左侧选择要作答的招标文档', true);
+        return;
+    }
+    
+    // 使用第一个选中的文档作为招标文档
+    const bidDocId = llmSelectedDocuments[0];
+    
+    // Step 1: 解析指令
+    const loadingId = addLLMLoadingMessage('正在解析指令...');
+    
+    try {
+        const parseResponse = await fetch(`${API_BASE}/parse-bid-instruction`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                instruction: instruction,
+                doc_id: bidDocId
+            })
+        });
+        
+        const parseResult = await parseResponse.json();
+        removeLLMMessage(loadingId);
+        
+        if (!parseResult.success) {
+            addLLMMessage('system', `❌ ${parseResult.error}`, true);
+            return;
+        }
+        
+        const sectionNumbers = parseResult.data.section_numbers;
+        if (sectionNumbers.length === 0) {
+            addLLMMessage('system', '❌ 未识别到有效的章节编号，请使用格式如：1.4.1, 1.4.2', true);
+            return;
+        }
+        
+        // 显示解析结果
+        addLLMMessage('system', `✅ 已识别章节编号：<strong>${sectionNumbers.join(', ')}</strong><br>正在获取章节内容...`, true);
+        
+        // Step 2: 获取章节的技术要求
+        const reqLoadingId = addLLMLoadingMessage('正在获取技术要求...');
+        
+        const reqResponse = await fetch(`${API_BASE}/get-section-requirements`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                doc_id: bidDocId,
+                section_numbers: sectionNumbers
+            })
+        });
+        
+        const reqResult = await reqResponse.json();
+        removeLLMMessage(reqLoadingId);
+        
+        if (!reqResult.success) {
+            addLLMMessage('system', `❌ 获取章节内容失败: ${reqResult.error}`, true);
+            return;
+        }
+        
+        const sectionsData = reqResult.data.sections;
+        const totalReq = reqResult.data.total_requirements;
+        
+        if (totalReq === 0) {
+            addLLMMessage('system', '⚠️ 未在指定章节中找到技术要求条目', true);
+            return;
+        }
+        
+        // 显示找到的技术要求
+        displayBidSectionPreview(sectionsData, reqResult.data);
+        
+        // 保存数据供后续使用
+        currentBidData = {
+            docId: bidDocId,
+            sectionNumbers: sectionNumbers,
+            sections: sectionsData,
+            results: []
+        };
+        
+    } catch (error) {
+        removeLLMMessage(loadingId);
+        addLLMMessage('system', `❌ 处理失败: ${error.message}`, true);
+    }
+}
+
+// 显示招标章节预览
+function displayBidSectionPreview(sectionsData, reqData) {
+    let html = `
+        <div class="bid-preview">
+            <div class="bid-preview-header">
+                <h4>📋 技术要求预览</h4>
+                <span>共 ${reqData.total_requirements} 条技术要求</span>
+            </div>
+    `;
+    
+    for (const [sectionNum, section] of Object.entries(sectionsData)) {
+        const reqCount = section.requirements ? section.requirements.length : 0;
+        html += `
+            <div class="bid-section-item">
+                <div class="bid-section-header">
+                    <span class="section-number">${sectionNum}</span>
+                    <span class="section-title">${escapeHtml(section.title || '')}</span>
+                    <span class="section-count">${reqCount} 条</span>
+                </div>
+        `;
+        
+        if (section.requirements && section.requirements.length > 0) {
+            html += '<div class="bid-requirements-list">';
+            section.requirements.slice(0, 5).forEach((req, idx) => {
+                const reqText = req.text || req.content || '';
+                html += `
+                    <div class="bid-req-item">
+                        <span class="req-idx">${req.index || idx + 1}</span>
+                        <span class="req-text">${escapeHtml(reqText.substring(0, 100))}${reqText.length > 100 ? '...' : ''}</span>
+                    </div>
+                `;
+            });
+            if (section.requirements.length > 5) {
+                html += `<div class="bid-req-more">... 还有 ${section.requirements.length - 5} 条</div>`;
+            }
+            html += '</div>';
+        }
+        
+        html += '</div>';
+    }
+    
+    if (reqData.missing_sections && reqData.missing_sections.length > 0) {
+        html += `<div class="bid-warning">⚠️ 未找到章节: ${reqData.missing_sections.join(', ')}</div>`;
+    }
+    
+    html += `
+            <div class="bid-actions">
+                <button class="btn btn-primary" onclick="startBidAnswering()">🚀 开始智能作答</button>
+                <button class="btn btn-secondary" onclick="cancelBidAnswering()">取消</button>
+            </div>
+        </div>
+    `;
+    
+    addLLMMessage('system', html, true);
+}
+
+// 开始招标作答
+async function startBidAnswering() {
+    if (!currentBidData.docId || currentBidData.sectionNumbers.length === 0) {
+        addLLMMessage('system', '❌ 没有待作答的数据', true);
+        return;
+    }
+    
+    const llmConfigId = document.getElementById('llmConfigSelect').value;
+    const enableWebSearch = document.getElementById('enableWebSearchLLM').checked;
+    
+    // 获取知识库文档（除了招标文档本身之外的其他选中文档）
+    const knowledgeDocIds = llmSelectedDocuments.filter(id => id !== currentBidData.docId);
+    
+    addLLMMessage('system', '🔄 开始智能作答，请稍候...<br>匹配优先级：精确匹配 → 语义匹配 → 网络搜索 → LLM生成', true);
+    
+    const loadingId = addLLMLoadingMessage('正在进行智能匹配和作答...');
+    
+    try {
+        const response = await fetch(`${API_BASE}/answer-bid-requirements`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                doc_id: currentBidData.docId,
+                section_numbers: currentBidData.sectionNumbers,
+                knowledge_doc_ids: knowledgeDocIds,
+                llm_config_id: llmConfigId || null,
+                enable_web_search: enableWebSearch
+            })
+        });
+        
+        const result = await response.json();
+        removeLLMMessage(loadingId);
+        
+        if (result.success) {
+            currentBidData.results = result.data.results;
+            llmSearchResults = result.data.results;
+            displayBidAnswerResults(result.data);
+            document.getElementById('btnExportLLM').disabled = false;
+        } else {
+            addLLMMessage('system', `❌ 作答失败: ${result.error}`, true);
+        }
+    } catch (error) {
+        removeLLMMessage(loadingId);
+        addLLMMessage('system', `❌ 请求失败: ${error.message}`, true);
+    }
+}
+
+// 显示招标作答结果
+function displayBidAnswerResults(data) {
+    const matchTypeLabels = {
+        'exact': '精确匹配',
+        'semantic': '语义匹配',
+        'web': '网络搜索',
+        'llm_generated': 'LLM生成',
+        'none': '未匹配',
+        'error': '分析失败'
+    };
+    
+    const matchTypeColors = {
+        'exact': '#28a745',
+        'semantic': '#17a2b8',
+        'web': '#fd7e14',
+        'llm_generated': '#6f42c1',
+        'none': '#dc3545',
+        'error': '#dc3545'
+    };
+    
+    const summary = data.summary;
+    
+    let html = `
+        <div class="bid-results">
+            <div class="bid-results-header">
+                <h4>📊 招标作答结果</h4>
+                <div class="doc-info">📄 ${escapeHtml(data.doc_info?.filename || '')}</div>
+            </div>
+            <div class="bid-summary">
+                <div class="summary-item"><span>总计</span><strong>${summary.total}</strong></div>
+                <div class="summary-item" style="color:${matchTypeColors.exact}"><span>精确匹配</span><strong>${summary.exact}</strong></div>
+                <div class="summary-item" style="color:${matchTypeColors.semantic}"><span>语义匹配</span><strong>${summary.semantic}</strong></div>
+                <div class="summary-item" style="color:${matchTypeColors.web}"><span>网络搜索</span><strong>${summary.web}</strong></div>
+                <div class="summary-item" style="color:${matchTypeColors.llm_generated}"><span>LLM生成</span><strong>${summary.llm_generated}</strong></div>
+                <div class="summary-item" style="color:${matchTypeColors.none}"><span>未匹配</span><strong>${summary.none}</strong></div>
+            </div>
+            <div class="bid-export-actions">
+                <button class="btn btn-primary btn-sm" onclick="exportBidAnswers('default')">📥 导出Word文档</button>
+                <button class="btn btn-outline btn-sm" onclick="exportBidAnswers('table')">📋 导出表格格式</button>
+            </div>
+    `;
+    
+    // 按章节分组显示
+    const groupedResults = {};
+    data.results.forEach(r => {
+        const key = r.section_number;
+        if (!groupedResults[key]) {
+            groupedResults[key] = {
+                title: r.section_title,
+                items: []
+            };
+        }
+        groupedResults[key].items.push(r);
+    });
+    
+    for (const [sectionNum, group] of Object.entries(groupedResults)) {
+        html += `
+            <div class="bid-section-result">
+                <div class="section-result-header" onclick="toggleSectionResult('${sectionNum}')">
+                    <span class="section-num">${sectionNum}</span>
+                    <span class="section-title">${escapeHtml(group.title)}</span>
+                    <span class="section-toggle">▼</span>
+                </div>
+                <div class="section-result-body" id="sectionResult_${sectionNum.replace(/\./g, '_')}">
+        `;
+        
+        group.items.forEach((item, idx) => {
+            const matchType = item.match_type || 'none';
+            const confidence = Math.round((item.confidence || 0) * 100);
+            
+            // 获取来源中的图片信息（如果有）
+            const images = item.source?.images || [];
+            // 使用 renderContentWithImages 处理答案中的图片占位符
+            const answerHtml = renderContentWithImages(item.answer || '未能生成答案', images);
+            
+            html += `
+                <div class="bid-answer-item">
+                    <div class="answer-header">
+                        <span class="answer-idx">${item.requirement_index || idx + 1}</span>
+                        <span class="match-badge" style="background:${matchTypeColors[matchType]}20;color:${matchTypeColors[matchType]}">${matchTypeLabels[matchType]} (${confidence}%)</span>
+                    </div>
+                    <div class="answer-requirement">
+                        <strong>技术要求：</strong>${escapeHtml(item.requirement || '')}
+                        ${item.spec ? `<br><em>规格：${escapeHtml(item.spec)}</em>` : ''}
+                    </div>
+                    <div class="answer-content">
+                        <strong>应答内容：</strong>
+                        <div class="answer-text">${answerHtml}</div>
+                    </div>
+                    ${item.source?.type === 'document' ? `<div class="answer-source">📄 来源：${escapeHtml(item.source.filename || '文档')}</div>` : ''}
+                </div>
+            `;
+        });
+        
+        html += '</div></div>';
+    }
+    
+    html += '</div>';
+    
+    addLLMMessage('system', html, true);
+}
+
+// 导出招标作答结果为Word
+async function exportBidAnswers(formatType = 'default') {
+    if (!currentBidData.results || currentBidData.results.length === 0) {
+        alert('没有可导出的结果');
+        return;
+    }
+    
+    addLLMMessage('system', '📥 正在生成Word文档...', true);
+    
+    try {
+        const response = await fetch(`${API_BASE}/export-bid-answers`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                results: currentBidData.results,
+                title: '招标技术要求应答书',
+                doc_info: {
+                    doc_id: currentBidData.docId,
+                    filename: document.querySelector('.bid-results .doc-info')?.textContent?.replace('📄 ', '') || ''
+                },
+                format_type: formatType
+            })
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = formatType === 'table' ? '招标应答表.docx' : '招标应答书.docx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+            addLLMMessage('system', '✅ Word文档已生成并下载', true);
+        } else {
+            const result = await response.json();
+            addLLMMessage('system', `❌ 导出失败: ${result.error}`, true);
+        }
+    } catch (error) {
+        addLLMMessage('system', `❌ 导出失败: ${error.message}`, true);
+    }
+}
+
+// 切换章节结果展开/收起
+function toggleSectionResult(sectionNum) {
+    const bodyId = `sectionResult_${sectionNum.replace(/\./g, '_')}`;
+    const body = document.getElementById(bodyId);
+    if (body) {
+        body.style.display = body.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+// 取消招标作答
+function cancelBidAnswering() {
+    currentBidData = {
+        docId: null,
+        sectionNumbers: [],
+        sections: {},
+        results: []
+    };
+    addLLMMessage('system', '已取消招标作答');
+}
+
+// 需求文件选择
+document.getElementById('reqFile').addEventListener('change', function() {
+    const fileName = this.files.length > 0 ? this.files[0].name : '';
+    document.getElementById('reqFileName').textContent = fileName;
+    
+    if (fileName) {
+        document.getElementById('btnAnalyzeFile').style.display = 'inline-block';
+        addLLMMessage('system', `已选择文件: <strong>${escapeHtml(fileName)}</strong><br>请点击"智能匹配"或"分析文档"按钮开始分析`, true);
+    } else {
+        document.getElementById('btnAnalyzeFile').style.display = 'none';
+    }
+});
+
+// LLM输入框回车发送
+document.getElementById('llmQueryInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        doLLMSearch();
+    }
+});
+
+// ============== LLM配置管理弹窗功能 ==============
+
+// 模型选项映射
+const llmModelOptions = {
+    'openai': ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo', 'gpt-4o', 'gpt-4o-mini'],
+    'qianwen': ['qwen-turbo', 'qwen-plus', 'qwen-max', 'qwen-long'],
+    'wenxin': ['ernie-bot-4', 'ernie-bot-turbo', 'ernie-bot'],
+    'zhipu': ['glm-4', 'glm-4-flash', 'glm-3-turbo'],
+    'deepseek': ['deepseek-chat', 'deepseek-coder'],
+    'custom': []
+};
+
+let llmConfigsCache = [];
+
+// 打开配置弹窗
+function openLLMConfigModal() {
+    document.getElementById('llmConfigModal').classList.add('show');
+    loadLLMConfigList();
+}
+
+// 关闭配置弹窗
+function closeLLMConfigModal() {
+    document.getElementById('llmConfigModal').classList.remove('show');
+    hideLLMConfigForm();
+}
+
+// 加载配置列表
+async function loadLLMConfigList() {
+    const container = document.getElementById('llmConfigList');
+    container.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">加载中...</div>';
+    
+    try {
+        const response = await fetch('/llm/config', {
+            credentials: 'same-origin'
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            llmConfigsCache = result.data;
+            renderLLMConfigList(result.data);
+            // 同时更新下拉框
+            updateLLMConfigSelect(result.data);
+        } else {
+            container.innerHTML = '<div style="color:#dc3545;padding:10px;">加载配置失败</div>';
+        }
+    } catch (error) {
+        console.error('加载LLM配置失败:', error);
+        container.innerHTML = '<div style="color:#dc3545;padding:10px;">加载配置失败</div>';
+    }
+}
+
+// 渲染配置列表
+function renderLLMConfigList(configs) {
+    const container = document.getElementById('llmConfigList');
+    
+    if (!configs || configs.length === 0) {
+        container.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">暂无配置，请添加新配置</div>';
+        return;
+    }
+    
+    container.innerHTML = configs.map(config => `
+        <div class="llm-config-item ${config.is_default ? 'default' : ''}">
+            <div class="llm-config-info">
+                <div class="llm-config-name">
+                    ${escapeHtml(config.config_name)} 
+                    ${config.is_default ? '<span style="color:#667eea;font-size:12px;">(默认)</span>' : ''}
+                </div>
+                <div class="llm-config-detail">${config.model_type} / ${config.model_name}</div>
+            </div>
+            <div class="llm-config-actions">
+                <button onclick="editLLMConfig(${config.id})">编辑</button>
+                <button class="danger" onclick="deleteLLMConfig(${config.id})">删除</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// 更新LLM配置下拉框
+function updateLLMConfigSelect(configs) {
+    const select = document.getElementById('llmConfigSelect');
+    const currentValue = select.value;
+    
+    select.innerHTML = '<option value="">使用默认配置</option>';
+    
+    configs.forEach(config => {
+        const option = document.createElement('option');
+        option.value = config.id;
+        option.textContent = config.config_name + (config.is_default ? ' (默认)' : '');
+        select.appendChild(option);
+    });
+    
+    // 保持之前的选择
+    if (currentValue) {
+        select.value = currentValue;
+    }
+    
+    // 刷新状态显示
+    checkLLMConfig();
+}
+
+// 显示添加配置表单
+function showAddLLMConfigForm() {
+    document.getElementById('llmConfigForm').style.display = 'block';
+    document.getElementById('llmConfigFormTitle').textContent = '添加配置';
+    document.getElementById('editLLMConfigId').value = '';
+    
+    // 重置表单
+    document.getElementById('llmConfigName').value = '';
+    document.getElementById('llmModelType').value = 'openai';
+    document.getElementById('llmApiBaseUrl').value = '';
+    document.getElementById('llmApiKey').value = '';
+    document.getElementById('llmMaxTokens').value = '2048';
+    document.getElementById('llmTemperature').value = '0.7';
+    document.getElementById('llmIsDefault').checked = false;
+    
+    onLLMModelTypeChange();
+}
+
+// 隐藏配置表单
+function hideLLMConfigForm() {
+    document.getElementById('llmConfigForm').style.display = 'none';
+}
+
+// 模型类型变更
+function onLLMModelTypeChange() {
+    const modelType = document.getElementById('llmModelType').value;
+    const modelSelectContainer = document.getElementById('llmModelName').parentNode;
+    const options = llmModelOptions[modelType] || [];
+    
+    // 移除旧的元素
+    const oldElement = document.getElementById('llmModelName');
+    
+    if (options.length === 0) {
+        // 自定义模型，使用input
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = 'llmModelName';
+        input.placeholder = '输入模型名称';
+        oldElement.parentNode.replaceChild(input, oldElement);
+    } else {
+        // 预设模型，使用select
+        if (oldElement.tagName !== 'SELECT') {
+            const select = document.createElement('select');
+            select.id = 'llmModelName';
+            oldElement.parentNode.replaceChild(select, oldElement);
+        }
+        
+        const selectEl = document.getElementById('llmModelName');
+        selectEl.innerHTML = options.map(model => 
+            `<option value="${model}">${model}</option>`
+        ).join('');
+    }
+}
+
+// 编辑配置
+function editLLMConfig(configId) {
+    const config = llmConfigsCache.find(c => c.id === configId);
+    if (!config) return;
+    
+    document.getElementById('llmConfigForm').style.display = 'block';
+    document.getElementById('llmConfigFormTitle').textContent = '编辑配置';
+    document.getElementById('editLLMConfigId').value = configId;
+    
+    document.getElementById('llmConfigName').value = config.config_name;
+    document.getElementById('llmModelType').value = config.model_type;
+    onLLMModelTypeChange();
+    
+    const modelNameEl = document.getElementById('llmModelName');
+    modelNameEl.value = config.model_name;
+    
+    document.getElementById('llmApiBaseUrl').value = config.api_base_url || '';
+    document.getElementById('llmApiKey').value = '';  // 不显示密钥
+    document.getElementById('llmMaxTokens').value = config.max_tokens;
+    document.getElementById('llmTemperature').value = config.temperature;
+    document.getElementById('llmIsDefault').checked = config.is_default;
+}
+
+// 保存配置
+async function saveLLMConfig() {
+    const editId = document.getElementById('editLLMConfigId').value;
+    const isEdit = !!editId;
+    
+    const configName = document.getElementById('llmConfigName').value.trim();
+    const apiKey = document.getElementById('llmApiKey').value.trim();
+    
+    if (!configName) {
+        alert('请输入配置名称');
+        return;
+    }
+    
+    if (!isEdit && !apiKey) {
+        alert('请输入API Key');
+        return;
+    }
+    
+    const data = {
+        config_name: configName,
+        model_type: document.getElementById('llmModelType').value,
+        model_name: document.getElementById('llmModelName').value,
+        api_base_url: document.getElementById('llmApiBaseUrl').value || null,
+        max_tokens: parseInt(document.getElementById('llmMaxTokens').value),
+        temperature: parseFloat(document.getElementById('llmTemperature').value),
+        is_default: document.getElementById('llmIsDefault').checked
+    };
+    
+    if (apiKey) {
+        data.api_key = apiKey;
+    }
+    
+    try {
+        const url = isEdit ? `/llm/config/${editId}` : '/llm/config';
+        const method = isEdit ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin',
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(isEdit ? '配置更新成功' : '配置创建成功');
+            hideLLMConfigForm();
+            loadLLMConfigList();
+        } else {
+            alert('保存失败: ' + result.error);
+        }
+    } catch (error) {
+        console.error('保存配置失败:', error);
+        alert('保存失败，请稍后重试');
+    }
+}
+
+// 删除配置
+async function deleteLLMConfig(configId) {
+    if (!confirm('确定要删除这个配置吗？')) return;
+    
+    try {
+        const response = await fetch(`/llm/config/${configId}`, {
+            method: 'DELETE',
+            credentials: 'same-origin'
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            loadLLMConfigList();
+        } else {
+            alert('删除失败: ' + result.error);
+        }
+    } catch (error) {
+        console.error('删除配置失败:', error);
+        alert('删除失败，请稍后重试');
+    }
+}
+
+// 测试配置
+async function testLLMConfig() {
+    const editId = document.getElementById('editLLMConfigId').value;
+    const apiKey = document.getElementById('llmApiKey').value.trim();
+    const modelType = document.getElementById('llmModelType').value;
+    const modelName = document.getElementById('llmModelName').value;
+    
+    // 构建测试数据
+    let testData = {};
+    
+    if (apiKey) {
+        // 如果有输入API Key，使用表单数据直接测试
+        testData = {
+            model_type: modelType,
+            model_name: modelName,
+            api_key: apiKey,
+            api_base_url: document.getElementById('llmApiBaseUrl').value || null,
+            max_tokens: parseInt(document.getElementById('llmMaxTokens').value),
+            temperature: parseFloat(document.getElementById('llmTemperature').value)
+        };
+    } else if (editId) {
+        // 如果没有输入API Key但是在编辑模式，使用已保存的配置ID测试
+        testData = {config_id: parseInt(editId)};
+    } else {
+        // 新建配置且没有输入API Key
+        alert('请输入API Key后再测试');
+        return;
+    }
+    
+    try {
+        // 显示测试中状态
+        const testBtn = event.target;
+        const originalText = testBtn.textContent;
+        testBtn.textContent = '测试中...';
+        testBtn.disabled = true;
+        
+        const response = await fetch('/llm/test', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin',
+            body: JSON.stringify(testData)
+        });
+        
+        const result = await response.json();
+        
+        // 恢复按钮状态
+        testBtn.textContent = originalText;
+        testBtn.disabled = false;
+        
+        if (result.success) {
+            alert('测试成功！\n回复: ' + result.data.response);
+        } else {
+            alert('测试失败: ' + result.error);
+        }
+    } catch (error) {
+        console.error('测试失败:', error);
+        alert('测试失败，请检查网络连接');
+    }
+}
+
+// 点击弹窗外部关闭
+document.getElementById('llmConfigModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeLLMConfigModal();
+    }
+});
 </script>
 
 {% endblock %}

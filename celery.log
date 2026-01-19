@@ -210,3 +210,59 @@ User information: uid=0 euid=0 gid=0 egid=0
 2026-01-16 22:31:40.156 | INFO     | file_process.models.prodetail:process_document_task:790 - 直接调用WordParser处理Word文档: /mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/中冶南方自主可控数据库招标技术要求-点对点.docx
 2026-01-16 22:31:42.254 | INFO     | file_process.models.prodetail:process_document_task:950 - Word文档处理成功: doc_id=62b3235fc40dd3c31a20d4de3c7ed269, chapters=42, images=76
 [2026-01-16 22:31:42,273: INFO/MainProcess] Task file_process.models.prodetail.process_document_task[4f0bcb74-93ac-4de2-a823-58c26c62fda4] succeeded in 2.1179543419275433s: {'metadata': {'chapter_count': 42, 'image_count': 76}, 'process_time': '2026-01-16 22:31:42', 'status': 'success'}
+[2026-01-17 23:39:53,767: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[7505736e-c7ba-4193-8b13-f0d506c08ff3] received
+2026-01-17 23:39:53.769 | INFO     | file_process.models.fileupload:merge_chunks_task:567 - 开始合并: 62b3235fc40dd3c31a20d4de3c7ed269
+2026-01-17 23:39:53.769 | INFO     | file_process.models.fileupload:merge_chunks_task:568 - UPLOAD_FOLDER路径: /mnt/e/codebuddy/data/tencentcode/data/uploads/temp
+2026-01-17 23:39:53.770 | INFO     | file_process.models.fileupload:merge_chunks_task:569 - FINAL_FOLDER路径: /mnt/e/codebuddy/data/tencentcode/data/uploads/final
+2026-01-17 23:39:54.425 | INFO     | file_process.models.fileupload:merge_chunks_task:640 - 合并完成: 62b3235fc40dd3c31a20d4de3c7ed269 - /mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/中冶南方自主可控数据库招标技术要求-点对点.docx
+[2026-01-17 23:39:54,439: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[7505736e-c7ba-4193-8b13-f0d506c08ff3] succeeded in 0.6707292631035671s: {'status': 'completed', 'filename': '中冶南方自主可控数据库招标技术要求-点对点.docx', 'path': '/mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/中冶南方自主可控数据库招标技术要求-点对点.docx', 'size': 25930089}
+[2026-01-17 23:39:54,536: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[9bfef264-2226-4e36-aa62-c23fffa6bff5] received
+2026-01-17 23:39:54.537 | INFO     | file_process.models.fileupload:merge_chunks_task:567 - 开始合并: 54ca64f287d965cb8b9483926805b0ac
+2026-01-17 23:39:54.538 | INFO     | file_process.models.fileupload:merge_chunks_task:568 - UPLOAD_FOLDER路径: /mnt/e/codebuddy/data/tencentcode/data/uploads/temp
+2026-01-17 23:39:54.538 | INFO     | file_process.models.fileupload:merge_chunks_task:569 - FINAL_FOLDER路径: /mnt/e/codebuddy/data/tencentcode/data/uploads/final
+2026-01-17 23:39:55.651 | INFO     | file_process.models.fileupload:merge_chunks_task:640 - 合并完成: 54ca64f287d965cb8b9483926805b0ac - /mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/潍柴国产数据库采购项目-20240806.docx
+[2026-01-17 23:39:55,666: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[9bfef264-2226-4e36-aa62-c23fffa6bff5] succeeded in 1.1285781690385193s: {'status': 'completed', 'filename': '潍柴国产数据库采购项目-20240806.docx', 'path': '/mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/潍柴国产数据库采购项目-20240806.docx', 'size': 51575743}
+[2026-01-17 23:39:55,871: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[47a25305-4a4f-463e-9b81-6f9d83ec1c2d] received
+2026-01-17 23:39:55.873 | INFO     | file_process.models.fileupload:merge_chunks_task:567 - 开始合并: 90a66aba91b816bb9621ccd2d2f2eba0
+2026-01-17 23:39:55.873 | INFO     | file_process.models.fileupload:merge_chunks_task:568 - UPLOAD_FOLDER路径: /mnt/e/codebuddy/data/tencentcode/data/uploads/temp
+2026-01-17 23:39:55.874 | INFO     | file_process.models.fileupload:merge_chunks_task:569 - FINAL_FOLDER路径: /mnt/e/codebuddy/data/tencentcode/data/uploads/final
+2026-01-17 23:39:57.204 | INFO     | file_process.models.fileupload:merge_chunks_task:640 - 合并完成: 90a66aba91b816bb9621ccd2d2f2eba0 - /mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/山东黄金分布式点对点应答1212V1.docx
+[2026-01-17 23:39:57,217: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[47a25305-4a4f-463e-9b81-6f9d83ec1c2d] succeeded in 1.3448455679463223s: {'status': 'completed', 'filename': '山东黄金分布式点对点应答1212V1.docx', 'path': '/mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/山东黄金分布式点对点应答1212V1.docx', 'size': 80121117}
+[2026-01-17 23:39:57,220: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[f2a179f9-0ce9-406d-94e9-87b23e9a665f] received
+2026-01-17 23:39:57.220 | INFO     | file_process.models.fileupload:merge_chunks_task:567 - 开始合并: 719df31327598804d6f9cdd3aca0b3bd
+2026-01-17 23:39:57.221 | INFO     | file_process.models.fileupload:merge_chunks_task:568 - UPLOAD_FOLDER路径: /mnt/e/codebuddy/data/tencentcode/data/uploads/temp
+2026-01-17 23:39:57.221 | INFO     | file_process.models.fileupload:merge_chunks_task:569 - FINAL_FOLDER路径: /mnt/e/codebuddy/data/tencentcode/data/uploads/final
+2026-01-17 23:39:58.629 | INFO     | file_process.models.fileupload:merge_chunks_task:640 - 合并完成: 719df31327598804d6f9cdd3aca0b3bd - /mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/华能点对点-0419.docx
+[2026-01-17 23:39:58,644: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[f2a179f9-0ce9-406d-94e9-87b23e9a665f] succeeded in 1.4234099559253082s: {'status': 'completed', 'filename': '华能点对点-0419.docx', 'path': '/mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/华能点对点-0419.docx', 'size': 85552647}
+[2026-01-17 23:41:56,982: INFO/MainProcess] Task file_process.models.prodetail.process_document_task[f43254bf-cdfb-41aa-afbe-35a008aeb84f] received
+2026-01-17 23:41:56.983 | INFO     | file_process.models.prodetail:process_document_task:785 - 开始处理文档: doc_id=719df31327598804d6f9cdd3aca0b3bd, file_path=/mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/华能点对点-0419.docx
+2026-01-17 23:41:56.983 | INFO     | file_process.models.prodetail:process_document_task:790 - 直接调用WordParser处理Word文档: /mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/华能点对点-0419.docx
+2026-01-17 23:42:12.860 | INFO     | file_process.models.prodetail:process_document_task:950 - Word文档处理成功: doc_id=719df31327598804d6f9cdd3aca0b3bd, chapters=321, images=558
+[2026-01-17 23:42:12,884: INFO/MainProcess] Task file_process.models.prodetail.process_document_task[f43254bf-cdfb-41aa-afbe-35a008aeb84f] succeeded in 15.901463071000762s: {'metadata': {'chapter_count': 321, 'image_count': 558}, 'process_time': '2026-01-17 23:42:12', 'status': 'success'}
+[2026-01-17 23:42:12,889: INFO/MainProcess] Task file_process.models.prodetail.process_document_task[6fd88a8c-23e3-480a-a6a0-dffe7f60b66b] received
+2026-01-17 23:42:12.890 | INFO     | file_process.models.prodetail:process_document_task:785 - 开始处理文档: doc_id=90a66aba91b816bb9621ccd2d2f2eba0, file_path=/mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/山东黄金分布式点对点应答1212V1.docx
+2026-01-17 23:42:12.891 | INFO     | file_process.models.prodetail:process_document_task:790 - 直接调用WordParser处理Word文档: /mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/山东黄金分布式点对点应答1212V1.docx
+2026-01-17 23:43:06.258 | INFO     | file_process.models.prodetail:process_document_task:950 - Word文档处理成功: doc_id=90a66aba91b816bb9621ccd2d2f2eba0, chapters=149, images=763
+[2026-01-17 23:43:06,274: INFO/MainProcess] Task file_process.models.prodetail.process_document_task[6fd88a8c-23e3-480a-a6a0-dffe7f60b66b] succeeded in 53.384273317991756s: {'metadata': {'chapter_count': 149, 'image_count': 763}, 'process_time': '2026-01-17 23:43:06', 'status': 'success'}
+[2026-01-17 23:43:06,279: INFO/MainProcess] Task file_process.models.prodetail.process_document_task[6665a830-93f4-4640-843f-7d244599a177] received
+2026-01-17 23:43:06.280 | INFO     | file_process.models.prodetail:process_document_task:785 - 开始处理文档: doc_id=54ca64f287d965cb8b9483926805b0ac, file_path=/mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/潍柴国产数据库采购项目-20240806.docx
+2026-01-17 23:43:06.280 | INFO     | file_process.models.prodetail:process_document_task:790 - 直接调用WordParser处理Word文档: /mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/潍柴国产数据库采购项目-20240806.docx
+2026-01-17 23:43:16.988 | INFO     | file_process.models.prodetail:process_document_task:950 - Word文档处理成功: doc_id=54ca64f287d965cb8b9483926805b0ac, chapters=248, images=346
+[2026-01-17 23:43:17,004: INFO/MainProcess] Task file_process.models.prodetail.process_document_task[6665a830-93f4-4640-843f-7d244599a177] succeeded in 10.724063989007846s: {'metadata': {'chapter_count': 248, 'image_count': 346}, 'process_time': '2026-01-17 23:43:16', 'status': 'success'}
+[2026-01-17 23:43:17,008: INFO/MainProcess] Task file_process.models.prodetail.process_document_task[92b4f883-0507-453b-9ce0-93046a638793] received
+2026-01-17 23:43:17.008 | INFO     | file_process.models.prodetail:process_document_task:785 - 开始处理文档: doc_id=62b3235fc40dd3c31a20d4de3c7ed269, file_path=/mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/中冶南方自主可控数据库招标技术要求-点对点.docx
+2026-01-17 23:43:17.009 | INFO     | file_process.models.prodetail:process_document_task:790 - 直接调用WordParser处理Word文档: /mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/中冶南方自主可控数据库招标技术要求-点对点.docx
+2026-01-17 23:43:19.043 | INFO     | file_process.models.prodetail:process_document_task:950 - Word文档处理成功: doc_id=62b3235fc40dd3c31a20d4de3c7ed269, chapters=42, images=76
+[2026-01-17 23:43:19,063: INFO/MainProcess] Task file_process.models.prodetail.process_document_task[92b4f883-0507-453b-9ce0-93046a638793] succeeded in 2.054479298996739s: {'metadata': {'chapter_count': 42, 'image_count': 76}, 'process_time': '2026-01-17 23:43:19', 'status': 'success'}
+[2026-01-18 12:05:24,070: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[7caede12-4893-4935-b31c-836e8c2c41df] received
+2026-01-18 12:05:24.071 | INFO     | file_process.models.fileupload:merge_chunks_task:567 - 开始合并: fdbc2bd3c85cac03d6d2192c3183da8c
+2026-01-18 12:05:24.072 | INFO     | file_process.models.fileupload:merge_chunks_task:568 - UPLOAD_FOLDER路径: /mnt/e/codebuddy/data/tencentcode/data/uploads/temp
+2026-01-18 12:05:24.073 | INFO     | file_process.models.fileupload:merge_chunks_task:569 - FINAL_FOLDER路径: /mnt/e/codebuddy/data/tencentcode/data/uploads/final
+2026-01-18 12:05:24.131 | INFO     | file_process.models.fileupload:merge_chunks_task:640 - 合并完成: fdbc2bd3c85cac03d6d2192c3183da8c - /mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/中冶南方自主可控数据库招标技术要求 (1).docx
+[2026-01-18 12:05:24,150: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[7caede12-4893-4935-b31c-836e8c2c41df] succeeded in 0.07928406307473779s: {'status': 'completed', 'filename': '中冶南方自主可控数据库招标技术要求 (1).docx', 'path': '/mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/中冶南方自主可控数据库招标技术要求 (1).docx', 'size': 28409}
+[2026-01-18 12:23:43,770: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[4a90b5f9-bdf8-426b-87c1-c9205c08a083] received
+2026-01-18 12:23:43.771 | INFO     | file_process.models.fileupload:merge_chunks_task:567 - 开始合并: fdbc2bd3c85cac03d6d2192c3183da8c
+2026-01-18 12:23:43.772 | INFO     | file_process.models.fileupload:merge_chunks_task:568 - UPLOAD_FOLDER路径: /mnt/e/codebuddy/data/tencentcode/data/uploads/temp
+2026-01-18 12:23:43.772 | INFO     | file_process.models.fileupload:merge_chunks_task:569 - FINAL_FOLDER路径: /mnt/e/codebuddy/data/tencentcode/data/uploads/final
+2026-01-18 12:23:43.829 | INFO     | file_process.models.fileupload:merge_chunks_task:640 - 合并完成: fdbc2bd3c85cac03d6d2192c3183da8c - /mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/中冶南方自主可控数据库招标技术要求 (1).docx
+[2026-01-18 12:23:43,843: INFO/MainProcess] Task file_process.models.fileupload.merge_chunks_task[4a90b5f9-bdf8-426b-87c1-c9205c08a083] succeeded in 0.07264678599312901s: {'status': 'completed', 'filename': '中冶南方自主可控数据库招标技术要求 (1).docx', 'path': '/mnt/e/codebuddy/data/tencentcode/data/uploads/final/asd/中冶南方自主可控数据库招标技术要求 (1).docx', 'size': 28409}

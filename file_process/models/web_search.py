@@ -1,6 +1,6 @@
 """
 网络搜索服务模块
-支持Google、百度、Bing及自定义搜索引擎
+支持Google、百度、Bing、DuckDuckGo及自定义搜索引擎
 """
 import requests
 import json
@@ -52,6 +52,8 @@ class WebSearchService:
                 return self._search_baidu(query, num_results)
             elif search_engine == 'bing':
                 return self._search_bing(query, num_results)
+            elif search_engine == 'duckduckgo':
+                return self._search_duckduckgo(query, num_results)
             elif search_engine == 'custom':
                 return self._search_custom(query, num_results)
             else:
@@ -150,6 +152,77 @@ class WebSearchService:
             })
         
         return results
+    
+    def _search_duckduckgo(self, query, num_results):
+        """DuckDuckGo搜索（无需API Key）"""
+        try:
+            # 使用DuckDuckGo HTML搜索接口
+            url = "https://html.duckduckgo.com/html/"
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+            data = {
+                'q': query,
+                'b': ''
+            }
+            
+            response = requests.post(url, headers=headers, data=data, timeout=30)
+            response.raise_for_status()
+            
+            # 解析HTML结果
+            from html.parser import HTMLParser
+            
+            class DuckDuckGoParser(HTMLParser):
+                def __init__(self):
+                    super().__init__()
+                    self.results = []
+                    self.current_result = {}
+                    self.in_result = False
+                    self.in_title = False
+                    self.in_snippet = False
+                    
+                def handle_starttag(self, tag, attrs):
+                    attrs_dict = dict(attrs)
+                    if tag == 'a' and attrs_dict.get('class') == 'result__a':
+                        self.in_result = True
+                        self.in_title = True
+                        href = attrs_dict.get('href', '')
+                        # DuckDuckGo返回的是重定向URL，需要提取真实URL
+                        if 'uddg=' in href:
+                            import urllib.parse
+                            parsed = urllib.parse.parse_qs(urllib.parse.urlparse(href).query)
+                            self.current_result['url'] = parsed.get('uddg', [href])[0]
+                        else:
+                            self.current_result['url'] = href
+                    elif tag == 'a' and attrs_dict.get('class') == 'result__snippet':
+                        self.in_snippet = True
+                        
+                def handle_endtag(self, tag):
+                    if tag == 'a':
+                        if self.in_title:
+                            self.in_title = False
+                        if self.in_snippet:
+                            self.in_snippet = False
+                            if self.current_result.get('title') and self.current_result.get('url'):
+                                self.results.append(self.current_result)
+                                self.current_result = {}
+                            
+                def handle_data(self, data):
+                    text = data.strip()
+                    if text:
+                        if self.in_title:
+                            self.current_result['title'] = self.current_result.get('title', '') + text
+                        elif self.in_snippet:
+                            self.current_result['snippet'] = self.current_result.get('snippet', '') + text
+            
+            parser = DuckDuckGoParser()
+            parser.feed(response.text)
+            
+            return parser.results[:num_results]
+            
+        except Exception as e:
+            logger.error(f"DuckDuckGo搜索失败: {e}")
+            return []
     
     def _search_custom(self, query, num_results):
         """自定义搜索引擎"""

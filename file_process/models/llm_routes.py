@@ -142,9 +142,12 @@ def create_search_config():
     try:
         data = request.get_json()
         
+        # DuckDuckGo 不需要 api_key
+        api_key = data.get('api_key', '')
+        
         config_id = WebSearchConfigManager.create_config(
             search_engine=data['search_engine'],
-            api_key=data['api_key'],
+            api_key=api_key,
             api_url=data.get('api_url'),
             extra_params=data.get('extra_params'),
             is_default=data.get('is_default', False)
@@ -157,6 +160,38 @@ def create_search_config():
         })
     except Exception as e:
         logger.error(f"创建搜索配置失败: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@llm_bp.route('/search-config/<int:config_id>', methods=['PUT'])
+def update_search_config(config_id):
+    """更新网络搜索配置"""
+    try:
+        data = request.get_json()
+        
+        success = WebSearchConfigManager.update_config(config_id, **data)
+        
+        if success:
+            return jsonify({'success': True, 'message': '配置更新成功'})
+        else:
+            return jsonify({'success': False, 'error': '更新失败'}), 400
+    except Exception as e:
+        logger.error(f"更新搜索配置失败: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@llm_bp.route('/search-config/<int:config_id>', methods=['DELETE'])
+def delete_search_config(config_id):
+    """删除网络搜索配置"""
+    try:
+        success = WebSearchConfigManager.delete_config(config_id)
+        
+        if success:
+            return jsonify({'success': True, 'message': '配置删除成功'})
+        else:
+            return jsonify({'success': False, 'error': '删除失败'}), 400
+    except Exception as e:
+        logger.error(f"删除搜索配置失败: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -310,12 +345,36 @@ def ask_question():
 
 @llm_bp.route('/test', methods=['POST'])
 def test_llm_config():
-    """测试LLM配置是否可用"""
+    """测试LLM配置是否可用
+    
+    支持两种方式:
+    1. 传入 config_id 测试已保存的配置
+    2. 直接传入配置参数进行测试（用于保存前测试）
+    """
     try:
         data = request.get_json()
         config_id = data.get('config_id')
         
-        llm_service = get_llm_service(config_id)
+        # 如果传入了直接配置参数，使用临时配置测试
+        if data.get('model_type') and data.get('api_key'):
+            # 直接使用传入的配置参数测试
+            from .llm_service import LLMService
+            
+            temp_config = {
+                'model_type': data['model_type'],
+                'model_name': data.get('model_name', 'gpt-3.5-turbo'),
+                'api_key': data['api_key'],
+                'api_base_url': data.get('api_base_url'),
+                'max_tokens': data.get('max_tokens', 2048),
+                'temperature': data.get('temperature', 0.7)
+            }
+            
+            llm_service = LLMService(temp_config)
+        elif config_id:
+            # 使用已保存的配置
+            llm_service = get_llm_service(config_id)
+        else:
+            return jsonify({'success': False, 'error': '请提供配置ID或配置参数'}), 400
         
         # 发送测试消息
         result = llm_service.chat_completion([

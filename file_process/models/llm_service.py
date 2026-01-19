@@ -4,8 +4,20 @@ LLM服务核心模块
 """
 import json
 import requests
+from decimal import Decimal
 from config.logging_config import logger
 from .llm_config import LLMConfigManager
+
+
+def convert_decimal(obj):
+    """将Decimal类型转换为float，用于JSON序列化"""
+    if isinstance(obj, Decimal):
+        return float(obj)
+    elif isinstance(obj, dict):
+        return {k: convert_decimal(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_decimal(item) for item in obj]
+    return obj
 
 
 class LLMService:
@@ -18,9 +30,11 @@ class LLMService:
         Args:
             config: LLM配置，如果为None则使用默认配置
         """
-        self.config = config or LLMConfigManager.get_default_config()
-        if not self.config:
+        config = config or LLMConfigManager.get_default_config()
+        if not config:
             raise ValueError("未找到LLM配置，请先配置大模型")
+        # 转换Decimal类型为float，避免JSON序列化错误
+        self.config = convert_decimal(config)
     
     def chat_completion(self, messages, stream=False, **kwargs):
         """
@@ -66,7 +80,7 @@ class LLMService:
     
     def _call_openai_api(self, messages, params):
         """调用OpenAI兼容API"""
-        api_url = self.config.get('api_base_url', 'https://api.openai.com/v1')
+        api_url = self.config.get('api_base_url') or 'https://api.openai.com/v1'
         api_key = self.config.get('api_key')
         
         headers = {
@@ -88,8 +102,16 @@ class LLMService:
             return self._stream_response(url, headers, data)
         else:
             response = requests.post(url, headers=headers, json=data, timeout=120)
-            response.raise_for_status()
             result = response.json()
+            
+            # 检查API错误响应
+            if 'error' in result:
+                error_msg = result['error'].get('message', str(result['error']))
+                raise Exception(f"API错误: {error_msg}")
+            
+            if 'choices' not in result:
+                logger.error(f"API响应异常: {result}")
+                raise Exception(f"API响应格式错误: {result.get('msg', result.get('message', '未知错误'))}")
             
             return {
                 'content': result['choices'][0]['message']['content'],
@@ -159,7 +181,7 @@ class LLMService:
     
     def _call_zhipu_api(self, messages, params):
         """调用智谱GLM API"""
-        api_url = self.config.get('api_base_url', 'https://open.bigmodel.cn/api/paas/v4')
+        api_url = self.config.get('api_base_url') or 'https://open.bigmodel.cn/api/paas/v4'
         api_key = self.config.get('api_key')
         
         headers = {
@@ -176,13 +198,22 @@ class LLMService:
         }
         
         url = f"{api_url.rstrip('/')}/chat/completions"
+        logger.debug(f"智谱GLM请求URL: {url}")
         
         if params['stream']:
             return self._stream_response(url, headers, data)
         else:
             response = requests.post(url, headers=headers, json=data, timeout=120)
-            response.raise_for_status()
             result = response.json()
+            
+            # 检查API错误响应
+            if 'error' in result:
+                error_msg = result['error'].get('message', str(result['error']))
+                raise Exception(f"智谱API错误: {error_msg}")
+            
+            if 'choices' not in result:
+                logger.error(f"智谱API响应异常: {result}")
+                raise Exception(f"API响应格式错误: {result.get('msg', result.get('message', '未知错误'))}")
             
             return {
                 'content': result['choices'][0]['message']['content'],
