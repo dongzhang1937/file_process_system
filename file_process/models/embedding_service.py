@@ -482,6 +482,7 @@ class EmbeddingConfigManager:
             SELECT id, name, provider, model_name, api_key, api_base, dimensions, 
                    is_default, is_active, created_at
             FROM embedding_configs
+            WHERE is_active = 1
             ORDER BY is_default DESC, created_at DESC
         """
         configs = fetch_all(sql, ())

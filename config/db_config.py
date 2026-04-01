@@ -7,24 +7,30 @@ from .app_config import Config
 # 从统一配置文件获取数据库配置
 db_config = Config.get_mysql_config_dict()
 
-pool = PooledDB(
-    #列出pooledb常用的参数，并给出相应的中文注释
-    creator=pymysql,  # 数据库连接模块
-    maxconnections=Config.MYSQL_POOL_MAX_CONNECTIONS,  # 最大连接数
-    mincached=Config.MYSQL_POOL_MIN_CACHED,  # 初始化时，链接池中至少创建的空闲的链接，0表示不创建
-    blocking=Config.MYSQL_POOL_BLOCKING,  # 连接池中如果没有可用连接后，是否阻塞等待。True，等待；False，不等待然后报错
-    maxcached=Config.MYSQL_POOL_MAX_CACHED,  # 最大空闲连接数
-    maxshared=Config.MYSQL_POOL_MAX_SHARED,  # 共享连接数
-    setsession=[],  # 开始会话前执行的命令列表。如：["set datestyle to ...", "set time zone ..."]
-    ping=Config.MYSQL_POOL_PING,  # 连接的ping值
+# 构建连接池参数（unix_socket 仅在路径存在时使用，否则走 TCP）
+import os as _os
+_pool_kwargs = dict(
+    creator=pymysql,
+    maxconnections=Config.MYSQL_POOL_MAX_CONNECTIONS,
+    mincached=Config.MYSQL_POOL_MIN_CACHED,
+    blocking=Config.MYSQL_POOL_BLOCKING,
+    maxcached=Config.MYSQL_POOL_MAX_CACHED,
+    maxshared=Config.MYSQL_POOL_MAX_SHARED,
+    setsession=[],
+    ping=Config.MYSQL_POOL_PING,
     host=db_config['host'],
     port=db_config['port'],
     user=db_config['user'],
     password=db_config['password'],
     database=db_config['database'],
     charset=db_config['charset'],
-    unix_socket=db_config['unix_socket']
 )
+# 仅当 unix_socket 配置了且文件存在时才使用
+_unix_sock = db_config.get('unix_socket')
+if _unix_sock and _os.path.exists(_unix_sock):
+    _pool_kwargs['unix_socket'] = _unix_sock
+
+pool = PooledDB(**_pool_kwargs)
 
 def get_conn():
     conn = pool.connection()
