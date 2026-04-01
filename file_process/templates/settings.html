@@ -1,0 +1,503 @@
+{% extends "base.html" %}
+{% block title %}系统设置{% endblock %}
+{% block extra_css %}
+<style>
+.stg-layout{display:flex;flex:1;width:100%}
+.stg-main{flex:1;padding:24px;overflow-y:auto}
+.tab-nav{display:flex;gap:0;border-bottom:2px solid #e4e7ed;margin-bottom:20px;flex-wrap:wrap}
+.tab-btn{padding:10px 20px;border:none;background:none;cursor:pointer;font-size:14px;color:#606266;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;white-space:nowrap}
+.tab-btn:hover{color:#667eea;background:#f5f7fa}
+.tab-btn.active{color:#667eea;border-bottom-color:#667eea;font-weight:600}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.card{background:#fff;border:1px solid #e4e7ed;border-radius:8px;padding:16px;margin-bottom:12px}
+.card:hover{border-color:#667eea;box-shadow:0 2px 8px rgba(102,126,234,.1)}
+.card-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.card-title{font-weight:600;font-size:14px;color:#333}
+.badge{font-size:11px;padding:2px 8px;border-radius:10px}
+.badge-def{background:#e6f7ff;color:#1890ff}
+.badge-on{background:#f0f9eb;color:#67c23a}
+.badge-off{background:#fef0f0;color:#f56c6c}
+.card-info{font-size:13px;color:#909399}
+.card-acts{margin-top:10px;display:flex;gap:8px}
+.fm-sec{background:#fff;border:1px solid #e4e7ed;border-radius:8px;padding:20px;margin-bottom:16px}
+.fm-row{margin-bottom:12px}
+.fm-row label{display:block;margin-bottom:4px;font-size:13px;font-weight:600;color:#555}
+.fm-row input,.fm-row select,.fm-row textarea{width:100%;padding:8px 12px;border:1px solid #dcdfe6;border-radius:4px;font-size:13px;box-sizing:border-box}
+.fm-row input:focus,.fm-row select:focus,.fm-row textarea:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 2px rgba(102,126,234,.1)}
+.fm-row small{color:#909399;font-size:11px}
+.btn{padding:7px 16px;border:none;border-radius:4px;cursor:pointer;font-size:13px;transition:all .2s}
+.btn-p{background:#667eea;color:#fff}.btn-p:hover{background:#5a6fd6}
+.btn-s{background:#67c23a;color:#fff}.btn-s:hover{background:#5daf34}
+.btn-d{background:#f56c6c;color:#fff}.btn-d:hover{background:#e45656}
+.btn-o{background:#fff;color:#606266;border:1px solid #dcdfe6}.btn-o:hover{border-color:#667eea;color:#667eea}
+.btn-sm{padding:4px 10px;font-size:12px}
+.msg{padding:10px 14px;border-radius:4px;font-size:13px;margin-bottom:12px}
+.msg-ok{background:#f0f9eb;color:#67c23a;border:1px solid #c2e7b0}
+.msg-err{background:#fef0f0;color:#f56c6c;border:1px solid #fbc4c4}
+.msg-info{background:#e6f7ff;color:#1890ff;border:1px solid #91d5ff}
+.sqldb-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.sqldb-grid{grid-template-columns:1fr}}
+.rag-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.rag-num{font-size:28px;font-weight:bold;color:#667eea}
+.rag-lbl{font-size:13px;color:#909399;margin-top:4px}
+.pt-btn{padding:6px 14px;border:1px solid #dcdfe6;background:#fff;border-radius:4px 4px 0 0;cursor:pointer;font-size:12px;color:#606266;transition:all .2s}
+.pt-btn:hover{background:#f5f7fa;color:#667eea}
+.pt-btn.active{background:#667eea;color:#fff;border-color:#667eea}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="stg-layout">
+<div class="app-sidebar">
+    <h3>功能菜单</h3>
+    <ul>
+        <li><a href="/documentlist">文档上传</a></li>
+        <li><a href="/docprocess">文档处理</a></li>
+        <li><a href="/chatdoc">文档对话</a></li>
+        <li><a href="/settings" class="active">系统设置</a></li>
+    </ul>
+</div>
+<div class="stg-main">
+    <h2 style="margin-bottom:20px">⚙️ 系统设置</h2>
+    <div class="tab-nav">
+        <button class="tab-btn active" onclick="stab('llm',this)">🤖 LLM大模型</button>
+        <button class="tab-btn" onclick="stab('emb',this)">📊 Embedding</button>
+        <button class="tab-btn" onclick="stab('sql',this)">🗄️ SQL数据库</button>
+        {% if is_admin %}
+        <button class="tab-btn" onclick="stab('pt',this)">📝 Prompt模板</button>
+        {% endif %}
+        <button class="tab-btn" onclick="stab('sch',this)">🔍 搜索引擎</button>
+        <button class="tab-btn" onclick="stab('rag',this)">📚 RAG向量库</button>
+    </div>
+
+    <!-- LLM -->
+    <div id="tab-llm" class="tab-panel active">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h3 style="margin:0">LLM 大模型配置</h3>
+            <button class="btn btn-p" onclick="showLlmForm()">+ 添加配置</button>
+        </div>
+        <div id="llmFormArea" style="display:none"></div>
+        <div id="llmList"><div class="msg msg-info">加载中...</div></div>
+    </div>
+
+    <!-- Embedding -->
+    <div id="tab-emb" class="tab-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h3 style="margin:0">Embedding 向量模型配置</h3>
+            <button class="btn btn-p" onclick="showEmbForm()">+ 添加配置</button>
+        </div>
+        <div id="embStatus"></div>
+        <div id="embFormArea" style="display:none"></div>
+        <div id="embList"><div class="msg msg-info">加载中...</div></div>
+    </div>
+
+    <!-- SQL DB -->
+    <div id="tab-sql" class="tab-panel">
+        <h3 style="margin-bottom:12px">SQL 数据库连接配置</h3>
+        <div class="msg msg-info" style="margin-bottom:16px"><strong>说明：</strong>配置6种数据库连接，用于SQL语法验证。Oracle兼容模式默认复用PG连接。</div>
+        <div id="sqlCards" class="sqldb-grid"></div>
+    </div>
+
+    {% if is_admin %}
+    <!-- Prompt（仅管理员） -->
+    <div id="tab-pt" class="tab-panel">
+        <h3 style="margin-bottom:12px">Prompt 模板配置</h3>
+        <div class="msg msg-info" style="margin-bottom:16px"><strong>说明：</strong>自定义各阶段 Prompt。支持 {% raw %}<code>{{requirement}}</code>{% endraw %} 等占位符。留空使用系统默认。</div>
+        <div style="display:flex;gap:4px;margin-bottom:12px;border-bottom:2px solid #e4e7ed;padding-bottom:8px;flex-wrap:wrap">
+            <button class="pt-btn active" onclick="spt('sql_extraction_mysql',this)">🔍 MySQL</button>
+            <button class="pt-btn" onclick="spt('sql_extraction_pg',this)">🔍 PG</button>
+            <button class="pt-btn" onclick="spt('sql_extraction_oracle',this)">🔍 Oracle</button>
+            <button class="pt-btn" onclick="spt('web_search_summary',this)">🌐 搜索归纳</button>
+            <button class="pt-btn" onclick="spt('general',this)">🤖 通用</button>
+        </div>
+        <div class="fm-sec">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <label style="font-weight:600;font-size:13px" id="ptLabel">🔍 SQL(MySQL) Prompt</label>
+                <div><button class="btn btn-o btn-sm" onclick="resetPt()">恢复默认</button> <button class="btn btn-p btn-sm" onclick="savePt()">💾 保存</button></div>
+            </div>
+            <div style="font-size:11px;color:#909399;margin-bottom:8px" id="ptHint">可用变量：{% raw %}<code>{{requirement}}</code>{% endraw %}</div>
+            <textarea id="ptEditor" style="width:100%;height:400px;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.5;padding:12px;border:1px solid #dcdfe6;border-radius:4px;resize:vertical;background:#fafbfc" placeholder="输入 Prompt 模板..."></textarea>
+            <div id="ptStatus" style="font-size:11px;margin-top:4px"></div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Search -->
+    <div id="tab-sch" class="tab-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h3 style="margin:0">网络搜索引擎配置</h3>
+            <button class="btn btn-p" onclick="showSchForm()">+ 添加</button>
+        </div>
+        <div id="schList"><div class="msg msg-info">加载中...</div></div>
+        <div id="schFormArea" style="display:none"></div>
+    </div>
+
+    <!-- RAG -->
+    <div id="tab-rag" class="tab-panel">
+        <h3 style="margin-bottom:16px">RAG 向量知识库</h3>
+        <div id="ragStats"></div>
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+            {% if is_admin %}
+            <button class="btn btn-p" onclick="ragEmbed()">📂 批量向量化 download_doc</button>
+            {% endif %}
+            <button class="btn btn-o" onclick="loadRag()">🔄 刷新</button>
+        </div>
+        <div id="ragList"><div class="msg msg-info">加载中...</div></div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const isAdmin = {{ 'true' if is_admin else 'false' }};
+const H=s=>{const d=document.createElement('div');d.textContent=s||'';return d.innerHTML};
+
+// Tab
+function stab(id,btn){
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('tab-'+id).classList.add('active');btn.classList.add('active');
+    ({llm:loadLlm,emb:loadEmb,sql:loadSql,pt:()=>loadPt(curPt),sch:loadSch,rag:loadRag})[id]?.();
+}
+
+// ===== LLM =====
+let llmModels={};
+async function loadLlm(){
+    try{
+        // 加载模型类型
+        const mr=await(await fetch('/llm/config/models')).json();
+        if(mr.success)llmModels=mr.data||{};
+        const r=await(await fetch('/llm/config')).json();
+        if(!r.success){document.getElementById('llmList').innerHTML=`<div class="msg msg-err">${r.error}</div>`;return}
+        const cs=r.data||[];
+        if(!cs.length){document.getElementById('llmList').innerHTML='<div class="msg msg-info">暂无配置，请添加</div>';return}
+        document.getElementById('llmList').innerHTML=cs.map(c=>`<div class="card" id="llm-card-${c.id}">
+            <div class="card-hd"><span class="card-title">${H(c.config_name||c.name)}</span>
+            <span>${c.is_default?'<span class="badge badge-def">默认</span>':''}</span></div>
+            <div class="card-info">提供商: ${H(c.provider||c.model_type)} | 模型: ${H(c.model_name)}${c.api_base_url?' | API: '+H(c.api_base_url):''}</div>
+            <div class="card-acts">
+            ${!c.is_default?`<button class="btn btn-s btn-sm" onclick="setDefLlm(${c.id})">设为默认</button>`:''}
+            <button class="btn btn-o btn-sm" onclick="editLlm(${c.id},'${H(c.config_name||'')}','${H(c.model_type||c.provider||'')}','${H(c.model_name||'')}','${H(c.api_base_url||'')}')">编辑</button>
+            <button class="btn btn-o btn-sm" onclick="testLlm(${c.id})">测试</button>
+            <button class="btn btn-d btn-sm" onclick="delLlm(${c.id})">删除</button></div></div>`).join('');
+    }catch(e){document.getElementById('llmList').innerHTML=`<div class="msg msg-err">${e.message}</div>`}
+}
+function showLlmForm(editId,name,type,model,base){
+    // 先清除之前的编辑表单
+    document.querySelectorAll('.llm-inline-form').forEach(e=>e.remove());
+    document.getElementById('llmFormArea').style.display='none';
+    
+    const isEdit=!!editId;
+    const opts=Object.entries(llmModels).map(([k,v])=>`<option value="${k}" ${k===type?'selected':''}>${v.name||k}</option>`).join('');
+    const formHtml=`<div class="fm-sec llm-inline-form"><h4>${isEdit?'编辑':'添加'} LLM 配置${isEdit?' (ID:'+editId+')':''}</h4>
+        <div class="fm-row"><label>配置名称 *</label><input id="lf_name" value="${H(name||'')}" placeholder="如: 我的GPT-4"></div>
+        <div class="fm-row"><label>模型类型 *</label><select id="lf_type">${opts}</select></div>
+        <div class="fm-row"><label>模型名称 *</label><input id="lf_model" value="${H(model||'')}" placeholder="如: gpt-4o, deepseek-chat"></div>
+        <div class="fm-row"><label>API Key</label><input type="password" id="lf_key" placeholder="${isEdit?'留空不修改':'Ollama可留空'}"></div>
+        <div class="fm-row"><label>API Base URL</label><input id="lf_base" value="${H(base||'')}" placeholder="可选，如 https://api.openai.com/v1"></div>
+        <div class="fm-row"><label><input type="checkbox" id="lf_def" ${!isEdit?'checked':''}> 设为默认</label></div>
+        <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-p" onclick="saveLlm(${editId||'null'})">保存</button>
+        <button class="btn btn-o" onclick="closeLlmForm()">取消</button></div>
+        <div id="lf_msg" style="margin-top:8px"></div></div>`;
+    
+    if(isEdit){
+        // 编辑：插入到对应卡片下方
+        const card=document.getElementById('llm-card-'+editId);
+        if(card){card.insertAdjacentHTML('afterend',formHtml);card.nextElementSibling.scrollIntoView({behavior:'smooth',block:'nearest'})}
+    }else{
+        // 新增：显示在顶部
+        const a=document.getElementById('llmFormArea');a.style.display='block';a.innerHTML=formHtml;
+        a.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }
+}
+function closeLlmForm(){document.querySelectorAll('.llm-inline-form').forEach(e=>e.remove());document.getElementById('llmFormArea').style.display='none'}
+function editLlm(id,name,type,model,base){showLlmForm(id,name,type,model,base)}
+async function saveLlm(editId){
+    const b={config_name:document.getElementById('lf_name').value,model_type:document.getElementById('lf_type').value,
+        model_name:document.getElementById('lf_model').value,is_default:document.getElementById('lf_def').checked};
+    const key=document.getElementById('lf_key').value;if(key)b.api_key=key;
+    const base=document.getElementById('lf_base').value;if(base)b.api_base_url=base;
+    try{
+        let r;
+        if(editId){r=await(await fetch(`/llm/config/${editId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})).json()}
+        else{if(!b.api_key&&b.model_type!=='ollama'){document.getElementById('lf_msg').innerHTML='<span style="color:red">❌ 非Ollama模型需要API Key</span>';return}
+            r=await(await fetch('/llm/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})).json()}
+        if(r.success){closeLlmForm();loadLlm()}
+        else document.getElementById('lf_msg').innerHTML=`<span style="color:red">❌ ${r.error}</span>`
+    }catch(e){document.getElementById('lf_msg').innerHTML=`<span style="color:red">❌ ${e.message}</span>`}
+}
+async function setDefLlm(id){try{await fetch(`/llm/config/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({is_default:true})});loadLlm()}catch(e){alert(e.message)}}
+async function testLlm(id){
+    try{const r=await(await fetch('/llm/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({config_id:id})})).json();
+    alert(r.success?`✅ 测试成功: ${r.data?.model||''}`:`❌ ${r.error}`)}catch(e){alert(e.message)}
+}
+async function delLlm(id){if(!confirm('确认删除？'))return;try{await fetch(`/llm/config/${id}`,{method:'DELETE'});loadLlm()}catch(e){alert(e.message)}}
+
+// ===== Embedding =====
+async function loadEmb(){
+    try{
+        const sr=await(await fetch('/api/embedding/status')).json();
+        if(sr.success&&sr.data){const d=sr.data;
+            document.getElementById('embStatus').innerHTML=d.configured
+                ?`<div class="msg msg-ok">✅ 当前: <b>${H(d.default_config?.model_name)}</b> (${H(d.default_config?.provider)})</div>`
+                :'<div class="msg msg-err">⚠️ 未配置Embedding服务</div>'}
+        const r=await(await fetch('/api/embedding/config')).json();
+        const cs=r.data||[];
+        if(!cs.length){document.getElementById('embList').innerHTML='<div class="msg msg-info">暂无配置</div>';return}
+        document.getElementById('embList').innerHTML=cs.map(c=>`<div class="card" id="emb-card-${c.id}">
+            <div class="card-hd"><span class="card-title">${H(c.name)}</span>
+            <span>${c.is_default?'<span class="badge badge-def">默认</span>':''}</span></div>
+            <div class="card-info">提供商: ${H(c.provider)} | 模型: ${H(c.model_name)} | 维度: ${c.dimensions}</div>
+            <div class="card-acts">${!c.is_default?`<button class="btn btn-s btn-sm" onclick="setDefEmb(${c.id})">设为默认</button>`:''} 
+            <button class="btn btn-o btn-sm" onclick="editEmb(${c.id},'${H(c.name)}','${H(c.provider)}','${H(c.model_name)}',${c.dimensions},'${H(c.api_base||'')}')">编辑</button>
+            <button class="btn btn-o btn-sm" onclick="testEmb(${c.id})">测试</button>
+            <button class="btn btn-d btn-sm" onclick="delEmb(${c.id})">删除</button></div></div>`).join('');
+    }catch(e){document.getElementById('embList').innerHTML=`<div class="msg msg-err">${e.message}</div>`}
+}
+function showEmbForm(){
+    const a=document.getElementById('embFormArea');a.style.display='block';
+    a.innerHTML=`<div class="fm-sec"><h4>添加 Embedding 配置</h4>
+        <div class="fm-row"><label>配置名称 *</label><input id="ef_name" placeholder="如: BGE-M3"></div>
+        <div class="fm-row"><label>提供商 *</label><select id="ef_prov"><option value="">请选择</option>
+            <option value="ollama">Ollama/Sentence-Transformers</option><option value="openai">OpenAI</option>
+            <option value="hunyuan">腾讯混元</option><option value="huggingface">HuggingFace本地</option></select></div>
+        <div class="fm-row"><label>模型名称 *</label><input id="ef_model" placeholder="如: bge-m3"></div>
+        <div class="fm-row"><label>API Base URL</label><input id="ef_base" placeholder="如: http://119.45.183.233:11435"></div>
+        <div class="fm-row"><label>API Key</label><input type="password" id="ef_key" placeholder="不需要则留空"></div>
+        <div class="fm-row"><label>向量维度</label><input type="number" id="ef_dim" value="1024"></div>
+        <div class="fm-row"><label><input type="checkbox" id="ef_def" checked> 设为默认</label></div>
+        <div style="display:flex;gap:8px;margin-top:16px"><button class="btn btn-p" onclick="saveEmb()">保存</button>
+        <button class="btn btn-o" onclick="document.getElementById('embFormArea').style.display='none'">取消</button>
+        <button class="btn btn-s" onclick="testNewEmb()">测试连接</button></div>
+        <div id="ef_msg" style="margin-top:8px"></div></div>`;
+    a.scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function saveEmb(){
+    const b={name:document.getElementById('ef_name').value,provider:document.getElementById('ef_prov').value,
+        model_name:document.getElementById('ef_model').value,api_base:document.getElementById('ef_base').value||null,
+        api_key:document.getElementById('ef_key').value||null,dimensions:parseInt(document.getElementById('ef_dim').value)||1024,
+        is_default:document.getElementById('ef_def').checked};
+    try{const r=await(await fetch('/api/embedding/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})).json();
+        if(r.success){document.getElementById('embFormArea').style.display='none';loadEmb()}
+        else document.getElementById('ef_msg').innerHTML=`<span style="color:red">❌ ${r.error}</span>`
+    }catch(e){document.getElementById('ef_msg').innerHTML=`<span style="color:red">❌ ${e.message}</span>`}
+}
+function editEmb(id,name,provider,model,dims,apiBase){
+    // 清除之前的编辑表单
+    document.querySelectorAll('.emb-inline-form').forEach(e=>e.remove());
+    document.getElementById('embFormArea').style.display='none';
+    
+    const formHtml=`<div class="fm-sec emb-inline-form"><h4>编辑 Embedding 配置 (ID: ${id})</h4>
+        <div class="fm-row"><label>配置名称 *</label><input id="ef_name" value="${name}"></div>
+        <div class="fm-row"><label>提供商 *</label><select id="ef_prov">
+            <option value="ollama" ${provider==='ollama'?'selected':''}>Ollama/Sentence-Transformers</option>
+            <option value="openai" ${provider==='openai'?'selected':''}>OpenAI</option>
+            <option value="hunyuan" ${provider==='hunyuan'?'selected':''}>腾讯混元</option>
+            <option value="huggingface" ${provider==='huggingface'?'selected':''}>HuggingFace本地</option></select></div>
+        <div class="fm-row"><label>模型名称 *</label><input id="ef_model" value="${model}"></div>
+        <div class="fm-row"><label>API Base URL</label><input id="ef_base" value="${apiBase||''}" placeholder="留空不修改"></div>
+        <div class="fm-row"><label>API Key</label><input type="password" id="ef_key" placeholder="留空不修改"></div>
+        <div class="fm-row"><label>向量维度</label><input type="number" id="ef_dim" value="${dims}"></div>
+        <div style="display:flex;gap:8px;margin-top:16px"><button class="btn btn-p" onclick="updateEmb(${id})">保存修改</button>
+        <button class="btn btn-o" onclick="closeEmbForm()">取消</button>
+        <button class="btn btn-s" onclick="testNewEmb()">测试连接</button></div>
+        <div id="ef_msg" style="margin-top:8px"></div></div>`;
+    
+    const card=document.getElementById('emb-card-'+id);
+    if(card){card.insertAdjacentHTML('afterend',formHtml);card.nextElementSibling.scrollIntoView({behavior:'smooth',block:'nearest'})}
+}
+function closeEmbForm(){document.querySelectorAll('.emb-inline-form').forEach(e=>e.remove());document.getElementById('embFormArea').style.display='none'}
+async function updateEmb(id){
+    const b={name:document.getElementById('ef_name').value,provider:document.getElementById('ef_prov').value,
+        model_name:document.getElementById('ef_model').value,dimensions:parseInt(document.getElementById('ef_dim').value)||1024};
+    const base=document.getElementById('ef_base').value;if(base)b.api_base=base;
+    const key=document.getElementById('ef_key').value;if(key)b.api_key=key;
+    try{const r=await(await fetch(`/api/embedding/config/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})).json();
+        if(r.success){closeEmbForm();loadEmb()}
+        else document.getElementById('ef_msg').innerHTML=`<span style="color:red">❌ ${r.error}</span>`
+    }catch(e){document.getElementById('ef_msg').innerHTML=`<span style="color:red">❌ ${e.message}</span>`}
+}
+async function testNewEmb(){
+    const b={config_data:{provider:document.getElementById('ef_prov').value,model_name:document.getElementById('ef_model').value,
+        api_base:document.getElementById('ef_base').value,api_key:document.getElementById('ef_key').value,
+        dimensions:parseInt(document.getElementById('ef_dim').value)||1024}};
+    try{const r=await(await fetch('/api/embedding/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})).json();
+        document.getElementById('ef_msg').innerHTML=r.success?`<span style="color:green">✅ ${r.message||'成功'} 维度=${r.data?.dimensions}</span>`:`<span style="color:red">❌ ${r.error}</span>`
+    }catch(e){document.getElementById('ef_msg').innerHTML=`<span style="color:red">❌ ${e.message}</span>`}
+}
+async function testEmb(id){try{const r=await(await fetch('/api/embedding/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({config_id:id})})).json();alert(r.success?`✅ 维度=${r.data?.dimensions}`:`❌ ${r.error}`)}catch(e){alert(e.message)}}
+async function setDefEmb(id){try{await fetch(`/api/embedding/config/${id}/default`,{method:'POST'});loadEmb()}catch(e){alert(e.message)}}
+async function delEmb(id){if(!confirm('确认删除？'))return;try{await fetch(`/api/embedding/config/${id}`,{method:'DELETE'});loadEmb()}catch(e){alert(e.message)}}
+
+// ===== SQL DB =====
+const sqlInfo={mysql_centralized:{n:'兼容MySQL集中式',d:'pymysql',p:3306},mysql_distributed:{n:'兼容MySQL分布式(TDSQL)',d:'pymysql',p:3306},
+    pg_centralized:{n:'兼容PG集中式',d:'psycopg2',p:5432},pg_distributed:{n:'兼容PG分布式(TDSQL-PG)',d:'psycopg2',p:5432},
+    oracle_centralized:{n:'兼容Oracle集中式',d:'psycopg2',p:5432},oracle_distributed:{n:'兼容Oracle分布式',d:'psycopg2',p:5432}};
+async function loadSql(){
+    try{const r=await(await fetch('/llm/sql-db-config')).json();const cfgs={};
+        if(r.success)for(const c of(r.data||[]))cfgs[c.db_type]=c;
+        let h='';for(const[t,i]of Object.entries(sqlInfo)){const c=cfgs[t]||{};const en=!!c.is_enabled;
+            h+=`<div class="card"><div class="card-hd"><span class="card-title">${i.n}</span>
+            <label style="font-size:12px"><input type="checkbox" id="sq_en_${t}" ${en?'checked':''}> 启用</label></div>
+            <div style="font-size:11px;color:#909399;margin-bottom:8px">驱动: ${i.d}</div>
+            <div class="fm-row"><input id="sq_h_${t}" placeholder="主机" value="${H(c.host||'')}"></div>
+            <div class="fm-row"><input type="number" id="sq_p_${t}" placeholder="端口" value="${c.port||i.p}"></div>
+            <div class="fm-row"><input id="sq_u_${t}" placeholder="用户名" value="${H(c.username||'')}"></div>
+            <div class="fm-row"><input type="password" id="sq_pw_${t}" placeholder="密码"></div>
+            <div class="fm-row"><input id="sq_db_${t}" placeholder="数据库名" value="${H(c.database_name||'')}"></div>
+            <div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-p btn-sm" onclick="saveSql('${t}')">保存</button>
+            <button class="btn btn-s btn-sm" onclick="testSql('${t}')">测试</button></div>
+            <div id="sq_st_${t}" style="font-size:12px;margin-top:6px"></div></div>`}
+        document.getElementById('sqlCards').innerHTML=h;
+    }catch(e){document.getElementById('sqlCards').innerHTML=`<div class="msg msg-err">${e.message}</div>`}
+}
+async function saveSql(t){
+    const b={db_type:t,host:document.getElementById(`sq_h_${t}`).value,port:parseInt(document.getElementById(`sq_p_${t}`).value)||0,
+        username:document.getElementById(`sq_u_${t}`).value,password:document.getElementById(`sq_pw_${t}`).value,
+        database_name:document.getElementById(`sq_db_${t}`).value,is_enabled:document.getElementById(`sq_en_${t}`).checked?1:0};
+    try{const r=await(await fetch('/llm/sql-db-config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})).json();
+        document.getElementById(`sq_st_${t}`).innerHTML=r.success?'<span style="color:green">✅ 保存成功</span>':`<span style="color:red">❌ ${r.error}</span>`
+    }catch(e){document.getElementById(`sq_st_${t}`).innerHTML=`<span style="color:red">❌ ${e.message}</span>`}
+}
+async function testSql(t){
+    const b={db_type:t,host:document.getElementById(`sq_h_${t}`).value,port:parseInt(document.getElementById(`sq_p_${t}`).value)||0,
+        username:document.getElementById(`sq_u_${t}`).value,password:document.getElementById(`sq_pw_${t}`).value,
+        database_name:document.getElementById(`sq_db_${t}`).value};
+    try{const r=await(await fetch('/llm/sql-db-config/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})).json();
+        document.getElementById(`sq_st_${t}`).innerHTML=r.success?`<span style="color:green">✅ ${H(r.data?.version||'连接成功')}</span>`:`<span style="color:red">❌ ${r.data?.message||r.error}</span>`
+    }catch(e){document.getElementById(`sq_st_${t}`).innerHTML=`<span style="color:red">❌ ${e.message}</span>`}
+}
+
+// ===== Prompt =====
+let curPt='sql_extraction_mysql';
+const ptLabels={'sql_extraction_mysql':'🔍 SQL(MySQL)','sql_extraction_pg':'🔍 SQL(PG)','sql_extraction_oracle':'🔍 SQL(Oracle)',
+    'web_search_summary':'🌐 搜索归纳','general':'🤖 通用'};
+{% raw %}
+const ptHints={'sql_extraction_mysql':'<code>{{requirement}}</code>','sql_extraction_pg':'<code>{{requirement}}</code>',
+    'sql_extraction_oracle':'<code>{{requirement}}</code>','web_search_summary':'<code>{{requirement}}</code>, <code>{{search_results}}</code>',
+    'general':'<code>{{requirement}}</code>'};
+{% endraw %}
+function spt(s,btn){curPt=s;document.querySelectorAll('.pt-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+    document.getElementById('ptLabel').textContent=(ptLabels[s]||s)+' Prompt';
+    document.getElementById('ptHint').innerHTML='可用变量：'+(ptHints[s]||'');document.getElementById('ptStatus').textContent='';loadPt(s)}
+async function loadPt(scene){
+    const ed=document.getElementById('ptEditor');ed.value='加载中...';ed.disabled=true;
+    try{const r=await(await fetch(`/llm/skills-config?scene_type=${scene}`)).json();
+        if(r.success&&r.data&&r.data.length>0){const t=r.data.find(x=>x.is_default)||r.data[0];ed.value=t.system_prompt||'';ed.dataset.cid=t.id}
+        else{ed.value='';ed.dataset.cid=''}
+    }catch(e){ed.value='加载失败: '+e.message}ed.disabled=false}
+async function savePt(){
+    const ed=document.getElementById('ptEditor'),c=ed.value.trim(),cid=ed.dataset.cid,st=document.getElementById('ptStatus');
+    try{let r;
+        if(cid)r=await(await fetch(`/llm/skills-config/${cid}`,{method:'PUT',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({system_prompt:c,is_default:true,is_enabled:true})})).json();
+        else r=await(await fetch('/llm/skills-config',{method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({name:(ptLabels[curPt]||curPt)+' Prompt',scene_type:curPt,system_prompt:c,is_default:true,is_enabled:true})})).json();
+        if(r.success){st.style.color='#67c23a';st.textContent='✅ 保存成功';if(r.data?.id)ed.dataset.cid=r.data.id}
+        else{st.style.color='#f56c6c';st.textContent='❌ '+r.error}
+    }catch(e){st.style.color='#f56c6c';st.textContent='❌ '+e.message}}
+function resetPt(){if(confirm('确认清空？')){document.getElementById('ptEditor').value='';document.getElementById('ptStatus').textContent='已清空，请保存'}}
+
+// ===== Search =====
+async function loadSch(){
+    try{const r=await(await fetch('/llm/search-config')).json();const cs=r.data||[];
+        if(!cs.length){document.getElementById('schList').innerHTML='<div class="msg msg-info">暂无配置</div>';return}
+        document.getElementById('schList').innerHTML=cs.map(c=>`<div class="card">
+            <div class="card-hd"><span class="card-title">${H(c.name||c.search_engine||c.engine_type||'未命名')}</span>
+            <span>${c.is_default?'<span class="badge badge-def">默认</span>':''} <span class="badge ${c.is_active?'badge-on':'badge-off'}">${c.is_active?'启用':'禁用'}</span></span></div>
+            <div class="card-info">引擎: ${H(c.search_engine||c.engine_type||'-')} | API: ${H((c.api_url||c.api_base||'免费/无需API').substring(0,60))}</div>
+            <div class="card-acts"><button class="btn btn-d btn-sm" onclick="delSch(${c.id})">删除</button></div></div>`).join('');
+    }catch(e){document.getElementById('schList').innerHTML=`<div class="msg msg-err">${e.message}</div>`}}
+function showSchForm(){
+    const a=document.getElementById('schFormArea');a.style.display='block';
+    a.innerHTML=`<div class="fm-sec"><h4>添加搜索引擎</h4>
+        <div class="fm-row"><label>名称 *</label><input id="sf_name" placeholder="如: Google搜索"></div>
+        <div class="fm-row"><label>引擎类型 *</label><select id="sf_type">
+            <option value="google">Google</option><option value="bing">Bing</option>
+            <option value="serper">Serper</option><option value="custom">自定义</option></select></div>
+        <div class="fm-row"><label>API Key *</label><input type="password" id="sf_key" placeholder="搜索引擎 API Key"></div>
+        <div class="fm-row"><label>API Base URL</label><input id="sf_base" placeholder="自定义引擎的 API 地址（可选）"></div>
+        <div class="fm-row"><label>搜索引擎 ID</label><input id="sf_cx" placeholder="Google CSE 的 cx 参数（可选）"></div>
+        <div style="display:flex;gap:8px;margin-top:16px"><button class="btn btn-p" onclick="saveSch()">保存</button>
+        <button class="btn btn-o" onclick="document.getElementById('schFormArea').style.display='none'">取消</button></div>
+        <div id="sf_msg" style="margin-top:8px"></div></div>`;
+}
+async function saveSch(){
+    const b={search_engine:document.getElementById('sf_type').value,
+        api_key:document.getElementById('sf_key').value||'',api_url:document.getElementById('sf_base').value||'',
+        extra_params:document.getElementById('sf_cx').value?JSON.stringify({cx:document.getElementById('sf_cx').value}):null};
+    try{const r=await(await fetch('/llm/search-config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})).json();
+        if(r.success){document.getElementById('schFormArea').style.display='none';loadSch()}
+        else document.getElementById('sf_msg').innerHTML=`<span style="color:red">❌ ${r.error}</span>`
+    }catch(e){document.getElementById('sf_msg').innerHTML=`<span style="color:red">❌ ${e.message}</span>`}
+}
+async function delSch(id){if(!confirm('确认删除？'))return;try{await fetch(`/llm/search-config/${id}`,{method:'DELETE'});loadSch()}catch(e){alert(e.message)}}
+
+// ===== RAG =====
+async function loadRag(){
+    try{
+        const sr=await(await fetch('/api/rag/stats')).json();
+        if(sr.success&&sr.data){const s=sr.data.documents||{};
+            document.getElementById('ragStats').innerHTML=`<div class="rag-stats">
+                <div class="card" style="text-align:center"><div class="rag-num">${s.total_documents||0}</div><div class="rag-lbl">文档数</div></div>
+                <div class="card" style="text-align:center"><div class="rag-num">${s.total_sections||0}</div><div class="rag-lbl">章节数</div></div>
+                <div class="card" style="text-align:center"><div class="rag-num">${s.total_chunks||0}</div><div class="rag-lbl">检索块</div></div></div>`}
+        const dr=await(await fetch('/api/rag/documents')).json();const ds=dr.data||[];
+        if(!ds.length){document.getElementById('ragList').innerHTML='<div class="msg msg-info">暂无向量化文档</div>';return}
+        document.getElementById('ragList').innerHTML=ds.map(d=>`<div class="card">
+            <div class="card-hd"><span class="card-title">${H(d.filename)}</span>
+            <span class="badge ${d.status==='done'?'badge-on':d.status==='error'?'badge-off':'badge-def'}">${d.status}</span></div>
+            <div class="card-info">产品: ${H(d.product_name||'-')} | 章节: ${d.total_sections||0} | chunks: ${d.total_chunks||0}</div>
+            ${d.error_message?`<div style="color:#f56c6c;font-size:12px;margin-top:4px">${H(d.error_message)}</div>`:''}
+            <div class="card-acts">
+            ${d.status==='done'?`<button class="btn btn-o btn-sm" onclick="viewRagDetail(${d.id},'${H(d.filename)}')">查看切分</button>`:''}
+            ${isAdmin?`<button class="btn btn-d btn-sm" onclick="delRag(${d.id})">删除</button>`:''}</div></div>`).join('');
+    }catch(e){document.getElementById('ragList').innerHTML=`<div class="msg msg-err">${e.message}</div>`}}
+async function ragEmbed(){
+    if(!confirm('确认批量向量化 download_doc 目录下的所有文档？'))return;
+    document.getElementById('ragList').innerHTML='<div class="msg msg-info">⏳ 正在向量化，请稍候...</div>';
+    try{const r=await(await fetch('/api/rag/embed-directory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})})).json();
+        if(r.success){const d=r.data;alert(`完成！总计${d.total}，成功${d.success}，跳过${d.skipped}，失败${d.failed}`);loadRag()}
+        else alert('失败: '+r.error)
+    }catch(e){alert('请求失败: '+e.message);loadRag()}}
+async function delRag(id){if(!confirm('确认删除？'))return;try{await fetch(`/api/rag/documents/${id}`,{method:'DELETE'});loadRag()}catch(e){alert(e.message)}}
+
+async function viewRagDetail(docId,filename){
+    const listEl=document.getElementById('ragList');
+    listEl.innerHTML=`<div class="msg msg-info">加载切分详情: ${H(filename)}...</div>`;
+    try{
+        const r=await(await fetch(`/api/rag/documents/${docId}/detail`)).json();
+        if(!r.success){listEl.innerHTML=`<div class="msg msg-err">${r.error}</div>`;return}
+        const doc=r.data.document;const secs=r.data.sections||[];
+        let html=`<div style="margin-bottom:16px">
+            <button class="btn btn-o btn-sm" onclick="loadRag()">← 返回列表</button>
+            <span style="margin-left:12px;font-weight:600;font-size:15px">${H(filename)}</span>
+            <span style="margin-left:8px;font-size:13px;color:#909399">${secs.length} 个章节</span></div>`;
+        for(const s of secs){
+            const chunks=s.chunks||[];
+            html+=`<div class="card" style="margin-bottom:8px">
+                <div class="card-hd" onclick="this.parentElement.querySelector('.chunk-list').style.display=this.parentElement.querySelector('.chunk-list').style.display==='none'?'block':'none'" style="cursor:pointer">
+                    <span class="card-title" style="font-size:13px">${H(s.section_number||'')} ${H(s.title||'无标题')}</span>
+                    <span style="font-size:12px;color:#909399">层级${s.heading_level} | ${s.content_length||0}字 | ${chunks.length} chunks</span>
+                </div>
+                <div class="chunk-list" style="display:none;margin-top:8px;border-top:1px dashed #e4e7ed;padding-top:8px">
+                    <div style="font-size:11px;color:#909399;margin-bottom:6px">📂 路径: ${H(s.full_path||'-')}</div>`;
+            for(const c of chunks){
+                const preview=H((c.content||'').substring(0,200));
+                html+=`<div style="background:#fafbfc;border:1px solid #eee;border-radius:4px;padding:8px;margin-bottom:6px;font-size:12px">
+                    <div style="color:#667eea;font-size:11px;margin-bottom:4px">chunk #${c.chunk_index} (${c.content_length}字)</div>
+                    <div style="color:#333;line-height:1.5;white-space:pre-wrap">${preview}${(c.content||'').length>200?'<span style="color:#909399">...（点击展开）</span>':''}</div>
+                </div>`}
+            html+=`</div></div>`;
+        }
+        listEl.innerHTML=html;
+    }catch(e){listEl.innerHTML=`<div class="msg msg-err">${e.message}</div>`}
+}
+
+// 初始化
+document.addEventListener('DOMContentLoaded',()=>loadLlm());
+</script>
+{% endblock %}

@@ -1,0 +1,279 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor':'#ffffff','primaryTextColor':'#000000','primaryBorderColor':'#333333','lineColor':'#333333','secondaryColor':'#f5f5f5','tertiaryColor':'#e8e8e8','fontFamily':'Arial','fontSize':'13px'}}}%%
+
+graph LR
+    %% ===================================================================
+    %% 总调用关系架构图 — 前端JS函数 → 路由函数 → 服务层方法
+    %% 9大功能模块，38个fetch调用，28个JS函数
+    %% ===================================================================
+
+    subgraph FE["🖥️ chat_doc.html 前端 (28个JS函数, 38个fetch)"]
+        direction TB
+
+        subgraph FE_SQL["模块1: SQL数据库配置"]
+            F1["loadSqlDbStatusBrief()"]
+            F2["renderSQLDbCards()"]
+            F3["saveSQLDbConfig(dbType)"]
+            F4["testSQLDbConnection(dbType)"]
+        end
+
+        subgraph FE_PROMPT["模块2: Prompt技能配置"]
+            F5["loadPromptForScene(scene)"]
+            F6["savePromptConfig()"]
+            F7["resetPromptToDefault()"]
+        end
+
+        subgraph FE_SEARCH["模块3: 搜索引擎配置"]
+            F8["loadSearchConfigs()"]
+            F9["saveSearchConfig()"]
+            F10["deleteSearchConfig(id)"]
+        end
+
+        subgraph FE_LLM_CFG["模块4: LLM配置管理"]
+            F11["loadLLMConfigList()"]
+            F12["saveLLMConfig()"]
+            F13["deleteLLMConfig(id)"]
+            F14["testLLMConfig()"]
+        end
+
+        subgraph FE_EMBED["模块5: Embedding配置"]
+            F15["loadEmbeddingConfigs()"]
+            F16["loadEmbeddingProviders()"]
+            F17["checkEmbeddingStatus()"]
+            F18["testEmbeddingConfig()"]
+            F19["testEmbeddingConfigById(id)"]
+            F20["saveEmbeddingConfig()"]
+            F21["setDefaultEmbeddingConfig(id)"]
+            F22["deleteEmbeddingConfig(id)"]
+        end
+
+        subgraph FE_QUERY["模块6: LLM查询与文档分析"]
+            F23["loadLLMDocuments()"]
+            F24["loadLLMConfigs()"]
+            F25["checkLLMConfig()"]
+            F26["doLLMSearch()"]
+            F27["analyzeUploadedFile()"]
+        end
+
+        subgraph FE_TASK["模块7: 后台任务管理"]
+            F28["startBatchAnalysis()"]
+            F29["startTaskPolling(taskId)"]
+            F30["loadTaskResults(taskId)"]
+            F31["cancelBatchAnalysis()"]
+            F32["checkActiveTask()"]
+        end
+
+        subgraph FE_EXPORT["模块8: 导出功能"]
+            F33["exportLLMResults()"]
+            F34["exportBidAnswers(fmt)"]
+        end
+
+        subgraph FE_BID["模块9: 招标智能应答"]
+            F35["processBidInstruction()"]
+            F36["startBidAnswering()"]
+        end
+    end
+
+    subgraph RT["📡 路由层 (2个Blueprint)"]
+        direction TB
+
+        subgraph RT_LLM["llm_bp (llm_routes.py) 前缀: /llm"]
+            R1["GET /sql-db-config\nget_sql_db_configs()"]
+            R2["POST /sql-db-config\nsave_sql_db_config()"]
+            R3["POST /sql-db-config/test\ntest_sql_db_connection()"]
+            R4["GET /skills-config\nget_skills_configs()"]
+            R5["POST /skills-config\ncreate_skills_config()"]
+            R6["PUT /skills-config/:id\nupdate_skills_config()"]
+            R7["DELETE /skills-config/:id\ndelete_skills_config()"]
+            R8["GET /search-config\nget_search_configs()"]
+            R9["POST /search-config\ncreate_search_config()"]
+            R10["PUT /search-config/:id\nupdate_search_config()"]
+            R11["DELETE /search-config/:id\ndelete_search_config()"]
+            R12["GET /config\nget_llm_configs()"]
+            R13["POST /config\ncreate_llm_config()"]
+            R14["PUT /config/:id\nupdate_llm_config()"]
+            R15["DELETE /config/:id\ndelete_llm_config()"]
+            R16["POST /test\ntest_llm()"]
+        end
+
+        subgraph RT_CHAT["chatdoc (chat_db_doc.py) 前缀: /api/chat"]
+            R17["GET /embedding-configs\nget_embedding_configs()"]
+            R18["GET /embedding-providers\nget_embedding_providers()"]
+            R19["GET /embedding-config/check\ncheck_embedding_config()"]
+            R20["POST /embedding-config/test\ntest_embedding_config()"]
+            R21["POST|PUT /embedding-config\ncreate|update_embedding()"]
+            R22["POST /.../set-default\nset_default_embedding()"]
+            R23["DELETE /embedding-config/:id\ndelete_embedding_config()"]
+            R24["GET /documents\nget_documents()"]
+            R25["GET /llm-configs\nget_llm_configs()"]
+            R26["GET /llm-config/check\ncheck_llm_config()"]
+            R27["POST /llm-search\nllm_search()"]
+            R28["POST /analyze-file\nanalyze_uploaded_file()"]
+            R29["POST /task/submit\nsubmit_analysis_task()"]
+            R30["GET /task/:id/status\nget_task_status()"]
+            R31["GET /task/:id/results\nget_task_results()"]
+            R32["POST /task/:id/cancel\ncancel_analysis_task()"]
+            R33["GET /task/active\nget_active_task()"]
+            R34["POST /export-llm-results\nexport_llm_results()"]
+            R35["POST /export-bid-answers\nexport_bid_answers()"]
+            R36["POST /parse-bid-instruction\nparse_bid_instruction()"]
+            R37["POST /get-section-requirements\nget_section_requirements()"]
+            R38["POST /answer-bid-requirements\nanswer_bid_requirements()"]
+        end
+    end
+
+    subgraph SV["⚙️ 服务层 (10个文件, 12个核心类)"]
+        direction TB
+
+        S1["SQLDBConfigManager\n(mcp_skills_config.py)\nlist/upsert/delete/test"]
+        S2["SkillsConfigManager\n(mcp_skills_config.py)\nlist/create/update/delete\nget_prompt_for_scene()"]
+        S3["WebSearchConfigManager\n(llm_config.py)\nlist/create/update/delete"]
+        S4["LLMConfigManager\n(llm_config.py)\nlist/create/update/delete\nget_default_config()"]
+        S5["LLMService\n(llm_service.py)\nchat_completion()\nchat_with_tools()\n_call_ollama/openai/..."]
+        S6["EmbeddingConfigManager\n(embedding_service.py)\nget_all/create/update/delete\ntest_config()/get_providers()"]
+        S7["RequirementAnalyzer\n(requirement_analyzer.py)\nanalyze_requirement()\nparse_requirements_from_file()\nexport_to_word()"]
+        S8["AnalysisTaskManager\n(analysis_tasks.py)\ncreate_task()/start_task()\nget_status()/get_results()\ncancel_task()"]
+        S9["SQLValidator\n(sql_validator.py)\nexecute_sql_on_all()\nexecute_test_sql_on_all()\nThreadPoolExecutor"]
+        S10["function_tools\n(function_tools.py)\nexecute_sql/execute_sql_test\nweb_search"]
+        S11["BidDocumentParser\nBidAnswerGenerator\n(bid_requirement_extractor.py)"]
+        S12["PDFParser\nDocumentParser\n(pdf_parser.py)"]
+    end
+
+    subgraph EXT["🗄️ 外部依赖"]
+        E1[("MySQL\n配置存储/任务记录")]
+        E2[("6种SQL数据库\nMySQL/PG/Oracle\n×集中式/分布式")]
+        E3["LLM API\n8种: OpenAI/Gemini\n千问/文心/智谱\nDeepSeek/Ollama/自定义"]
+        E4["搜索引擎API\n5种: DuckDuckGo\nGoogle/Baidu/Bing/自定义"]
+        E5["Embedding API\nOpenAI / Ollama"]
+        E6[("文件系统\n临时文件/Word导出")]
+    end
+
+    %% ===== 模块1: SQL数据库配置 =====
+    F1 -->|"GET /llm/sql-db-config"| R1
+    F2 -->|"GET /llm/sql-db-config"| R1
+    F3 -->|"POST /llm/sql-db-config"| R2
+    F4 -->|"POST /llm/sql-db-config/test"| R3
+    R1 --> S1
+    R2 --> S1
+    R3 --> S1
+
+    %% ===== 模块2: Prompt技能配置 =====
+    F5 -->|"GET /llm/skills-config"| R4
+    F6 -->|"PUT /llm/skills-config/:id"| R6
+    F6 -->|"POST /llm/skills-config"| R5
+    F7 -->|"DELETE /llm/skills-config/:id"| R7
+    R4 --> S2
+    R5 --> S2
+    R6 --> S2
+    R7 --> S2
+
+    %% ===== 模块3: 搜索引擎配置 =====
+    F8 -->|"GET /llm/search-config"| R8
+    F9 -->|"POST/PUT /llm/search-config"| R9
+    F10 -->|"DELETE /llm/search-config/:id"| R11
+    R8 --> S3
+    R9 --> S3
+    R10 --> S3
+    R11 --> S3
+
+    %% ===== 模块4: LLM配置管理 =====
+    F11 -->|"GET /llm/config"| R12
+    F12 -->|"POST/PUT /llm/config"| R13
+    F13 -->|"DELETE /llm/config/:id"| R15
+    F14 -->|"POST /llm/test"| R16
+    R12 --> S4
+    R13 --> S4
+    R14 --> S4
+    R15 --> S4
+    R16 --> S5
+
+    %% ===== 模块5: Embedding配置 =====
+    F15 -->|"GET /embedding-configs"| R17
+    F16 -->|"GET /embedding-providers"| R18
+    F17 -->|"GET /embedding-config/check"| R19
+    F18 -->|"POST /embedding-config/test"| R20
+    F19 -->|"POST /embedding-config/test"| R20
+    F20 -->|"POST/PUT /embedding-config"| R21
+    F21 -->|"POST /set-default"| R22
+    F22 -->|"DELETE /embedding-config/:id"| R23
+    R17 --> S6
+    R18 --> S6
+    R19 --> S6
+    R20 --> S6
+    R21 --> S6
+    R22 --> S6
+    R23 --> S6
+
+    %% ===== 模块6: LLM查询与文档分析 =====
+    F23 -->|"GET /documents"| R24
+    F24 -->|"GET /llm-configs"| R25
+    F25 -->|"GET /llm-config/check"| R26
+    F26 -->|"POST /llm-search"| R27
+    F27 -->|"POST /analyze-file"| R28
+    R24 -.->|"直接SQL查询"| E1
+    R25 --> S4
+    R26 --> S4
+    R27 --> S7
+    R28 --> S7
+
+    %% ===== 模块7: 后台任务管理 =====
+    F28 -->|"POST /task/submit"| R29
+    F29 -->|"GET /task/:id/status\n每2秒轮询"| R30
+    F30 -->|"GET /task/:id/results"| R31
+    F31 -->|"POST /task/:id/cancel"| R32
+    F32 -->|"GET /task/active"| R33
+    R29 --> S8
+    R30 --> S8
+    R31 --> S8
+    R32 --> S8
+    R33 --> S8
+
+    %% ===== 模块8: 导出功能 =====
+    F33 -->|"POST /export-llm-results"| R34
+    F34 -->|"POST /export-bid-answers"| R35
+    R34 --> S7
+    R35 --> S11
+
+    %% ===== 模块9: 招标智能应答 =====
+    F35 -->|"POST /parse-bid-instruction\n+ POST /get-section-requirements"| R36
+    F35 -->|"POST /get-section-requirements"| R37
+    F36 -->|"POST /answer-bid-requirements"| R38
+    R36 --> S11
+    R37 --> S11
+    R38 --> S11
+
+    %% ===== 服务层内部调用 =====
+    S7 -->|"chat_completion()\nchat_with_tools()"| S5
+    S7 -->|"execute_test_sql_on_all()\nexecute_sql_on_all()"| S9
+    S7 -->|"execute_tool()"| S10
+    S7 -->|"get_prompt_for_scene()\nrender_prompt()"| S2
+    S7 -->|"parse()"| S12
+    S8 -->|"threading.Thread\nanalyze_requirement()"| S7
+    S10 -->|"execute_sql_on_all()\nexecute_test_sql_on_all()"| S9
+    S10 -->|"_web_search()"| S3
+    S11 -->|"chat_completion()"| S5
+
+    %% ===== 服务层 → 外部依赖 =====
+    S1 --> E1
+    S2 --> E1
+    S3 --> E1
+    S4 --> E1
+    S6 --> E1
+    S8 --> E1
+    S5 --> E3
+    S6 --> E5
+    S9 -->|"ThreadPoolExecutor\n6库并行"| E2
+    S10 --> E4
+    S7 --> E6
+    S11 --> E6
+    S12 --> E6
+
+    %% ===== 样式定义 =====
+    classDef frontend fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000000
+    classDef route fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000000
+    classDef service fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#000000
+    classDef external fill:#fce4ec,stroke:#c62828,stroke-width:2px,color:#000000
+
+    class F1,F2,F3,F4,F5,F6,F7,F8,F9,F10,F11,F12,F13,F14,F15,F16,F17,F18,F19,F20,F21,F22,F23,F24,F25,F26,F27,F28,F29,F30,F31,F32,F33,F34,F35,F36 frontend
+    class R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15,R16,R17,R18,R19,R20,R21,R22,R23,R24,R25,R26,R27,R28,R29,R30,R31,R32,R33,R34,R35,R36,R37,R38 route
+    class S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12 service
+    class E1,E2,E3,E4,E5,E6 external

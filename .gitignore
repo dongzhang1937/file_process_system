@@ -1,0 +1,6 @@
+uploads/*
+images/*
+file_process/download_doc/*
+gomypg/*
+gomypg/
+__pycache__/*

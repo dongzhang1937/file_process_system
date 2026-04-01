@@ -1,0 +1,122 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor':'#ffffff','primaryTextColor':'#000000','primaryBorderColor':'#333333','lineColor':'#333333','secondaryColor':'#f5f5f5','tertiaryColor':'#e8e8e8','fontFamily':'Arial','fontSize':'14px'}, 'sequence': {'actorMargin': 30, 'messageMargin': 20, 'mirrorActors': false}}}%%
+
+sequenceDiagram
+    participant FE as chat_doc.html
+    participant RT as chatdoc Route
+    participant RA as RequirementAnalyzer
+    participant LLM as LLMService
+    participant SV as SQLValidator
+    participant FT as function_tools
+    participant DB as MySQL
+    participant SQL6 as 6种SQL数据库
+    participant API as LLM API
+    participant WEB as 搜索引擎
+
+    Note over FE,WEB: 场景1: 单条需求智能匹配 (llm-search)
+
+    FE->>RT: POST /api/chat/llm-search
+    Note right of FE: {query, document_ids,\nenable_web_search,\nllm_config_id,\nenable_sql_validation}
+
+    RT->>RA: analyze_requirement(query, username, ...)
+
+    Note over RA: Stage 1: 精确匹配
+    RA->>DB: SELECT FROM chapters WHERE content LIKE ...
+    DB-->>RA: 匹配结果
+
+    alt 精确匹配成功
+        RA-->>RT: {match_type: "exact", answer: ...}
+        RT-->>FE: {success: true, data: result}
+    else 未匹配 - 进入Stage 2
+        Note over RA: Stage 2: SQL验证
+        RA->>SV: detect_sql_requirements(requirement)
+        SV-->>RA: true (含SQL相关需求)
+
+        alt Mode A: Function Calling (无自定义Prompt)
+            RA->>LLM: chat_with_tools(messages, tools)
+            LLM->>API: 发送请求 (含工具定义)
+            API-->>LLM: 返回tool_calls
+            LLM->>FT: execute_tool("execute_sql_test", args)
+            FT->>SV: execute_test_sql_on_all(statements)
+            SV->>SQL6: 并行执行SQL (ThreadPool)
+            SQL6-->>SV: 各库执行结果
+            SV-->>FT: 汇总结果
+            FT-->>LLM: 工具执行结果
+            LLM->>API: 发送结果请求最终回答
+            API-->>LLM: 最终分析回答
+            LLM-->>RA: {content, tool_calls_log}
+        else Mode B: 自定义Prompt
+            RA->>LLM: chat_completion(rendered_prompt)
+            LLM->>API: 发送请求
+            API-->>LLM: 返回JSON测试用例
+            LLM-->>RA: JSON测试用例
+            RA->>SV: execute_test_sql_on_all(parsed_statements)
+            SV->>SQL6: 并行执行
+            SQL6-->>SV: 结果
+            SV-->>RA: 汇总结果
+            RA->>LLM: chat_completion(验证结果总结prompt)
+            LLM->>API: 发送请求
+            API-->>LLM: 总结回答
+            LLM-->>RA: 最终答案
+        end
+
+        alt SQL验证成功
+            RA-->>RT: {match_type: "sql_validation", ...}
+            RT-->>FE: {success: true, data: result}
+        else SQL验证失败 - 进入Stage 3
+            Note over RA: Stage 3: 网络搜索
+            RA->>FT: execute_tool("web_search", {query})
+            FT->>WEB: 执行搜索
+            WEB-->>FT: 搜索结果
+            FT-->>RA: 搜索结果
+            RA->>LLM: chat_completion(搜索结果总结prompt)
+            LLM->>API: 发送请求
+            API-->>LLM: 总结回答
+            LLM-->>RA: 最终答案
+            RA-->>RT: {match_type: "web_search", ...}
+            RT-->>FE: {success: true, data: result}
+        end
+    end
+
+    Note over FE,WEB: 场景2: 批量文件分析 (后台任务模式)
+
+    FE->>RT: POST /api/chat/analyze-file (FormData)
+    Note right of FE: {file, document_ids[],\nllm_config_id,\nsection_filter}
+    RT->>RA: parse_requirements_from_file(path, filter)
+    RA-->>RT: requirements[]
+    RT-->>FE: {requirements, count, temp_file}
+
+    FE->>RT: POST /api/chat/task/submit
+    Note right of FE: {requirements,\ndocument_ids, ...}
+
+    RT->>DB: INSERT INTO analysis_tasks
+    DB-->>RT: task_id
+    RT->>RT: threading.Thread(target=_run_task)
+    RT-->>FE: {task_id, status: "running"}
+
+    loop 每2秒轮询
+        FE->>RT: GET /api/chat/task/{id}/status
+        RT->>DB: SELECT status, current FROM analysis_tasks
+        DB-->>RT: {status, current, total}
+        RT-->>FE: {status: "running", current: N}
+    end
+
+    Note over RT: 后台线程逐条处理
+    loop 每条需求
+        RT->>RA: analyze_requirement(req)
+        Note over RA: 执行三阶段分析(同上)
+        RA-->>RT: result
+        RT->>DB: JSON_ARRAY_APPEND(results_json, result)
+    end
+
+    RT->>DB: UPDATE status='completed'
+
+    FE->>RT: GET /api/chat/task/{id}/results
+    RT->>DB: SELECT results_json, summary_json
+    DB-->>RT: 完整结果
+    RT-->>FE: {results: [...], summary: {...}}
+
+    FE->>RT: POST /api/chat/export-llm-results
+    Note right of FE: {results, title,\nrequirement_tree}
+    RT->>RA: export_to_word(results, title, tree)
+    RA-->>RT: (filepath, filename)
+    RT-->>FE: Word文件下载
