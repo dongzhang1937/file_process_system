@@ -208,7 +208,7 @@ class LLMConfigManager:
     @classmethod
     def _clear_default_config(cls):
         """清除所有默认配置标记"""
-        sql = "UPDATE llm_configs SET is_default = 0 WHERE is_default = 1"
+        sql = "UPDATE llm_configs SET is_default = 0 WHERE is_default = 1 AND is_active = 1"
         dml_sql(sql)
     
     @classmethod
@@ -327,5 +327,5 @@ class WebSearchConfigManager:
     @classmethod
     def _clear_default_config(cls):
         """清除默认标记"""
-        sql = "UPDATE web_search_configs SET is_default = 0 WHERE is_default = 1"
+        sql = "UPDATE web_search_configs SET is_default = 0 WHERE is_default = 1 AND is_active = 1"
         dml_sql(sql)

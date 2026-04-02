@@ -39,7 +39,7 @@ def add_search_config(search_engine, api_key, api_url=None, extra_params=None, i
     """添加搜索配置"""
     # 如果设为默认，先清除其他默认
     if is_default:
-        dml_sql("UPDATE web_search_configs SET is_default = 0 WHERE is_default = 1")
+        dml_sql("UPDATE web_search_configs SET is_default = 0 WHERE is_default = 1 AND is_active = 1")
     
     sql = """
         INSERT INTO web_search_configs 

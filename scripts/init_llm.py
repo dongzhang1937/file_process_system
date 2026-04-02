@@ -123,7 +123,7 @@ def init_default_configs():
     """初始化默认配置（可选）"""
     
     # 检查是否已有配置
-    existing = fetch_one("SELECT COUNT(*) as cnt FROM llm_configs")
+    existing = fetch_one("SELECT COUNT(*) as cnt FROM llm_configs WHERE is_active = 1")
     if existing and existing.get('cnt', 0) > 0:
         print("○ LLM配置已存在，跳过初始化")
         return

@@ -499,7 +499,7 @@ class EmbeddingConfigManager:
         """创建新配置"""
         if is_default:
             # 取消其他默认配置
-            dml_sql("UPDATE embedding_configs SET is_default = 0 WHERE is_default = 1", ())
+            dml_sql("UPDATE embedding_configs SET is_default = 0 WHERE is_default = 1 AND is_active = 1", ())
         
         sql = """
             INSERT INTO embedding_configs 
@@ -529,7 +529,7 @@ class EmbeddingConfigManager:
                 if field == 'extra_config' and value is not None:
                     value = json.dumps(value)
                 if field == 'is_default' and value:
-                    dml_sql("UPDATE embedding_configs SET is_default = 0 WHERE is_default = 1", ())
+                    dml_sql("UPDATE embedding_configs SET is_default = 0 WHERE is_default = 1 AND is_active = 1", ())
                 updates.append(f"{field} = %s")
                 params.append(value)
         
@@ -545,7 +545,8 @@ class EmbeddingConfigManager:
     def delete_config(config_id: int, soft_delete: bool = True) -> bool:
         """删除配置（默认软删除）"""
         if soft_delete:
-            sql = "UPDATE embedding_configs SET is_active = 0 WHERE id = %s"
+            # 软删除时给 name 追加时间戳，释放唯一索引位置，避免重新添加同名配置时冲突
+            sql = "UPDATE embedding_configs SET is_active = 0, name = CONCAT(name, '_deleted_', UNIX_TIMESTAMP()) WHERE id = %s AND is_active = 1"
         else:
             sql = "DELETE FROM embedding_configs WHERE id = %s"
         affected = dml_sql(sql, (config_id,))
@@ -555,7 +556,7 @@ class EmbeddingConfigManager:
     def set_default(config_id: int) -> bool:
         """设置默认配置"""
         # 先取消所有默认
-        dml_sql("UPDATE embedding_configs SET is_default = 0 WHERE is_default = 1", ())
+        dml_sql("UPDATE embedding_configs SET is_default = 0 WHERE is_default = 1 AND is_active = 1", ())
         # 设置新默认
         sql = "UPDATE embedding_configs SET is_default = 1 WHERE id = %s AND is_active = 1"
         affected = dml_sql(sql, (config_id,))
