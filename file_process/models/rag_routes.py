@@ -114,6 +114,45 @@ def delete_document(doc_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@rag_bp.route('/documents/<int:doc_id>/retry', methods=['POST'])
+def retry_document(doc_id):
+    """重新向量化指定文档（用于 error/pending 状态的文档重试）"""
+    try:
+        import psycopg2, psycopg2.extras
+        from .rag_service import _get_pg_conn, embed_and_store_document
+
+        # 从 rag_documents 获取文件路径
+        conn = _get_pg_conn()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT id, filepath, filename, status FROM rag_documents WHERE id = %s", (doc_id,))
+        doc = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if not doc:
+            return jsonify({'success': False, 'error': '文档不存在'}), 404
+
+        filepath = doc.get('filepath')
+        if not filepath or not os.path.isfile(filepath):
+            return jsonify({'success': False, 'error': f'文件不存在: {filepath}'}), 400
+
+        # 强制重新处理
+        result = embed_and_store_document(filepath, force=True)
+
+        if result.get('success'):
+            return jsonify({
+                'success': True,
+                'message': f"向量化成功: {result.get('sections', 0)} 章节, {result.get('chunks', 0)} 检索块",
+                'data': result
+            })
+        else:
+            return jsonify({'success': False, 'error': result.get('message', '向量化失败')}), 500
+
+    except Exception as e:
+        logger.error(f"[RAG API] 重新向量化失败: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @rag_bp.route('/documents/<int:doc_id>/detail', methods=['GET'])
 def get_document_detail(doc_id):
     """获取文档切分详情（章节 + chunks）"""

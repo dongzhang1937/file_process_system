@@ -415,18 +415,29 @@ function showSchForm(){
     const a=document.getElementById('schFormArea');a.style.display='block';
     a.innerHTML=`<div class="fm-sec"><h4>添加搜索引擎</h4>
         <div class="fm-row"><label>名称 *</label><input id="sf_name" placeholder="如: Google搜索"></div>
-        <div class="fm-row"><label>引擎类型 *</label><select id="sf_type">
-            <option value="google">Google</option><option value="bing">Bing</option>
-            <option value="serper">Serper</option><option value="custom">自定义</option></select></div>
-        <div class="fm-row"><label>API Key *</label><input type="password" id="sf_key" placeholder="搜索引擎 API Key"></div>
-        <div class="fm-row"><label>API Base URL</label><input id="sf_base" placeholder="自定义引擎的 API 地址（可选）"></div>
-        <div class="fm-row"><label>搜索引擎 ID</label><input id="sf_cx" placeholder="Google CSE 的 cx 参数（可选）"></div>
+        <div class="fm-row"><label>引擎类型 *</label><select id="sf_type" onchange="onSchTypeChange()">
+            <option value="duckduckgo">DuckDuckGo（免费）</option><option value="google">Google</option><option value="bing">Bing</option>
+            <option value="baidu">百度</option><option value="custom">自定义</option></select></div>
+        <div id="sf_key_row" class="fm-row"><label>API Key</label><input type="password" id="sf_key" placeholder="搜索引擎 API Key"></div>
+        <div id="sf_base_row" class="fm-row"><label>API Base URL</label><input id="sf_base" placeholder="自定义引擎的 API 地址（可选）"></div>
+        <div id="sf_cx_row" class="fm-row"><label>搜索引擎 ID</label><input id="sf_cx" placeholder="Google CSE 的 cx 参数（可选）"></div>
         <div style="display:flex;gap:8px;margin-top:16px"><button class="btn btn-p" onclick="saveSch()">保存</button>
         <button class="btn btn-o" onclick="document.getElementById('schFormArea').style.display='none'">取消</button></div>
         <div id="sf_msg" style="margin-top:8px"></div></div>`;
 }
+function onSchTypeChange(){
+    const t=document.getElementById('sf_type').value;
+    const hide=t==='duckduckgo';
+    document.getElementById('sf_key_row').style.display=hide?'none':'';
+    document.getElementById('sf_base_row').style.display=(hide||t==='bing'||t==='baidu')?'none':'';
+    document.getElementById('sf_cx_row').style.display=t==='google'?'':'none';
+    if(!document.getElementById('sf_name').value){
+        const names={duckduckgo:'DuckDuckGo',google:'Google搜索',bing:'Bing搜索',baidu:'百度搜索',custom:'自定义搜索'};
+        document.getElementById('sf_name').value=names[t]||'';
+    }
+}
 async function saveSch(){
-    const b={search_engine:document.getElementById('sf_type').value,
+    const b={search_engine:document.getElementById('sf_type').value,name:document.getElementById('sf_name').value||'',
         api_key:document.getElementById('sf_key').value||'',api_url:document.getElementById('sf_base').value||'',
         extra_params:document.getElementById('sf_cx').value?JSON.stringify({cx:document.getElementById('sf_cx').value}):null};
     try{const r=await(await fetch('/llm/search-config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})).json();
@@ -454,6 +465,7 @@ async function loadRag(){
             ${d.error_message?`<div style="color:#f56c6c;font-size:12px;margin-top:4px">${H(d.error_message)}</div>`:''}
             <div class="card-acts">
             ${d.status==='done'?`<button class="btn btn-o btn-sm" onclick="viewRagDetail(${d.id},'${H(d.filename)}')">查看切分</button>`:''}
+            ${d.status==='error'||d.status==='pending'?`<button class="btn btn-s btn-sm" onclick="retryRag(${d.id})">重新向量化</button>`:''}
             ${isAdmin?`<button class="btn btn-d btn-sm" onclick="delRag(${d.id})">删除</button>`:''}</div></div>`).join('');
     }catch(e){document.getElementById('ragList').innerHTML=`<div class="msg msg-err">${e.message}</div>`}}
 async function ragEmbed(){
@@ -464,6 +476,14 @@ async function ragEmbed(){
         else alert('失败: '+r.error)
     }catch(e){alert('请求失败: '+e.message);loadRag()}}
 async function delRag(id){if(!confirm('确认删除？'))return;try{await fetch(`/api/rag/documents/${id}`,{method:'DELETE'});loadRag()}catch(e){alert(e.message)}}
+async function retryRag(id){
+    if(!confirm('确认重新向量化？'))return;
+    try{
+        const r=await(await fetch(`/api/rag/documents/${id}/retry`,{method:'POST'})).json();
+        if(r.success){alert(`✅ ${r.message||'向量化成功'}`);loadRag()}
+        else alert('❌ '+r.error)
+    }catch(e){alert('请求失败: '+e.message)}
+}
 
 async function viewRagDetail(docId,filename){
     const listEl=document.getElementById('ragList');
