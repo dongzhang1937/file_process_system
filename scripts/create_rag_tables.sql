@@ -10,6 +10,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 -- ==================== 层级1: 文档表 ====================
 CREATE TABLE IF NOT EXISTS rag_documents (
     id SERIAL PRIMARY KEY,
+    username VARCHAR(100) NOT NULL DEFAULT 'asd',  -- 所属用户
     filename VARCHAR(500) NOT NULL,              -- 文件名
     filepath VARCHAR(1000),                      -- 文件完整路径
     file_hash VARCHAR(64),                       -- 文件内容哈希（用于去重/更新检测）
@@ -27,6 +28,7 @@ CREATE TABLE IF NOT EXISTS rag_documents (
 CREATE INDEX IF NOT EXISTS idx_rag_docs_hash ON rag_documents(file_hash);
 CREATE INDEX IF NOT EXISTS idx_rag_docs_status ON rag_documents(status);
 CREATE INDEX IF NOT EXISTS idx_rag_docs_product ON rag_documents(product_name);
+CREATE INDEX IF NOT EXISTS idx_rag_docs_username ON rag_documents(username);
 
 -- ==================== 层级2: 章节表 ====================
 CREATE TABLE IF NOT EXISTS rag_sections (

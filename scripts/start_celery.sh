@@ -9,7 +9,9 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$PROJECT_ROOT"
 
 # 设置环境变量（使用项目根目录）
-export PYTHONPATH="$PROJECT_ROOT:$PYTHONPATH"
+export PYTHONPATH="$PROJECT_ROOT:${PYTHONPATH:-}"
+LOG_DIR="$PROJECT_ROOT/logs"
+mkdir -p "$LOG_DIR"
 
 # 检查是否已有 Celery 进程运行
 if pgrep -f "celery.*file_process.models.celery_app" > /dev/null; then
@@ -21,7 +23,7 @@ fi
 
 # 启动 Celery Worker
 echo "正在启动 Celery Worker..."
-LOG_FILE="$PROJECT_ROOT/celery.log"
+LOG_FILE="$LOG_DIR/celery.log"
 python -m celery -A file_process.models.celery_app worker \
     --loglevel=info \
     --concurrency=1 \

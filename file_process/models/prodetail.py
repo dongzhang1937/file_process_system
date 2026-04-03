@@ -968,7 +968,7 @@ def process_document_task(self, doc_id, file_path, username, filename):
                 }
                 try:
                     from .rag_service import embed_and_store_document
-                    rag_result = embed_and_store_document(file_path, force=True)
+                    rag_result = embed_and_store_document(file_path, force=True, username=username)
                     
                     if rag_result.get('success'):
                         embedding_info = {

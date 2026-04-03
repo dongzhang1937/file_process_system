@@ -1208,7 +1208,7 @@ async function deleteDoc(docId) {
         const response = await fetch(`${API_BASE}/delete`, {
             method: 'DELETE',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({doc_id: docId, reprocess: status === 'completed'}),
+            body: JSON.stringify({doc_id: docId}),
             credentials: 'same-origin'
         });
 

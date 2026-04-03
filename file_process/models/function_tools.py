@@ -307,7 +307,3 @@ def execute_tool(tool_name, arguments):
         logger.error(f"[Function Tools] 工具 {tool_name} 执行异常: {e}")
         return json.dumps({"error": f"工具执行异常: {str(e)}"}, ensure_ascii=False)
 
-
-def get_tool_names():
-    """获取所有工具名称列表"""
-    return list(_TOOL_EXECUTORS.keys())

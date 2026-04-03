@@ -6,7 +6,8 @@ from .models.documents import docu
 from .models.fileprocess import docp
 #from .models.fileupload import upload_bp
 from flask import request,session,redirect
-from extensions import db, celery # 导入扩展
+from extensions import db  # 导入扩展
+from .models.celery_app import celery  # Celery 实例统一来源
 from config.logging_config import setup_logging, logger
 
 # 添加父目录到路径，以便导入统一配置

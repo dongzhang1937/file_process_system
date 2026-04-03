@@ -20,6 +20,9 @@ from datetime import datetime
 from config.logging_config import logger
 from config.db_config import fetch_one, fetch_all, dml_sql, dml_sql_with_insert_id
 
+# 管理员用户名常量
+ADMIN_USERNAME = 'asd'
+
 
 class EmbeddingProvider(ABC):
     """Embedding 提供商基类"""
@@ -449,7 +452,7 @@ class EmbeddingConfigManager:
         """获取指定ID的配置"""
         sql = """
             SELECT id, name, provider, model_name, api_key, api_base,
-                   dimensions, is_default, is_active, extra_config
+                   dimensions, is_default, is_active, extra_config, username
             FROM embedding_configs
             WHERE id = %s AND is_active = 1
         """
@@ -460,32 +463,55 @@ class EmbeddingConfigManager:
         return result
     
     @staticmethod
-    def get_default_config() -> Optional[Dict]:
-        """获取默认配置"""
+    def get_default_config(username=ADMIN_USERNAME) -> Optional[Dict]:
+        """获取默认配置：优先用户自己的，回退 admin 的"""
+        if username != ADMIN_USERNAME:
+            sql = """
+                SELECT id, name, provider, model_name, api_key, api_base,
+                       dimensions, is_default, is_active, extra_config
+                FROM embedding_configs
+                WHERE is_default = 1 AND is_active = 1 AND username = %s
+                LIMIT 1
+            """
+            result = fetch_one(sql, (username,))
+            if result:
+                if result.get('extra_config') and isinstance(result['extra_config'], str):
+                    result['extra_config'] = json.loads(result['extra_config'])
+                return result
         sql = """
             SELECT id, name, provider, model_name, api_key, api_base,
                    dimensions, is_default, is_active, extra_config
             FROM embedding_configs
-            WHERE is_default = 1 AND is_active = 1
+            WHERE is_default = 1 AND is_active = 1 AND username = %s
             LIMIT 1
         """
-        result = fetch_one(sql, ())
+        result = fetch_one(sql, (ADMIN_USERNAME,))
         if result and result.get('extra_config'):
             if isinstance(result['extra_config'], str):
                 result['extra_config'] = json.loads(result['extra_config'])
         return result
     
     @staticmethod
-    def get_all_configs() -> List[Dict]:
-        """获取所有配置"""
-        sql = """
-            SELECT id, name, provider, model_name, api_key, api_base, dimensions, 
-                   is_default, is_active, created_at
-            FROM embedding_configs
-            WHERE is_active = 1
-            ORDER BY is_default DESC, created_at DESC
-        """
-        configs = fetch_all(sql, ())
+    def get_all_configs(username=ADMIN_USERNAME) -> List[Dict]:
+        """获取配置列表：admin看全部，普通用户看自己的+admin的"""
+        if username == ADMIN_USERNAME:
+            sql = """
+                SELECT id, name, provider, model_name, api_key, api_base, dimensions, 
+                       is_default, is_active, username, created_at
+                FROM embedding_configs
+                WHERE is_active = 1
+                ORDER BY is_default DESC, created_at DESC
+            """
+            configs = fetch_all(sql, ())
+        else:
+            sql = """
+                SELECT id, name, provider, model_name, api_key, api_base, dimensions, 
+                       is_default, is_active, username, created_at
+                FROM embedding_configs
+                WHERE (username = %s OR username = %s) AND is_active = 1
+                ORDER BY is_default DESC, created_at DESC
+            """
+            configs = fetch_all(sql, (username, ADMIN_USERNAME))
         # 脱敏 api_key
         for c in configs:
             if c.get('api_key'):
@@ -495,29 +521,36 @@ class EmbeddingConfigManager:
     @staticmethod
     def create_config(name: str, provider: str, model_name: str,
                       dimensions: int, api_key: str = None, api_base: str = None,
-                      is_default: bool = False, extra_config: Dict = None) -> int:
+                      is_default: bool = False, extra_config: Dict = None,
+                      username: str = ADMIN_USERNAME) -> int:
         """创建新配置"""
         if is_default:
-            # 取消其他默认配置
-            dml_sql("UPDATE embedding_configs SET is_default = 0 WHERE is_default = 1 AND is_active = 1", ())
+            # 取消该用户的其他默认配置
+            dml_sql("UPDATE embedding_configs SET is_default = 0 WHERE is_default = 1 AND is_active = 1 AND username = %s", (username,))
         
         sql = """
             INSERT INTO embedding_configs 
-            (name, provider, model_name, api_key, api_base, dimensions, is_default, extra_config)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            (name, provider, model_name, api_key, api_base, dimensions, is_default, extra_config, username)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         params = (
             name, provider, model_name, api_key, api_base, dimensions,
             1 if is_default else 0,
-            json.dumps(extra_config) if extra_config else None
+            json.dumps(extra_config) if extra_config else None,
+            username
         )
         
         result = dml_sql_with_insert_id(sql, params)
         return result[0] if result else None
     
     @staticmethod
-    def update_config(config_id: int, **kwargs) -> bool:
-        """更新配置"""
+    def update_config(config_id: int, username: str = ADMIN_USERNAME, **kwargs) -> bool:
+        """更新配置（普通用户只能改自己的）"""
+        if username != ADMIN_USERNAME:
+            existing = EmbeddingConfigManager.get_config(config_id)
+            if existing and existing.get('username', ADMIN_USERNAME) == ADMIN_USERNAME:
+                raise PermissionError("无权修改管理员配置")
+        
         allowed_fields = ['name', 'provider', 'model_name', 'api_key', 'api_base',
                           'dimensions', 'is_default', 'is_active', 'extra_config']
         
@@ -529,7 +562,7 @@ class EmbeddingConfigManager:
                 if field == 'extra_config' and value is not None:
                     value = json.dumps(value)
                 if field == 'is_default' and value:
-                    dml_sql("UPDATE embedding_configs SET is_default = 0 WHERE is_default = 1 AND is_active = 1", ())
+                    dml_sql("UPDATE embedding_configs SET is_default = 0 WHERE is_default = 1 AND is_active = 1 AND username = %s", (username,))
                 updates.append(f"{field} = %s")
                 params.append(value)
         
@@ -542,10 +575,14 @@ class EmbeddingConfigManager:
         return affected > 0
     
     @staticmethod
-    def delete_config(config_id: int, soft_delete: bool = True) -> bool:
-        """删除配置（默认软删除）"""
+    def delete_config(config_id: int, soft_delete: bool = True, username: str = ADMIN_USERNAME) -> bool:
+        """删除配置（普通用户只能删自己的）"""
+        if username != ADMIN_USERNAME:
+            existing = EmbeddingConfigManager.get_config(config_id)
+            if existing and existing.get('username', ADMIN_USERNAME) == ADMIN_USERNAME:
+                raise PermissionError("无权删除管理员配置")
+        
         if soft_delete:
-            # 软删除时给 name 追加时间戳，释放唯一索引位置，避免重新添加同名配置时冲突
             sql = "UPDATE embedding_configs SET is_active = 0, name = CONCAT(name, '_deleted_', UNIX_TIMESTAMP()) WHERE id = %s AND is_active = 1"
         else:
             sql = "DELETE FROM embedding_configs WHERE id = %s"
@@ -553,10 +590,10 @@ class EmbeddingConfigManager:
         return affected > 0
     
     @staticmethod
-    def set_default(config_id: int) -> bool:
+    def set_default(config_id: int, username: str = ADMIN_USERNAME) -> bool:
         """设置默认配置"""
-        # 先取消所有默认
-        dml_sql("UPDATE embedding_configs SET is_default = 0 WHERE is_default = 1 AND is_active = 1", ())
+        # 先取消该用户的所有默认
+        dml_sql("UPDATE embedding_configs SET is_default = 0 WHERE is_default = 1 AND is_active = 1 AND username = %s", (username,))
         # 设置新默认
         sql = "UPDATE embedding_configs SET is_default = 1 WHERE id = %s AND is_active = 1"
         affected = dml_sql(sql, (config_id,))
@@ -632,14 +669,16 @@ class EmbeddingService:
         'ollama': OllamaEmbedding,
     }
     
-    def __init__(self, config_id: int = None):
+    def __init__(self, config_id: int = None, username: str = ADMIN_USERNAME):
         """
         初始化 Embedding 服务
         
         Args:
             config_id: 配置ID，为 None 则使用默认配置
+            username: 用户名，用于获取用户级别的默认配置
         """
         self.config_id = config_id
+        self.username = username
         self.config = None
         self.provider = None
         self._init_provider()
@@ -649,7 +688,7 @@ class EmbeddingService:
         if self.config_id:
             self.config = EmbeddingConfigManager.get_config(self.config_id)
         else:
-            self.config = EmbeddingConfigManager.get_default_config()
+            self.config = EmbeddingConfigManager.get_default_config(username=self.username)
         
         if not self.config:
             logger.warning("未找到 Embedding 配置，将使用简单的词向量方案")

@@ -1,5 +1,4 @@
-from flask import Blueprint,request,redirect,render_template,url_for,flash,session
-from config.db_config import fetch_one,fetch_all,dml_sql
+from flask import Blueprint, render_template
 
 docu=Blueprint('docu',__name__)
 

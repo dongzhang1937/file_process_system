@@ -1,14 +1,19 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # 文档处理系统启动脚本
 echo "启动文档处理系统..."
 
-# 获取脚本所在目录
+# 获取项目根目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$PROJECT_ROOT"
 
-# 设置环境变量（使用当前目录）
-export PYTHONPATH="$SCRIPT_DIR:$PYTHONPATH"
+# 设置环境变量（使用项目根目录）
+export PYTHONPATH="$PROJECT_ROOT:${PYTHONPATH:-}"
+LOG_DIR="$PROJECT_ROOT/logs"
+mkdir -p "$LOG_DIR"
 
 # 检查Redis是否运行
 echo "检查Redis服务..."
@@ -27,20 +32,23 @@ if ! mysqladmin ping -h127.0.0.1 -P3306 -utest -ptest > /dev/null 2>&1; then
 fi
 echo "✅ MySQL服务正常"
 
-# 创建日志目录
-mkdir -p logs
-
 # 启动Celery Worker (后台运行)
 echo "启动Celery Worker..."
-nohup python -m celery -A file_process.modeles.celery_app worker \
+nohup python -m celery -A file_process.models.celery_app worker \
     --loglevel=info \
     --concurrency=2 \
     --pool=solo \
     --hostname=worker1@%h \
-    > logs/celery.log 2>&1 &
+    > "$LOG_DIR/celery.log" 2>&1 &
 
 CELERY_PID=$!
 echo "Celery Worker已启动 (PID: $CELERY_PID)"
+
+cleanup() {
+    echo "停止Celery Worker..."
+    kill "$CELERY_PID" 2>/dev/null || true
+}
+trap cleanup EXIT
 
 # 等待Celery启动
 sleep 3
@@ -48,9 +56,5 @@ sleep 3
 # 启动Flask应用
 echo "启动Flask应用..."
 python app.py
-
-# 如果Flask应用退出，也停止Celery Worker
-echo "停止Celery Worker..."
-kill $CELERY_PID 2>/dev/null || true
 
 echo "系统已停止"

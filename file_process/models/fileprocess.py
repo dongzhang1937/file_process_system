@@ -1,5 +1,4 @@
-from flask import Blueprint,request,redirect,render_template,url_for,flash,session
-from config.db_config import fetch_one,fetch_all,dml_sql
+from flask import Blueprint, render_template, session
 
 docp=Blueprint('docp',__name__)
 
@@ -12,5 +11,6 @@ def documentlist():
 def settings_page():
     """系统设置页面（所有用户可访问，部分功能按权限控制）"""
     user_info = session.get('user')
-    is_admin = user_info and user_info.get('username') == 'asd'
-    return render_template('settings.html', is_admin=is_admin)
+    username = user_info.get('username', 'anonymous') if user_info else 'anonymous'
+    is_admin = username == 'asd'
+    return render_template('settings.html', is_admin=is_admin, username=username)

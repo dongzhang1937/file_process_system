@@ -2,7 +2,7 @@
 LLM功能路由模块
 提供LLM配置管理等API接口
 """
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from config.logging_config import logger
 from .llm_config import LLMConfigManager, WebSearchConfigManager
 from .llm_service import get_llm_service
@@ -11,13 +11,19 @@ from .llm_service import get_llm_service
 llm_bp = Blueprint('llm', __name__, url_prefix='/llm')
 
 
+def _get_username():
+    """从 session 获取当前用户名"""
+    return session.get('user', {}).get('username', 'anonymous')
+
+
 # ==================== LLM配置管理API ====================
 
 @llm_bp.route('/config', methods=['GET'])
 def list_llm_configs():
     """获取所有LLM配置"""
     try:
-        configs = LLMConfigManager.list_configs()
+        username = _get_username()
+        configs = LLMConfigManager.list_configs(username=username)
         # 隐藏敏感信息
         for config in configs:
             if config.get('api_key'):
@@ -37,6 +43,7 @@ def create_llm_config():
     """创建LLM配置"""
     try:
         data = request.get_json()
+        username = _get_username()
         
         required_fields = ['config_name', 'model_type', 'model_name']
         for field in required_fields:
@@ -56,7 +63,8 @@ def create_llm_config():
             max_tokens=data.get('max_tokens', 2048),
             temperature=data.get('temperature', 0.7),
             is_default=data.get('is_default', False),
-            extra_params=data.get('extra_params')
+            extra_params=data.get('extra_params'),
+            username=username
         )
         
         return jsonify({
@@ -74,13 +82,16 @@ def update_llm_config(config_id):
     """更新LLM配置"""
     try:
         data = request.get_json()
+        username = _get_username()
         
-        success = LLMConfigManager.update_config(config_id, **data)
+        success = LLMConfigManager.update_config(config_id, username=username, **data)
         
         if success:
             return jsonify({'success': True, 'message': '配置更新成功'})
         else:
             return jsonify({'success': False, 'error': '更新失败'}), 400
+    except PermissionError as e:
+        return jsonify({'success': False, 'error': str(e)}), 403
     except Exception as e:
         logger.error(f"更新LLM配置失败: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -90,12 +101,15 @@ def update_llm_config(config_id):
 def delete_llm_config(config_id):
     """删除LLM配置"""
     try:
-        success = LLMConfigManager.delete_config(config_id)
+        username = _get_username()
+        success = LLMConfigManager.delete_config(config_id, username=username)
         
         if success:
             return jsonify({'success': True, 'message': '配置删除成功'})
         else:
             return jsonify({'success': False, 'error': '删除失败'}), 400
+    except PermissionError as e:
+        return jsonify({'success': False, 'error': str(e)}), 403
     except Exception as e:
         logger.error(f"删除LLM配置失败: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -116,7 +130,8 @@ def get_supported_models():
 def list_search_configs():
     """获取网络搜索配置"""
     try:
-        configs = WebSearchConfigManager.list_configs()
+        username = _get_username()
+        configs = WebSearchConfigManager.list_configs(username=username)
         for config in configs:
             if config.get('api_key'):
                 config['api_key'] = config['api_key'][:8] + '****'
@@ -135,6 +150,7 @@ def create_search_config():
     """创建网络搜索配置"""
     try:
         data = request.get_json()
+        username = _get_username()
         
         # DuckDuckGo 不需要 api_key
         api_key = data.get('api_key', '')
@@ -144,7 +160,8 @@ def create_search_config():
             api_key=api_key,
             api_url=data.get('api_url'),
             extra_params=data.get('extra_params'),
-            is_default=data.get('is_default', False)
+            is_default=data.get('is_default', False),
+            username=username
         )
         
         return jsonify({
@@ -162,13 +179,16 @@ def update_search_config(config_id):
     """更新网络搜索配置"""
     try:
         data = request.get_json()
+        username = _get_username()
         
-        success = WebSearchConfigManager.update_config(config_id, **data)
+        success = WebSearchConfigManager.update_config(config_id, username=username, **data)
         
         if success:
             return jsonify({'success': True, 'message': '配置更新成功'})
         else:
             return jsonify({'success': False, 'error': '更新失败'}), 400
+    except PermissionError as e:
+        return jsonify({'success': False, 'error': str(e)}), 403
     except Exception as e:
         logger.error(f"更新搜索配置失败: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -178,12 +198,15 @@ def update_search_config(config_id):
 def delete_search_config(config_id):
     """删除网络搜索配置"""
     try:
-        success = WebSearchConfigManager.delete_config(config_id)
+        username = _get_username()
+        success = WebSearchConfigManager.delete_config(config_id, username=username)
         
         if success:
             return jsonify({'success': True, 'message': '配置删除成功'})
         else:
             return jsonify({'success': False, 'error': '删除失败'}), 400
+    except PermissionError as e:
+        return jsonify({'success': False, 'error': str(e)}), 403
     except Exception as e:
         logger.error(f"删除搜索配置失败: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -351,7 +374,8 @@ def list_sql_db_configs():
     """获取所有SQL数据库连接配置"""
     try:
         from .mcp_skills_config import SQLDBConfigManager
-        configs = SQLDBConfigManager.list_configs()
+        username = _get_username()
+        configs = SQLDBConfigManager.list_configs(owner_username=username)
 
         # 密码脱敏
         for config in configs:
@@ -374,6 +398,7 @@ def save_sql_db_config():
     try:
         from .mcp_skills_config import SQLDBConfigManager
         data = request.get_json()
+        username = _get_username()
 
         db_type = data.get('db_type')
         if not db_type:
@@ -385,6 +410,7 @@ def save_sql_db_config():
         # 使用 upsert 模式
         result = SQLDBConfigManager.upsert_config(
             db_type=db_type,
+            owner_username=username,
             host=data.get('host', ''),
             port=int(data.get('port', 0)),
             username=data.get('username', ''),
@@ -409,12 +435,15 @@ def update_sql_db_config(config_id):
     try:
         from .mcp_skills_config import SQLDBConfigManager
         data = request.get_json()
-        success = SQLDBConfigManager.update_config(config_id, **data)
+        username = _get_username()
+        success = SQLDBConfigManager.update_config(config_id, owner_username=username, **data)
 
         if success:
             return jsonify({'success': True, 'message': '配置更新成功'})
         else:
             return jsonify({'success': False, 'error': '更新失败'}), 400
+    except PermissionError as e:
+        return jsonify({'success': False, 'error': str(e)}), 403
     except Exception as e:
         logger.error(f"更新SQL数据库配置失败: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -425,12 +454,15 @@ def delete_sql_db_config(config_id):
     """删除SQL数据库连接配置"""
     try:
         from .mcp_skills_config import SQLDBConfigManager
-        success = SQLDBConfigManager.delete_config(config_id)
+        username = _get_username()
+        success = SQLDBConfigManager.delete_config(config_id, owner_username=username)
 
         if success:
             return jsonify({'success': True, 'message': '配置删除成功'})
         else:
             return jsonify({'success': False, 'error': '删除失败'}), 400
+    except PermissionError as e:
+        return jsonify({'success': False, 'error': str(e)}), 403
     except Exception as e:
         logger.error(f"删除SQL数据库配置失败: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500

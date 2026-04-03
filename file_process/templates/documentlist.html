@@ -915,15 +915,16 @@
             }
         }
         
-        // 删除任务
+        // 移除本地上传任务（仅影响当前页面展示，不删除服务器端已落库记录）
         function deleteTask(taskId) {
             const task = uploadTasks.find(t => t.id === taskId);
             if (!task) return;
             
-            if (task.status === 'uploading' || task.status === 'merging') {
-                if (!confirm('任务正在进行中，确定要删除吗？')) {
-                    return;
-                }
+            const message = task.status === 'uploading' || task.status === 'merging'
+                ? '任务正在进行中，确定要从当前页面移除此本地上传任务吗？\n\n这不会删除服务器端已经接收的分片或后续落库记录。'
+                : '确定要从当前页面移除此本地上传任务吗？';
+            if (!confirm(message)) {
+                return;
             }
             
             // 从数组中移除
@@ -935,8 +936,8 @@
                 row.remove();
             }
             
-            // 如果没有任务了，显示空消息
-            if (uploadTasks.length === 0) {
+            // 只有表格中确实没有任何记录时才显示空消息
+            if (uploadTasks.length === 0 && uploadTableBody.children.length === 0) {
                 emptyMessage.style.display = 'block';
             }
         }

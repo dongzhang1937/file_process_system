@@ -1773,7 +1773,7 @@
                     <label style="font-size: 12px;"><input type="checkbox" class="sqlDbTypeCheckbox" value="oracle_distributed"> Oracle分布式</label>
                 </div>
                 <div class="option-group" id="sqlDbConfigGroup" style="display: none;">
-                    <a href="/settings" target="_blank" style="color: #667eea; font-size: 12px;">⚙️ 数据库连接配置（前往设置页面）</a>
+                    <a href="/settings" style="color: #667eea; font-size: 12px;">⚙️ 数据库连接配置（前往设置页面）</a>
                     <span id="sqlDbStatusBrief" style="font-size: 11px; color: #909399; margin-left: 6px;"></span>
                 </div>
             </div>
@@ -1823,7 +1823,7 @@
                             <span id="logPanelCount" style="font-size:11px; opacity:0.8;"></span>
                         </div>
                         <div class="panel-actions">
-                            <a href="/settings" target="_blank" title="在系统设置中配置Prompt" style="text-decoration:none;padding:2px 6px;font-size:12px;color:#606266;border:1px solid #ddd;border-radius:3px;">⚙️ Prompt</a>
+                            <a href="/settings" title="在系统设置中配置Prompt" style="text-decoration:none;padding:2px 6px;font-size:12px;color:#606266;border:1px solid #ddd;border-radius:3px;">⚙️ Prompt</a>
                             <button onclick="clearLogPanel()">🗑️ 清空</button>
                             <button onclick="toggleLogPanel()">◀ 收起</button>
                         </div>
@@ -1955,14 +1955,6 @@ function populateLogEntryWithProcessLogs(entryId, processLogs, matchType) {
 }
 
 // ==================== SQL数据库配置管理（chat_doc页面） ====================
-const sqlDbTypeInfo = {
-    'mysql_centralized':  { name: 'MySQL集中式', color: '#409eff', driver: 'pymysql', defaultPort: 3306, reuseFrom: null },
-    'mysql_distributed':  { name: 'MySQL分布式(TDSQL)', color: '#409eff', driver: 'pymysql', defaultPort: 3306, reuseFrom: null },
-    'pg_centralized':     { name: 'PG集中式', color: '#67c23a', driver: 'psycopg2', defaultPort: 5432, reuseFrom: null },
-    'pg_distributed':     { name: 'PG分布式(TDSQL-PG)', color: '#67c23a', driver: 'psycopg2', defaultPort: 5432, reuseFrom: null },
-    'oracle_centralized': { name: 'Oracle集中式', color: '#e6a23c', driver: 'psycopg2', defaultPort: 5432, reuseFrom: 'pg_centralized' },
-    'oracle_distributed': { name: 'Oracle分布式', color: '#e6a23c', driver: 'psycopg2', defaultPort: 5432, reuseFrom: 'pg_distributed' },
-};
 
 // SQL验证开关联动
 document.addEventListener('DOMContentLoaded', function() {

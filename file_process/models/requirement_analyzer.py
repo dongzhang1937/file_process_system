@@ -14,11 +14,9 @@ import tempfile
 from datetime import datetime
 from docx import Document
 from difflib import SequenceMatcher
-from flask import Blueprint, request, jsonify, session, send_file
-from config.db_config import fetch_one, fetch_all, dml_sql, dml_sql_with_insert_id, query_sql
+from config.db_config import fetch_one, fetch_all
 from config.logging_config import logger
-from .llm_service import LLMService, get_llm_service
-from .llm_config import LLMConfigManager
+from .llm_service import get_llm_service
 from .web_search import WebSearchService
 
 
@@ -102,14 +100,19 @@ class RequirementAnalyzer:
     FUZZY_MATCH_THRESHOLD = 0.6   # 模糊匹配阈值
     SEMANTIC_MATCH_THRESHOLD = 0.5  # 语义匹配阈值
     
-    def __init__(self, llm_config_id=None):
+    # 管理员用户名常量
+    ADMIN_USERNAME = 'asd'
+    
+    def __init__(self, llm_config_id=None, username=None):
         """
         初始化需求分析器
         
         Args:
             llm_config_id: LLM配置ID，为None则使用默认配置
+            username: 用户名，用于获取用户级别的配置
         """
         self.llm_config_id = llm_config_id
+        self.username = username or self.ADMIN_USERNAME
         self.llm_service = None
         self.web_search_service = WebSearchService()
     
@@ -1900,7 +1903,7 @@ class RequirementAnalyzer:
         else:
             # 未指定时，获取所有已启用的
             from .mcp_skills_config import SQLDBConfigManager
-            enabled = SQLDBConfigManager.get_enabled_db_types()
+            enabled = SQLDBConfigManager.get_enabled_db_types(owner_username=self.username)
             for dt in enabled:
                 cat = get_db_category(dt)
                 if cat not in db_categories:
@@ -3167,7 +3170,7 @@ class RequirementAnalyzer:
         
         try:
             # 检索
-            results = search_similar_chunks(content, top_k=8, threshold=0.45)
+            results = search_similar_chunks(content, top_k=8, threshold=0.45, username=self.username)
             process_log['search_results_count'] = len(results)
             
             if not results:
@@ -4437,6 +4440,6 @@ class RequirementAnalyzer:
         }
 
 
-def get_requirement_analyzer(llm_config_id=None):
+def get_requirement_analyzer(llm_config_id=None, username=None):
     """获取需求分析器实例"""
-    return RequirementAnalyzer(llm_config_id)
+    return RequirementAnalyzer(llm_config_id, username=username)

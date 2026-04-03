@@ -1532,38 +1532,3 @@ class DocumentParser:
         else:
             raise ValueError(f"不支持的文件类型: {ext}，仅支持 .pdf 和 .docx")
 
-
-def parse_pdf_file(file_path: str, use_llm: bool = False) -> Tuple[List[Dict], str, dict]:
-    """
-    解析 PDF 文件的便捷函数
-    
-    Args:
-        file_path: PDF 文件路径
-        use_llm: 是否使用 LLM 智能识别章节结构（更准确但需要API调用）
-    
-    Returns:
-        (chapters, full_text, summary): 章节列表、完整文本、摘要信息
-    """
-    parser = PDFParser(file_path)
-    
-    if use_llm:
-        chapters, full_text = parser.parse_with_llm()
-    else:
-        chapters, full_text = parser.parse()
-    
-    summary = parser.get_summary()
-    
-    return chapters, full_text, summary
-
-
-def parse_pdf_file_with_llm(file_path: str) -> Tuple[List[Dict], str, dict]:
-    """
-    使用 LLM 智能解析 PDF 文件的便捷函数
-    
-    Args:
-        file_path: PDF 文件路径
-    
-    Returns:
-        (chapters, full_text, summary): 章节列表、完整文本、摘要信息
-    """
-    return parse_pdf_file(file_path, use_llm=True)

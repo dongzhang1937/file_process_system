@@ -3,7 +3,7 @@
 """
 import os
 from datetime import datetime
-from flask import Blueprint, current_app, request, jsonify, render_template, session, send_file
+from flask import Blueprint, request, jsonify, render_template, session, send_file
 from config.db_config import fetch_one, fetch_all
 from config.logging_config import logger
 
@@ -73,7 +73,7 @@ def llm_search():
         if llm_config_id:
             config = LLMConfigManager.get_config(llm_config_id)
         else:
-            config = LLMConfigManager.get_default_config()
+            config = LLMConfigManager.get_default_config(username=username)
         
         if not config:
             return jsonify({
@@ -82,7 +82,7 @@ def llm_search():
             }), 400
         
         # 创建分析器并执行分析
-        analyzer = get_requirement_analyzer(llm_config_id)
+        analyzer = get_requirement_analyzer(llm_config_id, username=username)
         enable_sql_validation = data.get('enable_sql_validation', True)
         sql_db_types = data.get('sql_db_types', None)
         result = analyzer.analyze_requirement(
@@ -155,8 +155,6 @@ def analyze_uploaded_file():
             }), 400
         
         # 获取其他参数
-        document_ids = request.form.getlist('document_ids[]')
-        enable_web_search = request.form.get('enable_web_search', 'true').lower() == 'true'
         enable_sql_validation = request.form.get('enable_sql_validation', 'true').lower() == 'true'
         llm_config_id = request.form.get('llm_config_id')
         section_filter = request.form.get('section_filter')  # 章节过滤，如 "1.4.1,1.4.2"
@@ -174,7 +172,7 @@ def analyze_uploaded_file():
         if llm_config_id:
             config = LLMConfigManager.get_config(llm_config_id)
         else:
-            config = LLMConfigManager.get_default_config()
+            config = LLMConfigManager.get_default_config(username=username)
         
         if not config:
             return jsonify({
@@ -190,7 +188,7 @@ def analyze_uploaded_file():
         
         try:
             # 创建分析器
-            analyzer = get_requirement_analyzer(llm_config_id)
+            analyzer = get_requirement_analyzer(llm_config_id, username=username)
             
             # 解析需求（应用章节过滤，可选使用LLM智能识别章节）
             requirements = analyzer.parse_requirements_from_file(
@@ -455,7 +453,6 @@ def parse_bid_instruction():
         data = request.json
         instruction = data.get('instruction', '').strip()
         doc_id = data.get('doc_id')
-        file_path = data.get('file_path')
         
         if not instruction:
             return jsonify({

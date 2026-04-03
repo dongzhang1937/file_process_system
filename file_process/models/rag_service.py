@@ -8,12 +8,13 @@ RAG 向量检索服务
 PG 向量库：127.0.0.1 / t11 / t1（pgvector 扩展）
 Embedding：sentence-transformers bge-m3（119.45.183.233:11435）
 """
+from __future__ import annotations
+
 import os
 import re
 import json
 import hashlib
-from typing import List, Dict, Optional, Tuple
-from datetime import datetime
+from typing import Any
 
 import psycopg2
 import psycopg2.extras
@@ -21,7 +22,7 @@ from config.logging_config import logger
 
 # ==================== PG 向量库连接配置（从统一配置文件读取） ====================
 
-def _get_rag_pg_config():
+def _get_rag_pg_config() -> dict[str, str | int]:
     """获取 RAG 向量信息库的 PG 连接配置"""
     from config.app_config import get_rag_pg_config
     return get_rag_pg_config()
@@ -32,9 +33,13 @@ CHUNK_SIZE = 800       # 每个 chunk 的最大字符数（约 512 tokens）
 CHUNK_OVERLAP = 100    # 滑动窗口重叠字符数
 
 
-def _get_pg_conn():
+# 管理员用户名常量
+ADMIN_USERNAME = 'asd'
+
+
+def _get_pg_conn() -> Any:
     """获取 pgvector 数据库连接"""
-    conn = psycopg2.connect(**_get_rag_pg_config())
+    conn = psycopg2.connect(**_get_rag_pg_config())  # pyright: ignore[reportCallIssue,reportArgumentType]
     conn.autocommit = False
     return conn
 
@@ -55,7 +60,7 @@ def _content_hash(text: str) -> str:
 
 # ==================== 文档解析 ====================
 
-def parse_docx_to_sections(filepath: str) -> List[Dict]:
+def parse_docx_to_sections(filepath: str) -> list[dict[str, Any]]:
     """
     解析 Word 文档为章节列表（保留层级结构）
     
@@ -79,12 +84,12 @@ def parse_docx_to_sections(filepath: str) -> List[Dict]:
     sections = []
     
     # 维护标题路径栈：{level: title}
-    path_stack = {}
-    current_section = None
+    path_stack: dict[int, str] = {}
+    current_section: dict[str, Any] | None = None
     section_order = 0
     
     for para in doc.paragraphs:
-        style_name = para.style.name if para.style else ''
+        style_name = para.style.name if para.style and para.style.name else ''
         text = para.text.strip()
         
         if not text:
@@ -190,7 +195,7 @@ def parse_docx_to_sections(filepath: str) -> List[Dict]:
 
 def split_section_to_chunks(section_content: str, section_title: str = '',
                              chunk_size: int = CHUNK_SIZE,
-                             overlap: int = CHUNK_OVERLAP) -> List[Dict]:
+                             overlap: int = CHUNK_OVERLAP) -> list[dict[str, Any]]:
     """
     将章节文本分割为检索块（滑动窗口）
     
@@ -268,7 +273,7 @@ def split_section_to_chunks(section_content: str, section_title: str = '',
 
 # ==================== Embedding + 入库 ====================
 
-def _get_embedding_service():
+def _get_embedding_service(username: str = ADMIN_USERNAME) -> Any:
     """
     获取 Embedding 服务
     统一从数据库 embedding_configs 表读取默认配置，不硬编码。
@@ -276,7 +281,7 @@ def _get_embedding_service():
     """
     from .embedding_service import EmbeddingService
     
-    service = EmbeddingService()
+    service = EmbeddingService(username=username)
     if service.provider is None:
         raise RuntimeError(
             "Embedding 服务未配置或配置无效。"
@@ -285,13 +290,14 @@ def _get_embedding_service():
     return service
 
 
-def embed_and_store_document(filepath: str, force: bool = False) -> Dict:
+def embed_and_store_document(filepath: str, force: bool = False, username: str = ADMIN_USERNAME) -> dict[str, Any]:
     """
     完整流程：解析文档 → 分块 → 生成向量 → 存入 pgvector
     
     Args:
         filepath: docx 文件路径
         force: 强制重新处理（忽略文件哈希去重）
+        username: 所属用户名
     
     Returns:
         {'success': bool, 'document_id': int, 'sections': int, 'chunks': int, 'message': str}
@@ -301,11 +307,15 @@ def embed_and_store_document(filepath: str, force: bool = False) -> Dict:
     
     conn = _get_pg_conn()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    doc_id: int | None = None
     
     try:
-        # 检查是否已处理过
+        # 检查当前用户是否已处理过同一文件，避免跨用户互相覆盖
         if not force:
-            cur.execute("SELECT id, status FROM rag_documents WHERE file_hash = %s", (file_hash,))
+            cur.execute(
+                "SELECT id, status FROM rag_documents WHERE file_hash = %s AND username = %s",
+                (file_hash, username),
+            )
             existing = cur.fetchone()
             if existing and existing['status'] == 'done':
                 return {
@@ -315,12 +325,15 @@ def embed_and_store_document(filepath: str, force: bool = False) -> Dict:
                     'message': f'文档已存在（id={existing["id"]}），跳过。使用 force=True 强制重新处理。'
                 }
             elif existing:
-                # 之前处理失败或进行中，删除旧数据重来
+                # 之前处理失败或进行中，仅删除当前用户自己的旧数据后重来
                 cur.execute("DELETE FROM rag_documents WHERE id = %s", (existing['id'],))
                 conn.commit()
         else:
-            # 强制模式：删除旧数据
-            cur.execute("DELETE FROM rag_documents WHERE file_hash = %s", (file_hash,))
+            # 强制模式：仅删除当前用户自己的旧数据
+            cur.execute(
+                "DELETE FROM rag_documents WHERE file_hash = %s AND username = %s",
+                (file_hash, username),
+            )
             conn.commit()
         
         # 从文件名提取产品名和文档类型
@@ -329,10 +342,10 @@ def embed_and_store_document(filepath: str, force: bool = False) -> Dict:
         # 插入文档记录
         cur.execute("""
             INSERT INTO rag_documents (filename, filepath, file_hash, product_name, doc_type, 
-                                       embedding_model, status)
-            VALUES (%s, %s, %s, %s, %s, %s, 'processing')
+                                       embedding_model, username, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, 'processing')
             RETURNING id
-        """, (filename, filepath, file_hash, product_name, doc_type, 'bge-m3:latest'))
+        """, (filename, filepath, file_hash, product_name, doc_type, 'bge-m3:latest', username))
         doc_id = cur.fetchone()['id']
         conn.commit()
         
@@ -347,7 +360,7 @@ def embed_and_store_document(filepath: str, force: bool = False) -> Dict:
                     'message': '无法从文档中解析出章节'}
         
         # 2. 获取 embedding 服务
-        embed_service = _get_embedding_service()
+        embed_service = _get_embedding_service(username=username)
         
         # 3. 逐章节处理：分块 → embedding → 入库
         total_chunks = 0
@@ -441,9 +454,10 @@ def embed_and_store_document(filepath: str, force: bool = False) -> Dict:
         conn.rollback()
         logger.error(f"[RAG] 文档处理异常: {filename}: {e}", exc_info=True)
         try:
-            cur.execute("UPDATE rag_documents SET status='error', error_message=%s WHERE id=%s",
-                       (str(e)[:500], doc_id))
-            conn.commit()
+            if doc_id is not None:
+                cur.execute("UPDATE rag_documents SET status='error', error_message=%s WHERE id=%s",
+                           (str(e)[:500], doc_id))
+                conn.commit()
         except Exception:
             pass
         return {'success': False, 'document_id': None, 'sections': 0, 'chunks': 0,
@@ -453,20 +467,21 @@ def embed_and_store_document(filepath: str, force: bool = False) -> Dict:
         conn.close()
 
 
-def embed_directory(dir_path: str, force: bool = False) -> Dict:
+def embed_directory(dir_path: str, force: bool = False, username: str = ADMIN_USERNAME) -> dict[str, Any]:
     """
     批量处理目录下所有 docx 文件
     
     Args:
         dir_path: 目录路径
         force: 强制重新处理
+        username: 所属用户名
     
     Returns:
-        {'total': int, 'success': int, 'skipped': int, 'failed': int, 'details': [...]}
+        {'total': int, 'success': int, 'skipped': int, 'failed': int, 'details': [...]} 
     """
-    results = {'total': 0, 'success': 0, 'skipped': 0, 'failed': 0, 'details': []}
+    results: dict[str, Any] = {'total': 0, 'success': 0, 'skipped': 0, 'failed': 0, 'details': []}
     
-    for root, dirs, files in os.walk(dir_path):
+    for root, _dirs, files in os.walk(dir_path):
         for fname in files:
             if not fname.lower().endswith('.docx') or fname.startswith('~$'):
                 continue
@@ -475,7 +490,7 @@ def embed_directory(dir_path: str, force: bool = False) -> Dict:
             results['total'] += 1
             
             logger.info(f"[RAG] 处理 {results['total']}: {fname}")
-            result = embed_and_store_document(filepath, force=force)
+            result = embed_and_store_document(filepath, force=force, username=username)
             
             detail = {'filename': fname, **result}
             results['details'].append(detail)
@@ -493,12 +508,10 @@ def embed_directory(dir_path: str, force: bool = False) -> Dict:
     return results
 
 
-def _extract_product_info(filename: str) -> Tuple[str, str]:
+def _extract_product_info(filename: str) -> tuple[str, str]:
     """从文件名提取产品名和文档类型"""
-    # 文件名格式通常是：产品名_版本号_文档类型_xx.docx
     name = filename.replace('.docx', '').replace('.DOCX', '')
     
-    # 尝试匹配常见文档类型
     doc_types = [
         '白皮书', '产品白皮书', '用户指南', '运维手册', '运维管理指南', '部署手册',
         '安装部署', '开发手册', '开发', 'API参考', 'API 参考', 'API 接口',
@@ -518,9 +531,7 @@ def _extract_product_info(filename: str) -> Tuple[str, str]:
             doc_type = dt
             break
     
-    # 提取产品名（取第一个下划线之前的部分，或整个名称的前部分）
     product_name = name
-    # 常见产品名模式
     product_patterns = [
         r'(腾讯云TDSQL\s*(?:MySQL|PG)?\s*(?:版|企业版|基础版|生态工具)?(?:[^_]*?))',
         r'(数据库智能管家\s*DBbrain[^_]*)',
@@ -538,7 +549,7 @@ def _extract_product_info(filename: str) -> Tuple[str, str]:
 # ==================== 向量检索 ====================
 
 def search_similar_chunks(query: str, top_k: int = 10, threshold: float = 0.5,
-                          product_filter: str = None) -> List[Dict]:
+                          product_filter: str | None = None, username: str = ADMIN_USERNAME) -> list[dict[str, Any]]:
     """
     语义检索：返回最相关的文档块，带完整来源信息
     
@@ -547,32 +558,13 @@ def search_similar_chunks(query: str, top_k: int = 10, threshold: float = 0.5,
         top_k: 返回数量
         threshold: 相似度阈值（0-1，余弦相似度）
         product_filter: 可选的产品名过滤
+        username: 用户名，普通用户仅检索自己的文档，管理员检索全部
     
     Returns:
-        [
-            {
-                'content': '匹配的文本块内容',
-                'similarity': 0.87,
-                'document': {
-                    'id': 1,
-                    'filename': 'TDSQL MySQL版_白皮书.docx',
-                    'product_name': '腾讯云TDSQL MySQL版',
-                    'doc_type': '白皮书'
-                },
-                'section': {
-                    'id': 5,
-                    'title': '3.2 备份恢复',
-                    'section_number': '3.2',
-                    'heading_level': 2,
-                    'full_path': '3 运维管理 > 3.2 备份恢复'
-                },
-                'chunk_index': 0
-            },
-            ...
-        ]
+        [...]
     """
     # 生成查询向量
-    embed_service = _get_embedding_service()
+    embed_service = _get_embedding_service(username=username)
     query_embedding = embed_service.embed_text(query)
     vec_str = '[' + ','.join(str(v) for v in query_embedding) + ']'
     
@@ -582,16 +574,20 @@ def search_similar_chunks(query: str, top_k: int = 10, threshold: float = 0.5,
     try:
         # 构建查询（使用 pgvector 的余弦距离运算符 <=>）
         # 余弦距离 = 1 - 余弦相似度，所以 distance 越小越相似
-        filter_clause = ""
-        params = [vec_str, vec_str]
-        
+        where_clauses = ["d.status = 'done'"]
+        params: list[object] = [vec_str]
+
         if product_filter:
-            filter_clause = "AND d.product_name ILIKE %s"
+            where_clauses.append("d.product_name ILIKE %s")
             params.append(f'%{product_filter}%')
-        
-        params.append(1.0 - threshold)  # 余弦距离阈值
-        params.append(top_k)
-        
+
+        if username != ADMIN_USERNAME:
+            where_clauses.append("d.username = %s")
+            params.append(username)
+
+        where_clauses.append("(c.embedding <=> %s::vector) < %s")
+        params.extend([vec_str, 1.0 - threshold, vec_str, top_k])
+
         sql = f"""
             SELECT 
                 c.id AS chunk_id,
@@ -612,53 +608,12 @@ def search_similar_chunks(query: str, top_k: int = 10, threshold: float = 0.5,
             FROM rag_chunks c
             JOIN rag_documents d ON c.document_id = d.id
             JOIN rag_sections s ON c.section_id = s.id
-            WHERE d.status = 'done'
-                {filter_clause}
-                AND (c.embedding <=> %s::vector) < %s
+            WHERE {' AND '.join(where_clauses)}
             ORDER BY c.embedding <=> %s::vector ASC
             LIMIT %s
         """
-        # 需要额外一个 vec_str 给 ORDER BY
-        params.append(vec_str)
-        # 修正参数顺序：SELECT 的 similarity 用第1个，WHERE 的距离用第2个，ORDER BY 用最后一个
-        
-        # 重新构建参数
-        all_params = [vec_str]  # similarity
-        if product_filter:
-            all_params.append(f'%{product_filter}%')
-        all_params.append(vec_str)  # WHERE distance
-        all_params.append(1.0 - threshold)  # distance threshold
-        all_params.append(vec_str)  # ORDER BY
-        all_params.append(top_k)
-        
-        sql = f"""
-            SELECT 
-                c.id AS chunk_id,
-                c.content,
-                c.chunk_index,
-                c.metadata,
-                1 - (c.embedding <=> %s::vector) AS similarity,
-                d.id AS doc_id,
-                d.filename,
-                d.product_name,
-                d.doc_type,
-                s.id AS section_id,
-                s.title AS section_title,
-                s.section_number,
-                s.heading_level,
-                s.full_path,
-                s.content AS section_content
-            FROM rag_chunks c
-            JOIN rag_documents d ON c.document_id = d.id
-            JOIN rag_sections s ON c.section_id = s.id
-            WHERE d.status = 'done'
-                {filter_clause}
-                AND (c.embedding <=> %s::vector) < %s
-            ORDER BY c.embedding <=> %s::vector ASC
-            LIMIT %s
-        """
-        
-        cur.execute(sql, all_params)
+
+        cur.execute(sql, params)
         rows = cur.fetchall()
         
         results = []
@@ -695,7 +650,7 @@ def search_similar_chunks(query: str, top_k: int = 10, threshold: float = 0.5,
         conn.close()
 
 
-def format_search_results_as_context(results: List[Dict], max_length: int = 4000) -> str:
+def format_search_results_as_context(results: list[dict[str, Any]], max_length: int = 4000) -> str:
     """
     将检索结果格式化为 LLM 上下文（替代 web_search 的输出格式）
     
@@ -733,13 +688,23 @@ def format_search_results_as_context(results: List[Dict], max_length: int = 4000
 
 # ==================== 管理接口 ====================
 
-def get_rag_stats() -> Dict:
-    """获取 RAG 系统统计信息"""
+def get_rag_stats(username: str = ADMIN_USERNAME) -> dict[str, Any]:
+    """获取 RAG 系统统计信息（普通用户仅统计自己的文档）"""
     conn = _get_pg_conn()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     
     try:
-        cur.execute("""
+        doc_where = ""
+        doc_params = ()
+        done_where = "WHERE status = 'done'"
+        done_params = ()
+        if username != ADMIN_USERNAME:
+            doc_where = "WHERE username = %s"
+            doc_params = (username,)
+            done_where = "WHERE status = 'done' AND username = %s"
+            done_params = (username,)
+
+        cur.execute(f"""
             SELECT 
                 COUNT(*) AS total_documents,
                 COUNT(*) FILTER (WHERE status = 'done') AS done_documents,
@@ -748,15 +713,17 @@ def get_rag_stats() -> Dict:
                 COALESCE(SUM(total_sections), 0) AS total_sections,
                 COALESCE(SUM(total_chunks), 0) AS total_chunks
             FROM rag_documents
-        """)
+            {doc_where}
+        """, doc_params)
         stats = cur.fetchone()
         
         # 产品分布
-        cur.execute("""
+        cur.execute(f"""
             SELECT product_name, COUNT(*) AS doc_count, SUM(total_chunks) AS chunk_count
-            FROM rag_documents WHERE status = 'done'
+            FROM rag_documents
+            {done_where}
             GROUP BY product_name ORDER BY doc_count DESC
-        """)
+        """, done_params)
         products = cur.fetchall()
         
         return {
@@ -771,18 +738,27 @@ def get_rag_stats() -> Dict:
         conn.close()
 
 
-def list_rag_documents() -> List[Dict]:
-    """列出所有 RAG 文档"""
+def list_rag_documents(username: str = ADMIN_USERNAME) -> list[dict[str, Any]]:
+    """列出 RAG 文档（普通用户仅查看自己的文档，管理员查看全部）"""
     conn = _get_pg_conn()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     
     try:
-        cur.execute("""
-            SELECT id, filename, product_name, doc_type, total_sections, total_chunks,
-                   status, error_message, created_at, updated_at
-            FROM rag_documents
-            ORDER BY created_at DESC
-        """)
+        if username == ADMIN_USERNAME:
+            cur.execute("""
+                SELECT id, filename, product_name, doc_type, total_sections, total_chunks,
+                       status, error_message, username, created_at, updated_at
+                FROM rag_documents
+                ORDER BY created_at DESC
+            """)
+        else:
+            cur.execute("""
+                SELECT id, filename, product_name, doc_type, total_sections, total_chunks,
+                       status, error_message, username, created_at, updated_at
+                FROM rag_documents
+                WHERE username = %s
+                ORDER BY created_at DESC
+            """, (username,))
         docs = cur.fetchall()
         for d in docs:
             if d.get('created_at'):
@@ -798,14 +774,22 @@ def list_rag_documents() -> List[Dict]:
         conn.close()
 
 
-def delete_rag_document(doc_id: int) -> bool:
-    """删除指定文档及其所有章节和 chunks"""
+def delete_rag_document(doc_id: int, username: str = ADMIN_USERNAME) -> bool:
+    """删除指定文档及其所有章节和 chunks（普通用户只能删自己的）"""
     conn = _get_pg_conn()
-    cur = conn.cursor()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     try:
-        cur.execute("DELETE FROM rag_documents WHERE id = %s", (doc_id,))
+        # 权限校验
+        if username != ADMIN_USERNAME:
+            cur.execute("SELECT username FROM rag_documents WHERE id = %s", (doc_id,))
+            doc = cur.fetchone()
+            if doc and doc.get('username', ADMIN_USERNAME) == ADMIN_USERNAME:
+                return False  # 无权删除 admin 的文档
+        
+        cur2 = conn.cursor()
+        cur2.execute("DELETE FROM rag_documents WHERE id = %s", (doc_id,))
         conn.commit()
-        return cur.rowcount > 0
+        return cur2.rowcount > 0
     except Exception as e:
         conn.rollback()
         logger.error(f"[RAG] 删除文档失败: {e}")

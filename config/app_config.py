@@ -147,22 +147,6 @@ def get_config():
 Config = get_config()
 
 # ============ 便捷访问方法 ============
-def get_mysql_uri():
-    """便捷方法：获取MySQL连接字符串"""
-    return Config.get_mysql_uri()
-
-def get_redis_uri():
-    """便捷方法：获取Redis连接字符串"""
-    return Config.get_redis_uri()
-
-def get_mysql_config():
-    """便捷方法：获取MySQL配置字典"""
-    return Config.get_mysql_config_dict()
-
-def get_redis_config():
-    """便捷方法：获取Redis配置字典"""
-    return Config.get_redis_config_dict()
-
-def get_rag_pg_config():
+def get_rag_pg_config() -> dict[str, str | int]:
     """便捷方法：获取RAG向量信息库（PostgreSQL）配置字典"""
     return Config.get_rag_pg_config_dict()

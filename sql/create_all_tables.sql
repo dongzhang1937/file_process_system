@@ -112,22 +112,23 @@ CREATE TABLE IF NOT EXISTS `chapter_images` (
 -- 7. LLM 配置表
 CREATE TABLE IF NOT EXISTS `llm_configs` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `username` VARCHAR(100) NOT NULL DEFAULT 'asd' COMMENT '所属用户(asd为管理员全局配置)',
     `config_name` VARCHAR(100) NOT NULL COMMENT '配置名称',
-    `model_type` VARCHAR(50) NOT NULL COMMENT '模型类型: openai/qianwen/wenxin/zhipu/deepseek/ollama/gemini/custom',
-    `provider` VARCHAR(50) COMMENT '提供商: openai/hunyuan/qianwen/zhipu/custom',
+    `model_type` VARCHAR(50) NOT NULL COMMENT '模型类型',
+    `provider` VARCHAR(50) COMMENT '提供商',
     `api_base_url` VARCHAR(500) COMMENT 'API基础URL',
-    `api_key` VARCHAR(500) NOT NULL COMMENT 'API密钥（或腾讯云SecretId）',
-    `secret_key` VARCHAR(500) COMMENT '密钥（用于需要双密钥认证的服务，如腾讯云SecretKey）',
+    `api_key` VARCHAR(500) NOT NULL COMMENT 'API密钥',
+    `secret_key` VARCHAR(500) COMMENT '双密钥认证',
     `model_name` VARCHAR(100) NOT NULL COMMENT '模型名称',
     `max_tokens` INT DEFAULT 2048 COMMENT '最大token数',
     `temperature` DECIMAL(3,2) DEFAULT 0.70 COMMENT '温度参数',
     `is_default` TINYINT(1) DEFAULT 0 COMMENT '是否默认配置',
     `is_active` TINYINT(1) DEFAULT 1 COMMENT '是否激活',
-    `extra_params` JSON COMMENT '额外参数(JSON格式)',
+    `extra_params` JSON COMMENT '额外参数',
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX `idx_llm_username` (`username`, `is_active`),
     INDEX `idx_llm_model_type` (`model_type`),
-    INDEX `idx_llm_provider` (`provider`),
     INDEX `idx_llm_is_default` (`is_default`),
     INDEX `idx_llm_is_active` (`is_active`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='LLM配置表';
@@ -135,14 +136,16 @@ CREATE TABLE IF NOT EXISTS `llm_configs` (
 -- 8. 网络搜索配置表
 CREATE TABLE IF NOT EXISTS `web_search_configs` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
-    `search_engine` VARCHAR(50) NOT NULL COMMENT '搜索引擎: google/baidu/bing/duckduckgo/custom',
+    `username` VARCHAR(100) NOT NULL DEFAULT 'asd' COMMENT '所属用户',
+    `search_engine` VARCHAR(50) NOT NULL COMMENT '搜索引擎',
     `api_url` VARCHAR(500) COMMENT 'API地址',
-    `api_key` VARCHAR(500) COMMENT 'API密钥（DuckDuckGo无需）',
+    `api_key` VARCHAR(500) COMMENT 'API密钥',
     `extra_params` JSON COMMENT '额外参数',
     `is_default` TINYINT(1) DEFAULT 0 COMMENT '是否默认配置',
     `is_active` TINYINT(1) DEFAULT 1 COMMENT '是否激活',
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX `idx_search_username` (`username`, `is_active`),
     INDEX `idx_search_engine` (`search_engine`),
     INDEX `idx_search_is_default` (`is_default`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='网络搜索配置表';
@@ -154,8 +157,9 @@ CREATE TABLE IF NOT EXISTS `web_search_configs` (
 -- 9. Embedding 模型配置表
 CREATE TABLE IF NOT EXISTS `embedding_configs` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `username` VARCHAR(100) NOT NULL DEFAULT 'asd' COMMENT '所属用户',
     `name` VARCHAR(100) NOT NULL COMMENT '配置名称',
-    `provider` VARCHAR(50) NOT NULL COMMENT '提供商: openai/huggingface/local/hunyuan',
+    `provider` VARCHAR(50) NOT NULL COMMENT '提供商',
     `model_name` VARCHAR(100) NOT NULL COMMENT '模型名称',
     `api_key` TEXT COMMENT 'API密钥',
     `api_base` VARCHAR(255) COMMENT 'API基础URL',
@@ -165,7 +169,8 @@ CREATE TABLE IF NOT EXISTS `embedding_configs` (
     `extra_config` JSON COMMENT '额外配置',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY `uk_embedding_name` (`name`)
+    INDEX `idx_emb_username` (`username`, `is_active`),
+    UNIQUE KEY `uk_emb_name_user` (`name`, `username`, `is_active`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Embedding模型配置表';
 
 -- 插入默认的 Embedding 配置
@@ -201,21 +206,23 @@ CREATE TABLE IF NOT EXISTS `skills_configs` (
 -- 11. SQL 数据库连接配置表
 CREATE TABLE IF NOT EXISTS `sql_db_configs` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `username` VARCHAR(100) NOT NULL DEFAULT 'asd' COMMENT '所属用户',
     `db_type` VARCHAR(30) NOT NULL COMMENT '数据库类型',
     `name` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '配置名称/别名',
     `host` VARCHAR(200) NOT NULL DEFAULT '' COMMENT '主机地址',
     `port` INT NOT NULL DEFAULT 0 COMMENT '端口',
-    `username` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '用户名',
+    `db_username` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '数据库用户名',
     `password` VARCHAR(500) NOT NULL DEFAULT '' COMMENT '密码',
     `database_name` VARCHAR(200) NOT NULL DEFAULT '' COMMENT '数据库名',
-    `driver_type` VARCHAR(20) NOT NULL DEFAULT 'pymysql' COMMENT 'Python驱动: pymysql/psycopg2',
+    `driver_type` VARCHAR(20) NOT NULL DEFAULT 'pymysql' COMMENT 'Python驱动',
     `reuse_from` VARCHAR(30) DEFAULT NULL COMMENT 'Oracle类型复用的PG配置',
     `use_independent` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Oracle是否使用独立连接',
     `is_enabled` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否启用',
     `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否有效(软删除)',
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY `uk_db_type` (`db_type`, `is_active`),
+    INDEX `idx_sqldb_username` (`username`, `is_active`),
+    UNIQUE KEY `uk_db_type_user` (`db_type`, `username`, `is_active`),
     INDEX `idx_sqldb_enabled` (`is_enabled`, `is_active`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='SQL数据库连接配置表';
 

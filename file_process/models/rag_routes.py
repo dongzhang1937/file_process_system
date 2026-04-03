@@ -3,10 +3,15 @@ RAG 向量检索 API 路由
 提供文档向量化、检索、管理的 HTTP 接口
 """
 import os
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from config.logging_config import logger
 
 rag_bp = Blueprint('rag', __name__, url_prefix='/api/rag')
+
+
+def _get_username():
+    """从 session 获取当前用户名"""
+    return session.get('user', {}).get('username', 'anonymous')
 
 
 @rag_bp.route('/embed-directory', methods=['POST'])
@@ -18,6 +23,7 @@ def embed_directory():
         data = request.get_json() or {}
         dir_path = data.get('dir_path', '')
         force = data.get('force', False)
+        username = _get_username()
         
         if not dir_path:
             # 默认目录
@@ -27,7 +33,7 @@ def embed_directory():
         if not os.path.isdir(dir_path):
             return jsonify({'success': False, 'error': f'目录不存在: {dir_path}'}), 400
         
-        result = do_embed_dir(dir_path, force=force)
+        result = do_embed_dir(dir_path, force=force, username=username)
         return jsonify({'success': True, 'data': result})
         
     except Exception as e:
@@ -44,11 +50,12 @@ def embed_file():
         data = request.get_json() or {}
         filepath = data.get('filepath', '')
         force = data.get('force', False)
+        username = _get_username()
         
         if not filepath or not os.path.isfile(filepath):
             return jsonify({'success': False, 'error': f'文件不存在: {filepath}'}), 400
         
-        result = embed_and_store_document(filepath, force=force)
+        result = embed_and_store_document(filepath, force=force, username=username)
         return jsonify({'success': True, 'data': result})
         
     except Exception as e:
@@ -68,12 +75,13 @@ def search():
         threshold = data.get('threshold', 0.5)
         product_filter = data.get('product_filter')
         format_as_context = data.get('format_as_context', False)
+        username = _get_username()
         
         if not query:
             return jsonify({'success': False, 'error': '查询内容不能为空'}), 400
         
         results = search_similar_chunks(query, top_k=top_k, threshold=threshold,
-                                         product_filter=product_filter)
+                                         product_filter=product_filter, username=username)
         
         response = {'success': True, 'data': results, 'count': len(results)}
         
@@ -92,7 +100,8 @@ def list_documents():
     """列出所有 RAG 文档"""
     try:
         from .rag_service import list_rag_documents
-        docs = list_rag_documents()
+        username = _get_username()
+        docs = list_rag_documents(username=username)
         return jsonify({'success': True, 'data': docs})
     except Exception as e:
         logger.error(f"[RAG API] 列出文档失败: {e}", exc_info=True)
@@ -104,11 +113,12 @@ def delete_document(doc_id):
     """删除指定文档"""
     try:
         from .rag_service import delete_rag_document
-        success = delete_rag_document(doc_id)
+        username = _get_username()
+        success = delete_rag_document(doc_id, username=username)
         if success:
             return jsonify({'success': True, 'message': f'文档 {doc_id} 已删除'})
         else:
-            return jsonify({'success': False, 'error': '文档不存在'}), 404
+            return jsonify({'success': False, 'error': '文档不存在或无权限'}), 404
     except Exception as e:
         logger.error(f"[RAG API] 删除文档失败: {e}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -120,6 +130,8 @@ def retry_document(doc_id):
     try:
         import psycopg2, psycopg2.extras
         from .rag_service import _get_pg_conn, embed_and_store_document
+
+        username = _get_username()
 
         # 从 rag_documents 获取文件路径
         conn = _get_pg_conn()
@@ -137,7 +149,7 @@ def retry_document(doc_id):
             return jsonify({'success': False, 'error': f'文件不存在: {filepath}'}), 400
 
         # 强制重新处理
-        result = embed_and_store_document(filepath, force=True)
+        result = embed_and_store_document(filepath, force=True, username=username)
 
         if result.get('success'):
             return jsonify({
@@ -158,16 +170,25 @@ def get_document_detail(doc_id):
     """获取文档切分详情（章节 + chunks）"""
     try:
         import psycopg2, psycopg2.extras
-        from .rag_service import _get_pg_conn
+        from .rag_service import ADMIN_USERNAME, _get_pg_conn
         
+        username = _get_username()
         conn = _get_pg_conn()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         
         # 文档基本信息
-        cur.execute("SELECT * FROM rag_documents WHERE id = %s", (doc_id,))
+        if username == ADMIN_USERNAME:
+            cur.execute("SELECT * FROM rag_documents WHERE id = %s", (doc_id,))
+        else:
+            cur.execute(
+                "SELECT * FROM rag_documents WHERE id = %s AND username = %s",
+                (doc_id, username),
+            )
         doc = cur.fetchone()
         if not doc:
-            return jsonify({'success': False, 'error': '文档不存在'}), 404
+            cur.close()
+            conn.close()
+            return jsonify({'success': False, 'error': '文档不存在或无权限'}), 404
         
         # 所有章节
         cur.execute("""
@@ -212,7 +233,8 @@ def get_stats():
     """获取 RAG 系统统计"""
     try:
         from .rag_service import get_rag_stats
-        stats = get_rag_stats()
+        username = _get_username()
+        stats = get_rag_stats(username=username)
         return jsonify({'success': True, 'data': stats})
     except Exception as e:
         logger.error(f"[RAG API] 获取统计失败: {e}", exc_info=True)

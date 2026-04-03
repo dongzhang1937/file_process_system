@@ -3,11 +3,13 @@
 # 配置检查脚本
 echo "=== 系统配置检查 ==="
 
-# 获取脚本所在目录
+# 获取项目根目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$PROJECT_ROOT"
+export PYTHONPATH="$PROJECT_ROOT:${PYTHONPATH:-}"
 
-echo "项目目录: $SCRIPT_DIR"
+echo "项目目录: $PROJECT_ROOT"
 echo ""
 
 # 检查Redis配置
@@ -60,7 +62,7 @@ echo ""
 echo "4. 检查项目文件..."
 files=("app.py" "requirements.txt" "file_process/__init__.py" "config/db_config.py" "config/app_config.py")
 for file in "${files[@]}"; do
-    if [ -f "$file" ]; then
+    if [ -f "$PROJECT_ROOT/$file" ]; then
         echo "   ✅ $file 存在"
     else
         echo "   ❌ $file 不存在"
@@ -71,20 +73,10 @@ echo ""
 
 # 检查配置文件内容
 echo "5. 检查配置文件..."
-if [ -f "config/app_config.py" ]; then
+if [ -f "$PROJECT_ROOT/config/app_config.py" ]; then
     echo "   ✅ 统一配置文件存在"
     
-    # 检查配置是否正确
-    if python -c "
-import sys
-import os
-# 确保导入根目录的config，而不是file_process下的config
-parent_dir = os.path.dirname(os.getcwd())
-sys.path.insert(0, parent_dir)
-from config.app_config import Config
-print('   MySQL URI:', Config.get_mysql_uri())
-print('   Redis URI:', Config.get_redis_uri())
-" 2>/dev/null; then
+    if python -c "from config.app_config import Config; print('   MySQL URI:', Config.get_mysql_uri()); print('   Redis URI:', Config.get_redis_uri())" 2>/dev/null; then
         echo "   ✅ 配置文件格式正确"
     else
         echo "   ❌ 配置文件格式错误"
@@ -109,5 +101,5 @@ done
 echo ""
 echo "=== 检查完成 ==="
 echo ""
-echo "如果所有检查都通过，可以运行: ./start_system.sh"
+echo "如果所有检查都通过，可以运行: ./scripts/start_system.sh"
 echo "如果有依赖缺失，请运行: pip install -r requirements.txt"

@@ -11,6 +11,9 @@ from datetime import datetime
 from config.db_config import dml_sql, query_sql, fetch_one, fetch_all, dml_sql_with_insert_id
 from config.logging_config import logger
 
+# 管理员用户名常量
+ADMIN_USERNAME = 'asd'
+
 
 # ==================== Skills 配置管理器（LLM Prompt模板） ====================
 
@@ -260,7 +263,7 @@ class SQLDBConfigManager:
 
     @classmethod
     def create_config(cls, db_type, host='', port=0, username='', password='',
-                      database_name='', name='', use_independent=False):
+                      database_name='', name='', use_independent=False, owner_username=ADMIN_USERNAME):
         """
         创建 SQL 数据库连接配置
 
@@ -269,6 +272,7 @@ class SQLDBConfigManager:
             host, port, username, password, database_name: 连接参数
             name: 配置别名
             use_independent: Oracle类型是否使用独立连接
+            owner_username: 所属用户名
         """
         if db_type not in cls.DB_TYPES:
             raise ValueError(f"不支持的数据库类型: {db_type}")
@@ -287,13 +291,13 @@ class SQLDBConfigManager:
             INSERT INTO sql_db_configs
             (db_type, name, host, port, username, password, database_name,
              driver_type, reuse_from, use_independent,
-             is_enabled, is_active, created_at, updated_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 1, 1, %s, %s)
+             is_enabled, is_active, owner_username, created_at, updated_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 1, 1, %s, %s, %s)
         """
         now = datetime.now()
         config_id, _ = dml_sql_with_insert_id(sql, (
             db_type, name, host, port, username, password, database_name,
-            driver_type, reuse_from, 1 if use_independent else 0, now, now
+            driver_type, reuse_from, 1 if use_independent else 0, owner_username, now, now
         ))
         return config_id
 
@@ -304,23 +308,33 @@ class SQLDBConfigManager:
         return fetch_one(sql, (config_id,))
 
     @classmethod
-    def get_config_by_type(cls, db_type):
-        """根据数据库类型获取配置"""
-        sql = "SELECT * FROM sql_db_configs WHERE db_type = %s AND is_active = 1 LIMIT 1"
-        return fetch_one(sql, (db_type,))
+    def get_config_by_type(cls, db_type, owner_username=ADMIN_USERNAME):
+        """根据数据库类型获取配置：优先用户自己的，回退 admin 的"""
+        if owner_username != ADMIN_USERNAME:
+            sql = "SELECT * FROM sql_db_configs WHERE db_type = %s AND is_active = 1 AND owner_username = %s LIMIT 1"
+            result = fetch_one(sql, (db_type, owner_username))
+            if result:
+                return result
+        sql = "SELECT * FROM sql_db_configs WHERE db_type = %s AND is_active = 1 AND owner_username = %s LIMIT 1"
+        return fetch_one(sql, (db_type, ADMIN_USERNAME))
 
     @classmethod
-    def list_configs(cls):
-        """列出所有有效配置"""
-        sql = """SELECT * FROM sql_db_configs WHERE is_active = 1
+    def list_configs(cls, owner_username=ADMIN_USERNAME):
+        """列出配置：SQL数据库每人独立，只查自己的"""
+        sql = """SELECT * FROM sql_db_configs WHERE is_active = 1 AND owner_username = %s
                  ORDER BY FIELD(db_type, 'mysql_centralized','mysql_distributed',
                  'pg_centralized','pg_distributed','oracle_centralized','oracle_distributed')"""
-        results = query_sql(sql)
+        results = query_sql(sql, (owner_username,))
         return results
 
     @classmethod
-    def update_config(cls, config_id, **kwargs):
-        """更新配置"""
+    def update_config(cls, config_id, owner_username=ADMIN_USERNAME, **kwargs):
+        """更新配置（普通用户只能改自己的）"""
+        if owner_username != ADMIN_USERNAME:
+            config = cls.get_config(config_id)
+            if config and config.get('owner_username', ADMIN_USERNAME) == ADMIN_USERNAME:
+                raise PermissionError("无权修改管理员配置")
+        
         allowed_fields = ['name', 'host', 'port', 'username', 'password',
                           'database_name', 'use_independent', 'is_enabled', 'is_active']
         updates = []
@@ -343,27 +357,32 @@ class SQLDBConfigManager:
         return affected > 0
 
     @classmethod
-    def upsert_config(cls, db_type, **kwargs):
+    def upsert_config(cls, db_type, owner_username=ADMIN_USERNAME, **kwargs):
         """
-        按 db_type 创建或更新配置（前端保存时使用）
+        按 db_type + owner_username 创建或更新配置（前端保存时使用）
 
         如果该 db_type 已存在记录则更新，否则创建新记录
         """
-        existing = cls.get_config_by_type(db_type)
-        if existing:
-            return cls.update_config(existing['id'], **kwargs)
+        existing = cls.get_config_by_type(db_type, owner_username=owner_username)
+        if existing and existing.get('owner_username', ADMIN_USERNAME) == owner_username:
+            return cls.update_config(existing['id'], owner_username=owner_username, **kwargs)
         else:
-            return cls.create_config(db_type, **kwargs)
+            return cls.create_config(db_type, owner_username=owner_username, **kwargs)
 
     @classmethod
-    def delete_config(cls, config_id):
-        """软删除配置"""
+    def delete_config(cls, config_id, owner_username=ADMIN_USERNAME):
+        """软删除配置（普通用户只能删自己的）"""
+        if owner_username != ADMIN_USERNAME:
+            config = cls.get_config(config_id)
+            if config and config.get('owner_username', ADMIN_USERNAME) == ADMIN_USERNAME:
+                raise PermissionError("无权删除管理员配置")
+        
         sql = "UPDATE sql_db_configs SET is_active = 0, updated_at = %s WHERE id = %s"
         affected = dml_sql(sql, (datetime.now(), config_id))
         return affected > 0
 
     @classmethod
-    def get_connection_params(cls, db_type):
+    def get_connection_params(cls, db_type, owner_username=ADMIN_USERNAME):
         """
         获取完整的数据库连接参数
 
@@ -373,7 +392,7 @@ class SQLDBConfigManager:
         Returns:
             dict: {host, port, username, password, database_name, driver_type} 或 None
         """
-        config = cls.get_config_by_type(db_type)
+        config = cls.get_config_by_type(db_type, owner_username=owner_username)
         if not config:
             return None
 
@@ -385,7 +404,7 @@ class SQLDBConfigManager:
 
         # Oracle 类型且 use_independent=False -> 复用 PG 连接参数
         if reuse_from and not config.get('use_independent'):
-            pg_config = cls.get_config_by_type(reuse_from)
+            pg_config = cls.get_config_by_type(reuse_from, owner_username=owner_username)
             if not pg_config:
                 logger.warning(f"Oracle类型 {db_type} 需要复用 {reuse_from} 配置，但未找到")
                 return None
@@ -520,11 +539,22 @@ class SQLDBConfigManager:
         return cls.get_connection_params(config['db_type'])
 
     @classmethod
-    def get_enabled_db_types(cls):
-        """获取所有已启用的数据库类型列表"""
-        sql = "SELECT db_type FROM sql_db_configs WHERE is_enabled = 1 AND is_active = 1"
-        results = query_sql(sql)
-        return [r['db_type'] for r in results]
+    def get_enabled_db_types(cls, owner_username=ADMIN_USERNAME):
+        """获取所有已启用的数据库类型列表：合并用户自己 + admin 的"""
+        if owner_username == ADMIN_USERNAME:
+            sql = "SELECT db_type FROM sql_db_configs WHERE is_enabled = 1 AND is_active = 1 AND owner_username = %s"
+            results = query_sql(sql, (ADMIN_USERNAME,))
+        else:
+            sql = "SELECT db_type FROM sql_db_configs WHERE is_enabled = 1 AND is_active = 1 AND (owner_username = %s OR owner_username = %s)"
+            results = query_sql(sql, (owner_username, ADMIN_USERNAME))
+        # 去重
+        seen = set()
+        unique = []
+        for r in results:
+            if r['db_type'] not in seen:
+                seen.add(r['db_type'])
+                unique.append(r['db_type'])
+        return unique
 
     @classmethod
     def get_db_types(cls):

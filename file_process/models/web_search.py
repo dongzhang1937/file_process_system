@@ -4,7 +4,6 @@
 """
 import requests
 import json
-from urllib.parse import urlencode, quote_plus
 from config.logging_config import logger
 from .llm_config import WebSearchConfigManager
 
@@ -277,74 +276,3 @@ class WebSearchService:
             })
         
         return results
-
-
-class DirectUrlFetcher:
-    """直接URL内容抓取器"""
-    
-    @staticmethod
-    def fetch_content(url, timeout=30):
-        """
-        抓取指定URL的内容
-        
-        Args:
-            url: 目标URL
-            timeout: 超时时间
-        
-        Returns:
-            {'title': '', 'content': '', 'url': ''}
-        """
-        try:
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
-            response = requests.get(url, headers=headers, timeout=timeout)
-            response.raise_for_status()
-            
-            # 简单提取内容（实际使用可以用BeautifulSoup等）
-            from html.parser import HTMLParser
-            
-            class ContentExtractor(HTMLParser):
-                def __init__(self):
-                    super().__init__()
-                    self.title = ''
-                    self.content = []
-                    self.in_title = False
-                    self.in_script = False
-                    self.in_style = False
-                
-                def handle_starttag(self, tag, attrs):
-                    if tag == 'title':
-                        self.in_title = True
-                    elif tag == 'script':
-                        self.in_script = True
-                    elif tag == 'style':
-                        self.in_style = True
-                
-                def handle_endtag(self, tag):
-                    if tag == 'title':
-                        self.in_title = False
-                    elif tag == 'script':
-                        self.in_script = False
-                    elif tag == 'style':
-                        self.in_style = False
-                
-                def handle_data(self, data):
-                    if self.in_title:
-                        self.title = data.strip()
-                    elif not self.in_script and not self.in_style:
-                        text = data.strip()
-                        if text:
-                            self.content.append(text)
-            
-            extractor = ContentExtractor()
-            extractor.feed(response.text)
-            
-            return {
-                'title': extractor.title,
-                'content': ' '.join(extractor.content)[:5000],  # 限制内容长度
-                'url': url
-            }
-        except Exception as e:
-            logger.error(f"抓取URL内容失败 {url}: {e}")
-            return None

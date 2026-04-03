@@ -2,13 +2,17 @@
 Embedding 配置管理 API 路由
 提供 Embedding 模型配置的增删改查和测试功能
 """
-import json
 from flask import Blueprint, request, jsonify, session
 from config.logging_config import logger
 from .embedding_service import EmbeddingConfigManager, EmbeddingService
 
 # 创建蓝图
 embedding_bp = Blueprint('embedding', __name__, url_prefix='/api/embedding')
+
+
+def _get_username():
+    """从 session 获取当前用户名"""
+    return session.get('user', {}).get('username', 'anonymous')
 
 
 # ==================== Embedding配置管理API ====================
@@ -34,7 +38,8 @@ def get_supported_providers():
 def list_configs():
     """获取所有 Embedding 配置"""
     try:
-        configs = EmbeddingConfigManager.get_all_configs()
+        username = _get_username()
+        configs = EmbeddingConfigManager.get_all_configs(username=username)
         
         # 转换日期时间格式
         for config in configs:
@@ -85,6 +90,7 @@ def create_config():
     """创建新的 Embedding 配置"""
     try:
         data = request.json
+        username = _get_username()
         
         # 验证必要字段
         required_fields = ['name', 'provider', 'model_name', 'dimensions']
@@ -104,7 +110,8 @@ def create_config():
             api_key=data.get('api_key'),
             api_base=data.get('api_base'),
             is_default=data.get('is_default', False),
-            extra_config=data.get('extra_config')
+            extra_config=data.get('extra_config'),
+            username=username
         )
         
         if config_id:
@@ -133,6 +140,7 @@ def update_config(config_id):
     """更新 Embedding 配置"""
     try:
         data = request.json
+        username = _get_username()
         
         # 构建更新参数
         update_params = {}
@@ -156,7 +164,7 @@ def update_config(config_id):
         if 'extra_config' in data:
             update_params['extra_config'] = data['extra_config']
         
-        success = EmbeddingConfigManager.update_config(config_id, **update_params)
+        success = EmbeddingConfigManager.update_config(config_id, username=username, **update_params)
         
         if success:
             logger.info(f"更新 Embedding 配置成功: id={config_id}")
@@ -170,6 +178,8 @@ def update_config(config_id):
                 'error': '更新配置失败或配置不存在'
             }), 404
             
+    except PermissionError as e:
+        return jsonify({'success': False, 'error': str(e)}), 403
     except Exception as e:
         logger.error(f"更新配置失败: {e}")
         return jsonify({
@@ -182,7 +192,8 @@ def update_config(config_id):
 def delete_config(config_id):
     """删除 Embedding 配置"""
     try:
-        success = EmbeddingConfigManager.delete_config(config_id)
+        username = _get_username()
+        success = EmbeddingConfigManager.delete_config(config_id, username=username)
         
         if success:
             logger.info(f"删除 Embedding 配置成功: id={config_id}")
@@ -196,6 +207,8 @@ def delete_config(config_id):
                 'error': '删除配置失败或配置不存在'
             }), 404
             
+    except PermissionError as e:
+        return jsonify({'success': False, 'error': str(e)}), 403
     except Exception as e:
         logger.error(f"删除配置失败: {e}")
         return jsonify({
@@ -208,7 +221,8 @@ def delete_config(config_id):
 def set_default_config(config_id):
     """设置默认配置"""
     try:
-        success = EmbeddingConfigManager.set_default(config_id)
+        username = _get_username()
+        success = EmbeddingConfigManager.set_default(config_id, username=username)
         
         if success:
             logger.info(f"设置默认 Embedding 配置成功: id={config_id}")

@@ -246,7 +246,7 @@ class AnalysisTaskManager:
                 # 3. 初始化分析器
                 from .requirement_analyzer import get_requirement_analyzer
                 llm_config_id = params.get('llm_config_id')
-                analyzer = get_requirement_analyzer(llm_config_id)
+                analyzer = get_requirement_analyzer(llm_config_id, username=username)
 
                 document_ids = params.get('document_ids') or []
                 enable_web_search = params.get('enable_web_search', True)

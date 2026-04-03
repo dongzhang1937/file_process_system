@@ -1,10 +1,8 @@
 from file_process import myapp
-from file_process.models.auth import au
-from file_process.models.documents import docu
-from extensions import celery
-app = myapp()
-celery = app.extensions.get('celery', celery)
-if __name__ == '__main__':
-    # print(app.config)
+from file_process.models.celery_app import celery as _celery
 
+celery = _celery
+app = myapp()
+
+if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

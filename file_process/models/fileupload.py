@@ -1,4 +1,4 @@
-from flask import Blueprint,request,redirect,render_template,url_for,flash,session,jsonify
+from flask import Blueprint,request,session,jsonify
 from config.db_config import fetch_one,fetch_all,dml_sql
 import os
 import hashlib
@@ -6,7 +6,6 @@ import redis
 import json
 import sys
 from datetime import datetime, timedelta
-from celery import Celery
 #from celery import shared_task
 from .celery_app import celery
 
