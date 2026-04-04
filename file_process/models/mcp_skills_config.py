@@ -320,11 +320,12 @@ class SQLDBConfigManager:
 
     @classmethod
     def list_configs(cls, owner_username=ADMIN_USERNAME):
-        """列出配置：SQL数据库每人独立，只查自己的"""
-        sql = """SELECT * FROM sql_db_configs WHERE is_active = 1 AND owner_username = %s
-                 ORDER BY FIELD(db_type, 'mysql_centralized','mysql_distributed',
+        """列出配置：优先自己的，没有则显示 admin 的（作为参考预填）"""
+        sql = """SELECT * FROM sql_db_configs WHERE is_active = 1 AND (owner_username = %s OR owner_username = %s)
+                 ORDER BY CASE WHEN owner_username = %s THEN 0 ELSE 1 END,
+                 FIELD(db_type, 'mysql_centralized','mysql_distributed',
                  'pg_centralized','pg_distributed','oracle_centralized','oracle_distributed')"""
-        results = query_sql(sql, (owner_username,))
+        results = query_sql(sql, (owner_username, ADMIN_USERNAME, owner_username))
         return results
 
     @classmethod

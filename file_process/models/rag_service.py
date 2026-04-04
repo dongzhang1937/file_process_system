@@ -582,8 +582,9 @@ def search_similar_chunks(query: str, top_k: int = 10, threshold: float = 0.5,
             params.append(f'%{product_filter}%')
 
         if username != ADMIN_USERNAME:
-            where_clauses.append("d.username = %s")
+            where_clauses.append("(d.username = %s OR d.username = %s)")
             params.append(username)
+            params.append(ADMIN_USERNAME)
 
         where_clauses.append("(c.embedding <=> %s::vector) < %s")
         params.extend([vec_str, 1.0 - threshold, vec_str, top_k])

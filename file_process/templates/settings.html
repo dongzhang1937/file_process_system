@@ -371,17 +371,29 @@ const sqlInfo={mysql_centralized:{n:'兼容MySQL集中式',d:'pymysql',p:3306},m
     pg_centralized:{n:'兼容PG集中式',d:'psycopg2',p:5432},pg_distributed:{n:'兼容PG分布式(TDSQL-PG)',d:'psycopg2',p:5432},
     oracle_centralized:{n:'兼容Oracle集中式',d:'psycopg2',p:5432},oracle_distributed:{n:'兼容Oracle分布式',d:'psycopg2',p:5432}};
 async function loadSql(){
-    try{const r=await(await fetch('/llm/sql-db-config')).json();const cfgs={};
-        if(r.success)for(const c of(r.data||[]))cfgs[c.db_type]=c;
+    try{const r=await(await fetch('/llm/sql-db-config')).json();
+        // 按 db_type 分组，优先取自己的配置
+        const cfgs={};
+        if(r.success){
+            for(const c of(r.data||[])){
+                const t=c.db_type;
+                const isOwn=c.owner_username!==ADMIN_USER||isAdmin;
+                if(!cfgs[t]||isOwn) cfgs[t]=Object.assign({},c,{_isOwn:isOwn});
+            }
+        }
         let h='';for(const[t,i]of Object.entries(sqlInfo)){const c=cfgs[t]||{};const en=!!c.is_enabled;
-            h+=`<div class="card"><div class="card-hd"><span class="card-title">${i.n}</span>
+            const isGlobal=c.host&&!c._isOwn;
+            const globalTag=isGlobal?'<span style="font-size:11px;color:#1890ff;margin-left:8px">🔒 全局配置（可直接使用或保存为自己的）</span>':'';
+            h+=`<div class="card" ${isGlobal?'style="border-left:3px solid #1890ff"':''}>
+            <div class="card-hd"><span class="card-title">${i.n}</span>${globalTag}
             <label style="font-size:12px"><input type="checkbox" id="sq_en_${t}" ${en?'checked':''}> 启用</label></div>
             <div style="font-size:11px;color:#909399;margin-bottom:8px">驱动: ${i.d}</div>
             <div class="fm-row"><input id="sq_h_${t}" placeholder="主机" value="${H(c.host||'')}"></div>
             <div class="fm-row"><input type="number" id="sq_p_${t}" placeholder="端口" value="${c.port||i.p}"></div>
             <div class="fm-row"><input id="sq_u_${t}" placeholder="用户名" value="${H(c.username||'')}"></div>
-            <div class="fm-row"><input type="password" id="sq_pw_${t}" placeholder="密码"></div>
+            <div class="fm-row"><input type="password" id="sq_pw_${t}" placeholder="${c.host?'已配置，留空不修改':'密码'}"></div>
             <div class="fm-row"><input id="sq_db_${t}" placeholder="数据库名" value="${H(c.database_name||'')}"></div>
+            ${c.host?'<div style="font-size:11px;color:#67c23a;margin-bottom:4px">✅ 已配置连接: '+H(c.host)+':'+c.port+'/'+H(c.database_name||'')+'</div>':''}
             <div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-p btn-sm" onclick="saveSql('${t}')">保存</button>
             <button class="btn btn-s btn-sm" onclick="testSql('${t}')">测试</button></div>
             <div id="sq_st_${t}" style="font-size:12px;margin-top:6px"></div></div>`}
@@ -393,7 +405,8 @@ async function saveSql(t){
         username:document.getElementById(`sq_u_${t}`).value,password:document.getElementById(`sq_pw_${t}`).value,
         database_name:document.getElementById(`sq_db_${t}`).value,is_enabled:document.getElementById(`sq_en_${t}`).checked?1:0};
     try{const r=await(await fetch('/llm/sql-db-config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})).json();
-        document.getElementById(`sq_st_${t}`).innerHTML=r.success?'<span style="color:green">✅ 保存成功</span>':`<span style="color:red">❌ ${r.error}</span>`
+        if(r.success){document.getElementById(`sq_st_${t}`).innerHTML='<span style="color:green">✅ 保存成功</span>';loadSql()}
+        else document.getElementById(`sq_st_${t}`).innerHTML=`<span style="color:red">❌ ${r.error}</span>`
     }catch(e){document.getElementById(`sq_st_${t}`).innerHTML=`<span style="color:red">❌ ${e.message}</span>`}
 }
 async function testSql(t){
@@ -532,9 +545,12 @@ async function loadRag(){
             (await fetch('/api/rag/documents')).json(),
             loadRagUploadOptions()
         ]);
-        if(sr.success&&sr.data){const s=sr.data.documents||{};
+        if(sr.success&&sr.data){const s=sr.data.documents||{};const totalFiles=sr.data.total_source_files||0;
+            const doneCount=s.done_documents||0;const procCount=s.processing_documents||0;const errCount=s.error_documents||0;
+            const docLabel=totalFiles?`${s.total_documents||0} / ${totalFiles}`:`${s.total_documents||0}`;
+            const extraInfo=procCount||errCount?`<div style="font-size:11px;color:#909399;margin-top:4px">${procCount?`⏳处理中:${procCount} `:''}${errCount?`❌失败:${errCount}`:''}</div>`:'';
             document.getElementById('ragStats').innerHTML=`<div class="rag-stats">
-                <div class="card" style="text-align:center"><div class="rag-num">${s.total_documents||0}</div><div class="rag-lbl">文档数</div></div>
+                <div class="card" style="text-align:center"><div class="rag-num">${docLabel}</div><div class="rag-lbl">文档数（已入库/总数）</div>${extraInfo}</div>
                 <div class="card" style="text-align:center"><div class="rag-num">${s.total_sections||0}</div><div class="rag-lbl">章节数</div></div>
                 <div class="card" style="text-align:center"><div class="rag-num">${s.total_chunks||0}</div><div class="rag-lbl">检索块</div></div></div>`}
         const ds=dr.data||[];

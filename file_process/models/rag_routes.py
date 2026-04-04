@@ -241,6 +241,16 @@ def get_stats():
         from .rag_service import get_rag_stats
         username = _get_username()
         stats = get_rag_stats(username=username)
+        
+        # 统计 download_doc 目录下的总 docx 文件数
+        base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        doc_dir = os.path.join(base, 'file_process', 'download_doc')
+        total_files = 0
+        if os.path.isdir(doc_dir):
+            for root, _dirs, files in os.walk(doc_dir):
+                total_files += sum(1 for f in files if f.lower().endswith('.docx') and not f.startswith('~$'))
+        stats['total_source_files'] = total_files
+        
         return jsonify({'success': True, 'data': stats})
     except Exception as e:
         logger.error(f"[RAG API] 获取统计失败: {e}", exc_info=True)

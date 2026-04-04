@@ -1669,8 +1669,13 @@ class RequirementAnalyzer:
             return result
         
         # ============ 阶段2 & 3: 对未匹配需求进行分类处理 ============
+        # SQL 验证阶段使用精确的子需求标题，避免传入整段父需求文本
+        # 导致 LLM 把多个特性的测试用例混在一起
+        sql_content = req_title if (req_title and req_content and 
+                                     len(req_content) > len(req_title) * 2 and
+                                     len(req_title) > 3) else req_content
         unmatched_result = self._classify_and_process_unmatched(
-            req_content, req_title,
+            sql_content, req_title,
             enable_web_search=enable_web_search,
             enable_sql_validation=enable_sql_validation,
             sql_db_types=sql_db_types

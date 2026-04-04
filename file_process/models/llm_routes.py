@@ -465,6 +465,16 @@ def save_sql_db_config():
         if db_type not in SQLDBConfigManager.DB_TYPES:
             return jsonify({'success': False, 'error': f'不支持的数据库类型: {db_type}'}), 400
 
+        # 启用时校验必填连接参数
+        is_enabled = data.get('is_enabled', 0)
+        if is_enabled:
+            host = data.get('host', '').strip()
+            db_name = data.get('database_name', '').strip()
+            if not host:
+                return jsonify({'success': False, 'error': '启用时主机地址不能为空'}), 400
+            if not db_name:
+                return jsonify({'success': False, 'error': '启用时数据库名不能为空'}), 400
+
         # 使用 upsert 模式
         result = SQLDBConfigManager.upsert_config(
             db_type=db_type,
