@@ -147,8 +147,14 @@ class LLMConfigManager:
     
     @classmethod
     def get_default_config(cls, username=ADMIN_USERNAME):
-        """获取默认配置：优先用户自己的，回退 admin 的"""
-        # 先查用户自己的默认配置
+        """获取用户选中的配置：优先 user_selected_configs 表，fallback 到 is_default 字段"""
+        from .user_selection import get_effective_config_id
+        selected_id = get_effective_config_id(username, 'llm')
+        if selected_id is not None:
+            result = cls.get_config(selected_id)
+            if result:
+                return result
+        # fallback: 旧的 is_default 逻辑
         if username != ADMIN_USERNAME:
             sql = "SELECT * FROM llm_configs WHERE is_default = 1 AND is_active = 1 AND username = %s LIMIT 1"
             result = fetch_one(sql, (username,))
@@ -156,7 +162,6 @@ class LLMConfigManager:
                 if result.get('extra_params'):
                     result['extra_params'] = json.loads(result['extra_params'])
                 return result
-        # 回退到 admin 的默认配置
         sql = "SELECT * FROM llm_configs WHERE is_default = 1 AND is_active = 1 AND username = %s LIMIT 1"
         result = fetch_one(sql, (ADMIN_USERNAME,))
         if result and result.get('extra_params'):
@@ -165,23 +170,19 @@ class LLMConfigManager:
     
     @classmethod
     def list_configs(cls, include_inactive=False, username=ADMIN_USERNAME):
-        """列出配置：admin看全部，普通用户看自己的+admin的"""
+        """列出配置：admin只看自己的，普通用户看自己的+admin的"""
         if username == ADMIN_USERNAME:
-            # 管理员看所有活跃配置
             if include_inactive:
-                sql = "SELECT * FROM llm_configs ORDER BY is_default DESC, created_at DESC"
-                results = query_sql(sql)
+                sql = "SELECT * FROM llm_configs WHERE username = %s ORDER BY is_default DESC, created_at DESC"
             else:
-                sql = "SELECT * FROM llm_configs WHERE is_active = 1 ORDER BY is_default DESC, created_at DESC"
-                results = query_sql(sql)
+                sql = "SELECT * FROM llm_configs WHERE username = %s AND is_active = 1 ORDER BY is_default DESC, created_at DESC"
+            results = query_sql(sql, (ADMIN_USERNAME,))
         else:
-            # 普通用户看自己的 + admin 的
             if include_inactive:
                 sql = "SELECT * FROM llm_configs WHERE username = %s OR username = %s ORDER BY is_default DESC, created_at DESC"
-                results = query_sql(sql, (username, ADMIN_USERNAME))
             else:
                 sql = "SELECT * FROM llm_configs WHERE (username = %s OR username = %s) AND is_active = 1 ORDER BY is_default DESC, created_at DESC"
-                results = query_sql(sql, (username, ADMIN_USERNAME))
+            results = query_sql(sql, (username, ADMIN_USERNAME))
         
         for r in results:
             if r.get('extra_params'):
@@ -192,10 +193,12 @@ class LLMConfigManager:
     def update_config(cls, config_id, username=ADMIN_USERNAME, **kwargs):
         """更新配置（普通用户只能改自己的）"""
         # 权限校验：普通用户不能修改 admin 的配置
-        if username != ADMIN_USERNAME:
-            config = cls.get_config(config_id)
-            if config and config.get('username', ADMIN_USERNAME) == ADMIN_USERNAME:
-                raise PermissionError("无权修改管理员配置")
+        config = cls.get_config(config_id)
+        if not config:
+            return False
+        config_owner = config.get('username', ADMIN_USERNAME)
+        if username != ADMIN_USERNAME and config_owner == ADMIN_USERNAME:
+            raise PermissionError("无权修改管理员配置")
         
         allowed_fields = ['config_name', 'model_type', 'api_base_url', 'api_key', 
                           'model_name', 'max_tokens', 'temperature', 'is_default', 
@@ -209,7 +212,8 @@ class LLMConfigManager:
                 if field == 'extra_params' and value is not None:
                     value = json.dumps(value)
                 if field == 'is_default' and value:
-                    cls._clear_default_config(username=username)
+                    # 清除同归属用户的默认标记
+                    cls._clear_default_config(username=config_owner)
                 updates.append(f"{field} = %s")
                 params.append(value)
         
@@ -246,6 +250,16 @@ class LLMConfigManager:
         """清除该用户的所有默认配置标记"""
         sql = "UPDATE llm_configs SET is_default = 0 WHERE is_default = 1 AND is_active = 1 AND username = %s"
         dml_sql(sql, (username,))
+    
+    @classmethod
+    def select_config(cls, config_id, username=ADMIN_USERNAME):
+        """选中配置（互斥）：写入 user_selected_configs 表，不影响任何人的 is_default"""
+        target = cls.get_config(config_id)
+        if not target:
+            return False
+        from .user_selection import select_config as do_select
+        do_select(username, 'llm', config_id)
+        return True
     
     @classmethod
     def get_supported_models(cls):
@@ -307,7 +321,17 @@ class WebSearchConfigManager:
     
     @classmethod
     def get_default_config(cls, username=ADMIN_USERNAME):
-        """获取默认搜索配置：优先用户自己的，回退 admin 的"""
+        """获取用户选中的搜索配置：优先 user_selected_configs 表"""
+        from .user_selection import get_effective_config_id
+        selected_id = get_effective_config_id(username, 'search')
+        if selected_id is not None:
+            sql = "SELECT * FROM web_search_configs WHERE id = %s AND is_active = 1"
+            result = fetch_one(sql, (selected_id,))
+            if result:
+                if result.get('extra_params'):
+                    result['extra_params'] = json.loads(result['extra_params'])
+                return result
+        # fallback
         if username != ADMIN_USERNAME:
             sql = "SELECT * FROM web_search_configs WHERE is_default = 1 AND is_active = 1 AND username = %s LIMIT 1"
             result = fetch_one(sql, (username,))
@@ -323,10 +347,10 @@ class WebSearchConfigManager:
     
     @classmethod
     def list_configs(cls, username=ADMIN_USERNAME):
-        """列出搜索配置：admin看全部，普通用户看自己的+admin的"""
+        """列出搜索配置：admin只看自己的，普通用户看自己的+admin的"""
         if username == ADMIN_USERNAME:
-            sql = "SELECT * FROM web_search_configs WHERE is_active = 1 ORDER BY is_default DESC"
-            results = query_sql(sql)
+            sql = "SELECT * FROM web_search_configs WHERE username = %s AND is_active = 1 ORDER BY is_default DESC"
+            results = query_sql(sql, (ADMIN_USERNAME,))
         else:
             sql = "SELECT * FROM web_search_configs WHERE (username = %s OR username = %s) AND is_active = 1 ORDER BY is_default DESC"
             results = query_sql(sql, (username, ADMIN_USERNAME))
@@ -338,11 +362,12 @@ class WebSearchConfigManager:
     @classmethod
     def update_config(cls, config_id, username=ADMIN_USERNAME, **kwargs):
         """更新搜索配置（普通用户只能改自己的）"""
-        if username != ADMIN_USERNAME:
-            sql = "SELECT username FROM web_search_configs WHERE id = %s AND is_active = 1"
-            existing = fetch_one(sql, (config_id,))
-            if existing and existing.get('username', ADMIN_USERNAME) == ADMIN_USERNAME:
-                raise PermissionError("无权修改管理员配置")
+        existing = fetch_one("SELECT * FROM web_search_configs WHERE id = %s AND is_active = 1", (config_id,))
+        if not existing:
+            return False
+        config_owner = existing.get('username', ADMIN_USERNAME)
+        if username != ADMIN_USERNAME and config_owner == ADMIN_USERNAME:
+            raise PermissionError("无权修改管理员配置")
         
         allowed_fields = ['search_engine', 'api_url', 'api_key', 'extra_params', 
                           'is_default', 'is_active']
@@ -355,7 +380,7 @@ class WebSearchConfigManager:
                 if field == 'extra_params' and value is not None:
                     value = json.dumps(value)
                 if field == 'is_default' and value:
-                    cls._clear_default_config(username=username)
+                    cls._clear_default_config(username=config_owner)
                 updates.append(f"{field} = %s")
                 params.append(value)
         
@@ -388,3 +413,13 @@ class WebSearchConfigManager:
         """清除该用户的默认标记"""
         sql = "UPDATE web_search_configs SET is_default = 0 WHERE is_default = 1 AND is_active = 1 AND username = %s"
         dml_sql(sql, (username,))
+    
+    @classmethod
+    def select_config(cls, config_id, username=ADMIN_USERNAME):
+        """选中配置（互斥）：写入 user_selected_configs 表"""
+        target = fetch_one("SELECT * FROM web_search_configs WHERE id = %s AND is_active = 1", (config_id,))
+        if not target:
+            return False
+        from .user_selection import select_config as do_select
+        do_select(username, 'search', config_id)
+        return True

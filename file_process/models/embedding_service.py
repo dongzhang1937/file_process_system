@@ -464,7 +464,14 @@ class EmbeddingConfigManager:
     
     @staticmethod
     def get_default_config(username=ADMIN_USERNAME) -> Optional[Dict]:
-        """获取默认配置：优先用户自己的，回退 admin 的"""
+        """获取用户选中的 Embedding 配置：优先 user_selected_configs 表"""
+        from .user_selection import get_effective_config_id
+        selected_id = get_effective_config_id(username, 'embedding')
+        if selected_id is not None:
+            result = EmbeddingConfigManager.get_config(selected_id)
+            if result:
+                return result
+        # fallback: 旧的 is_default 逻辑
         if username != ADMIN_USERNAME:
             sql = """
                 SELECT id, name, provider, model_name, api_key, api_base,
@@ -493,16 +500,16 @@ class EmbeddingConfigManager:
     
     @staticmethod
     def get_all_configs(username=ADMIN_USERNAME) -> List[Dict]:
-        """获取配置列表：admin看全部，普通用户看自己的+admin的"""
+        """获取配置列表：admin只看自己的，普通用户看自己的+admin的"""
         if username == ADMIN_USERNAME:
             sql = """
                 SELECT id, name, provider, model_name, api_key, api_base, dimensions, 
                        is_default, is_active, username, created_at
                 FROM embedding_configs
-                WHERE is_active = 1
+                WHERE username = %s AND is_active = 1
                 ORDER BY is_default DESC, created_at DESC
             """
-            configs = fetch_all(sql, ())
+            configs = fetch_all(sql, (ADMIN_USERNAME,))
         else:
             sql = """
                 SELECT id, name, provider, model_name, api_key, api_base, dimensions, 
@@ -546,10 +553,12 @@ class EmbeddingConfigManager:
     @staticmethod
     def update_config(config_id: int, username: str = ADMIN_USERNAME, **kwargs) -> bool:
         """更新配置（普通用户只能改自己的）"""
-        if username != ADMIN_USERNAME:
-            existing = EmbeddingConfigManager.get_config(config_id)
-            if existing and existing.get('username', ADMIN_USERNAME) == ADMIN_USERNAME:
-                raise PermissionError("无权修改管理员配置")
+        existing = EmbeddingConfigManager.get_config(config_id)
+        if not existing:
+            return False
+        config_owner = existing.get('username', ADMIN_USERNAME)
+        if username != ADMIN_USERNAME and config_owner == ADMIN_USERNAME:
+            raise PermissionError("无权修改管理员配置")
         
         allowed_fields = ['name', 'provider', 'model_name', 'api_key', 'api_base',
                           'dimensions', 'is_default', 'is_active', 'extra_config']
@@ -562,7 +571,8 @@ class EmbeddingConfigManager:
                 if field == 'extra_config' and value is not None:
                     value = json.dumps(value)
                 if field == 'is_default' and value:
-                    dml_sql("UPDATE embedding_configs SET is_default = 0 WHERE is_default = 1 AND is_active = 1 AND username = %s", (username,))
+                    # 清除同归属用户的默认标记
+                    dml_sql("UPDATE embedding_configs SET is_default = 0 WHERE is_default = 1 AND is_active = 1 AND username = %s", (config_owner,))
                 updates.append(f"{field} = %s")
                 params.append(value)
         
@@ -591,13 +601,13 @@ class EmbeddingConfigManager:
     
     @staticmethod
     def set_default(config_id: int, username: str = ADMIN_USERNAME) -> bool:
-        """设置默认配置"""
-        # 先取消该用户的所有默认
-        dml_sql("UPDATE embedding_configs SET is_default = 0 WHERE is_default = 1 AND is_active = 1 AND username = %s", (username,))
-        # 设置新默认
-        sql = "UPDATE embedding_configs SET is_default = 1 WHERE id = %s AND is_active = 1"
-        affected = dml_sql(sql, (config_id,))
-        return affected > 0
+        """选中配置（互斥）：写入 user_selected_configs 表，不影响任何人的 is_default"""
+        target = EmbeddingConfigManager.get_config(config_id)
+        if not target:
+            return False
+        from .user_selection import select_config as do_select
+        do_select(username, 'embedding', config_id)
+        return True
     
     @staticmethod
     def test_config(config_id: int = None, config_data: Dict = None) -> Dict:

@@ -206,12 +206,12 @@ CREATE TABLE IF NOT EXISTS `skills_configs` (
 -- 11. SQL 数据库连接配置表
 CREATE TABLE IF NOT EXISTS `sql_db_configs` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
-    `username` VARCHAR(100) NOT NULL DEFAULT 'asd' COMMENT '所属用户',
+    `owner_username` VARCHAR(100) NOT NULL DEFAULT 'asd' COMMENT '配置所属用户(asd为管理员)',
     `db_type` VARCHAR(30) NOT NULL COMMENT '数据库类型',
     `name` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '配置名称/别名',
     `host` VARCHAR(200) NOT NULL DEFAULT '' COMMENT '主机地址',
     `port` INT NOT NULL DEFAULT 0 COMMENT '端口',
-    `db_username` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '数据库用户名',
+    `username` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '数据库登录用户名',
     `password` VARCHAR(500) NOT NULL DEFAULT '' COMMENT '密码',
     `database_name` VARCHAR(200) NOT NULL DEFAULT '' COMMENT '数据库名',
     `driver_type` VARCHAR(20) NOT NULL DEFAULT 'pymysql' COMMENT 'Python驱动',
@@ -221,8 +221,8 @@ CREATE TABLE IF NOT EXISTS `sql_db_configs` (
     `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否有效(软删除)',
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX `idx_sqldb_username` (`username`, `is_active`),
-    UNIQUE KEY `uk_db_type_user` (`db_type`, `username`, `is_active`),
+    INDEX `idx_sqldb_owner` (`owner_username`, `is_active`),
+    UNIQUE KEY `uk_db_type_owner` (`db_type`, `owner_username`, `is_active`),
     INDEX `idx_sqldb_enabled` (`is_enabled`, `is_active`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='SQL数据库连接配置表';
 
@@ -253,8 +253,24 @@ CREATE TABLE IF NOT EXISTS `analysis_tasks` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='批量需求分析后台任务表';
 
 -- =====================================================================
+-- 八、用户配置选中
+-- =====================================================================
+
+-- 13. 用户选中的配置表（每种类型只能选一个，不同用户互不影响）
+CREATE TABLE IF NOT EXISTS `user_selected_configs` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `username` VARCHAR(100) NOT NULL COMMENT '用户名',
+    `config_type` VARCHAR(30) NOT NULL COMMENT '配置类型: llm/embedding/search/sql_db',
+    `config_id` INT NOT NULL COMMENT '选中的配置记录ID',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY `uk_user_type` (`username`, `config_type`),
+    INDEX `idx_config_type` (`config_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户选中的配置（每种类型只能选一个）';
+
+-- =====================================================================
 -- 完成提示
 -- =====================================================================
--- 共 12 张 MySQL 表
+-- 共 13 张 MySQL 表
 -- PostgreSQL RAG 向量库表请使用: scripts/create_rag_tables.sql
 -- =====================================================================

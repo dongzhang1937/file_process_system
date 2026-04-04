@@ -137,10 +137,21 @@
     <div id="tab-rag" class="tab-panel">
         <h3 style="margin-bottom:16px">RAG 向量知识库</h3>
         <div id="ragStats"></div>
-        <div style="display:flex;gap:8px;margin-bottom:16px">
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+            {% if is_admin %}
             <button class="btn btn-p" onclick="ragEmbed()">📂 批量向量化 download_doc</button>
+            <button class="btn btn-s" onclick="embedSelectedRagFile()">📄 向量化单个文件</button>
+            {% endif %}
             <button class="btn btn-o" onclick="loadRag()">🔄 刷新</button>
         </div>
+        {% if is_admin %}
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+            <select id="ragFileSelect" style="min-width:320px;max-width:100%;padding:8px 10px;border:1px solid #dcdfe6;border-radius:4px">
+                <option value="">加载可向量化文件中...</option>
+            </select>
+            <span id="ragFileHint" style="font-size:12px;color:#909399">仅显示已上传完成的文件</span>
+        </div>
+        {% endif %}
         <div id="ragList"><div class="msg msg-info">加载中...</div></div>
     </div>
 </div>
@@ -171,28 +182,30 @@ function stab(id,btn){
 let llmModels={};
 async function loadLlm(){
     try{
-        // 加载模型类型
         const mr=await(await fetch('/llm/config/models')).json();
         if(mr.success)llmModels=mr.data||{};
         const r=await(await fetch('/llm/config')).json();
         if(!r.success){document.getElementById('llmList').innerHTML=`<div class="msg msg-err">${r.error}</div>`;return}
         const cs=r.data||[];
         if(!cs.length){document.getElementById('llmList').innerHTML='<div class="msg msg-info">暂无配置，请添加</div>';return}
+        const activeId=r.selected_id||null;
         document.getElementById('llmList').innerHTML=cs.map(c=>{
             const isAdminCfg=c.username===ADMIN_USER&&!isAdmin;
             const ownerBadge=isAdminCfg?'<span class="badge" style="background:#e6f7ff;color:#1890ff;margin-left:6px">🔒 全局</span>':'';
-            const defBadge=c.is_default?'<span class="badge badge-def">默认</span>':'';
-            const acts=isAdminCfg
-                ?`<button class="btn btn-s btn-sm" onclick="setDefLlm(${c.id})">设为默认</button>`
-                :`${!c.is_default?`<button class="btn btn-s btn-sm" onclick="setDefLlm(${c.id})">设为默认</button>`:''}
-                <button class="btn btn-o btn-sm" onclick="editLlm(${c.id},'${H(c.config_name||'')}','${H(c.model_type||c.provider||'')}','${H(c.model_name||'')}','${H(c.api_base_url||'')}')">编辑</button>
+            const selected=(c.id===activeId);
+            const selectBtn=selected
+                ?'<span class="badge" style="background:#f6ffed;color:#52c41a;font-size:12px;padding:3px 10px;border:1px solid #b7eb8f;border-radius:4px">✅ 已选中</span>'
+                :`<button class="btn btn-s btn-sm" onclick="selectLlm(${c.id})">选择使用</button>`;
+            const ownActs=isAdminCfg?'':` <button class="btn btn-o btn-sm" onclick="editLlm(${c.id},'${H(c.config_name||'')}','${H(c.model_type||c.provider||'')}','${H(c.model_name||'')}','${H(c.api_base_url||'')}')">编辑</button>
                 <button class="btn btn-o btn-sm" onclick="testLlm(${c.id})">测试</button>
                 <button class="btn btn-d btn-sm" onclick="delLlm(${c.id})">删除</button>`;
-            return `<div class="card" id="llm-card-${c.id}" ${isAdminCfg?'style="opacity:0.85;border-left:3px solid #1890ff"':''}>
+            const cardStyle=selected?'border-left:3px solid #52c41a;background:#fcfff5':'';
+            const adminStyle=isAdminCfg&&!selected?'opacity:0.85;border-left:3px solid #1890ff':'';
+            return `<div class="card" id="llm-card-${c.id}" style="${selected?cardStyle:adminStyle}">
             <div class="card-hd"><span class="card-title">${H(c.config_name||c.name)}</span>
-            <span>${defBadge}${ownerBadge}</span></div>
+            <span>${ownerBadge}</span></div>
             <div class="card-info">提供商: ${H(c.provider||c.model_type)} | 模型: ${H(c.model_name)}${c.api_base_url?' | API: '+H(c.api_base_url):''}</div>
-            <div class="card-acts">${acts}</div></div>`}).join('');
+            <div class="card-acts">${selectBtn}${ownActs}</div></div>`}).join('');
     }catch(e){document.getElementById('llmList').innerHTML=`<div class="msg msg-err">${e.message}</div>`}
 }
 function showLlmForm(editId,name,type,model,base){
@@ -208,7 +221,6 @@ function showLlmForm(editId,name,type,model,base){
         <div class="fm-row"><label>模型名称 *</label><input id="lf_model" value="${H(model||'')}" placeholder="如: gpt-4o, deepseek-chat"></div>
         <div class="fm-row"><label>API Key</label><input type="password" id="lf_key" placeholder="${isEdit?'留空不修改':'Ollama可留空'}"></div>
         <div class="fm-row"><label>API Base URL</label><input id="lf_base" value="${H(base||'')}" placeholder="可选，如 https://api.openai.com/v1"></div>
-        <div class="fm-row"><label><input type="checkbox" id="lf_def" ${!isEdit?'checked':''}> 设为默认</label></div>
         <div style="display:flex;gap:8px;margin-top:16px">
         <button class="btn btn-p" onclick="saveLlm(${editId||'null'})">保存</button>
         <button class="btn btn-o" onclick="closeLlmForm()">取消</button></div>
@@ -240,12 +252,12 @@ async function saveLlm(editId){
         else document.getElementById('lf_msg').innerHTML=`<span style="color:red">❌ ${r.error}</span>`
     }catch(e){document.getElementById('lf_msg').innerHTML=`<span style="color:red">❌ ${e.message}</span>`}
 }
-async function setDefLlm(id){try{await fetch(`/llm/config/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({is_default:true})});loadLlm()}catch(e){alert(e.message)}}
 async function testLlm(id){
     try{const r=await(await fetch('/llm/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({config_id:id})})).json();
     alert(r.success?`✅ 测试成功: ${r.data?.model||''}`:`❌ ${r.error}`)}catch(e){alert(e.message)}
 }
 async function delLlm(id){if(!confirm('确认删除？'))return;try{await fetch(`/llm/config/${id}`,{method:'DELETE'});loadLlm()}catch(e){alert(e.message)}}
+async function selectLlm(id){try{const r=await(await fetch(`/llm/config/${id}/select`,{method:'POST'})).json();if(r.success){loadLlm()}else{alert('选择失败: '+(r.error||'未知错误'))}}catch(e){alert('请求失败: '+e.message)}}
 
 // ===== Embedding =====
 async function loadEmb(){
@@ -258,21 +270,24 @@ async function loadEmb(){
         const r=await(await fetch('/api/embedding/config')).json();
         const cs=r.data||[];
         if(!cs.length){document.getElementById('embList').innerHTML='<div class="msg msg-info">暂无配置</div>';return}
+        const activeId=r.selected_id||null;
         document.getElementById('embList').innerHTML=cs.map(c=>{
             const isAdminCfg=c.username===ADMIN_USER&&!isAdmin;
             const ownerBadge=isAdminCfg?'<span class="badge" style="background:#e6f7ff;color:#1890ff;margin-left:6px">🔒 全局</span>':'';
-            const defBadge=c.is_default?'<span class="badge badge-def">默认</span>':'';
-            const acts=isAdminCfg
-                ?`<button class="btn btn-s btn-sm" onclick="setDefEmb(${c.id})">设为默认</button>`
-                :`${!c.is_default?`<button class="btn btn-s btn-sm" onclick="setDefEmb(${c.id})">设为默认</button>`:''} 
-                <button class="btn btn-o btn-sm" onclick="editEmb(${c.id},'${H(c.name)}','${H(c.provider)}','${H(c.model_name)}',${c.dimensions},'${H(c.api_base||'')}')">编辑</button>
+            const selected=(c.id===activeId);
+            const selectBtn=selected
+                ?'<span class="badge" style="background:#f6ffed;color:#52c41a;font-size:12px;padding:3px 10px;border:1px solid #b7eb8f;border-radius:4px">✅ 已选中</span>'
+                :`<button class="btn btn-s btn-sm" onclick="selectEmb(${c.id})">选择使用</button>`;
+            const ownActs=isAdminCfg?'':` <button class="btn btn-o btn-sm" onclick="editEmb(${c.id},'${H(c.name)}','${H(c.provider)}','${H(c.model_name)}',${c.dimensions},'${H(c.api_base||'')}')">编辑</button>
                 <button class="btn btn-o btn-sm" onclick="testEmb(${c.id})">测试</button>
                 <button class="btn btn-d btn-sm" onclick="delEmb(${c.id})">删除</button>`;
-            return `<div class="card" id="emb-card-${c.id}" ${isAdminCfg?'style="opacity:0.85;border-left:3px solid #1890ff"':''}>
+            const cardStyle=selected?'border-left:3px solid #52c41a;background:#fcfff5':'';
+            const adminStyle=isAdminCfg&&!selected?'opacity:0.85;border-left:3px solid #1890ff':'';
+            return `<div class="card" id="emb-card-${c.id}" style="${selected?cardStyle:adminStyle}">
             <div class="card-hd"><span class="card-title">${H(c.name)}</span>
-            <span>${defBadge}${ownerBadge}</span></div>
+            <span>${ownerBadge}</span></div>
             <div class="card-info">提供商: ${H(c.provider)} | 模型: ${H(c.model_name)} | 维度: ${c.dimensions}</div>
-            <div class="card-acts">${acts}</div></div>`}).join('');
+            <div class="card-acts">${selectBtn}${ownActs}</div></div>`}).join('');
     }catch(e){document.getElementById('embList').innerHTML=`<div class="msg msg-err">${e.message}</div>`}
 }
 function showEmbForm(){
@@ -297,7 +312,7 @@ async function saveEmb(){
     const b={name:document.getElementById('ef_name').value,provider:document.getElementById('ef_prov').value,
         model_name:document.getElementById('ef_model').value,api_base:document.getElementById('ef_base').value||null,
         api_key:document.getElementById('ef_key').value||null,dimensions:parseInt(document.getElementById('ef_dim').value)||1024,
-        is_default:document.getElementById('ef_def').checked};
+        is_default:true};
     try{const r=await(await fetch('/api/embedding/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})).json();
         if(r.success){document.getElementById('embFormArea').style.display='none';loadEmb()}
         else document.getElementById('ef_msg').innerHTML=`<span style="color:red">❌ ${r.error}</span>`
@@ -347,8 +362,8 @@ async function testNewEmb(){
     }catch(e){document.getElementById('ef_msg').innerHTML=`<span style="color:red">❌ ${e.message}</span>`}
 }
 async function testEmb(id){try{const r=await(await fetch('/api/embedding/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({config_id:id})})).json();alert(r.success?`✅ 维度=${r.data?.dimensions}`:`❌ ${r.error}`)}catch(e){alert(e.message)}}
-async function setDefEmb(id){try{await fetch(`/api/embedding/config/${id}/default`,{method:'POST'});loadEmb()}catch(e){alert(e.message)}}
 async function delEmb(id){if(!confirm('确认删除？'))return;try{await fetch(`/api/embedding/config/${id}`,{method:'DELETE'});loadEmb()}catch(e){alert(e.message)}}
+async function selectEmb(id){try{const r=await(await fetch(`/api/embedding/config/${id}/default`,{method:'POST'})).json();if(r.success){loadEmb()}else{alert('选择失败: '+(r.error||'未知错误'))}}catch(e){alert('请求失败: '+e.message)}}
 
 // ===== SQL DB =====
 const sqlInfo={mysql_centralized:{n:'兼容MySQL集中式',d:'pymysql',p:3306},mysql_distributed:{n:'兼容MySQL分布式(TDSQL)',d:'pymysql',p:3306},
@@ -423,18 +438,22 @@ function resetPt(){if(confirm('确认清空？')){document.getElementById('ptEdi
 async function loadSch(){
     try{const r=await(await fetch('/llm/search-config')).json();const cs=r.data||[];
         if(!cs.length){document.getElementById('schList').innerHTML='<div class="msg msg-info">暂无配置</div>';return}
+        const activeId=r.selected_id||null;
         document.getElementById('schList').innerHTML=cs.map(c=>{
             const isAdminCfg=c.username===ADMIN_USER&&!isAdmin;
             const ownerBadge=isAdminCfg?'<span class="badge" style="background:#e6f7ff;color:#1890ff;margin-left:6px">🔒 全局</span>':'';
-            const defBadge=c.is_default?'<span class="badge badge-def">默认</span>':'';
-            const acts=isAdminCfg
-                ?`<button class="btn btn-s btn-sm" onclick="setDefSch(${c.id})">设为默认</button>`
-                :`<button class="btn btn-d btn-sm" onclick="delSch(${c.id})">删除</button>`;
-            return `<div class="card" ${isAdminCfg?'style="opacity:0.85;border-left:3px solid #1890ff"':''}>
+            const selected=(c.id===activeId);
+            const selectBtn=selected
+                ?'<span class="badge" style="background:#f6ffed;color:#52c41a;font-size:12px;padding:3px 10px;border:1px solid #b7eb8f;border-radius:4px">✅ 已选中</span>'
+                :`<button class="btn btn-s btn-sm" onclick="selectSch(${c.id})">选择使用</button>`;
+            const ownActs=isAdminCfg?'':` <button class="btn btn-d btn-sm" onclick="delSch(${c.id})">删除</button>`;
+            const cardStyle=selected?'border-left:3px solid #52c41a;background:#fcfff5':'';
+            const adminStyle=isAdminCfg&&!selected?'opacity:0.85;border-left:3px solid #1890ff':'';
+            return `<div class="card" style="${selected?cardStyle:adminStyle}">
             <div class="card-hd"><span class="card-title">${H(c.name||c.search_engine||'未命名')}</span>
-            <span>${defBadge}${ownerBadge}</span></div>
+            <span>${ownerBadge}</span></div>
             <div class="card-info">引擎: ${H(c.search_engine||'-')} | API: ${H((c.api_url||'免费/无需API').substring(0,60))}</div>
-            <div class="card-acts">${acts}</div></div>`}).join('');
+            <div class="card-acts">${selectBtn}${ownActs}</div></div>`}).join('');
     }catch(e){document.getElementById('schList').innerHTML=`<div class="msg msg-err">${e.message}</div>`}}
 function showSchForm(){
     const a=document.getElementById('schFormArea');a.style.display='block';
@@ -471,7 +490,7 @@ async function saveSch(){
     }catch(e){document.getElementById('sf_msg').innerHTML=`<span style="color:red">❌ ${e.message}</span>`}
 }
 async function delSch(id){if(!confirm('确认删除？'))return;try{await fetch(`/llm/search-config/${id}`,{method:'DELETE'});loadSch()}catch(e){alert(e.message)}}
-async function setDefSch(id){try{await fetch(`/llm/search-config/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({is_default:true})});loadSch()}catch(e){alert(e.message)}}
+async function selectSch(id){try{const r=await(await fetch(`/llm/search-config/${id}/select`,{method:'POST'})).json();if(r.success){loadSch()}else{alert('选择失败: '+(r.error||'未知错误'))}}catch(e){alert('请求失败: '+e.message)}}
 
 // ===== RAG =====
 function setRagFileOptions(uploads){
@@ -526,7 +545,7 @@ async function loadRag(){
             ${d.error_message?`<div style="color:#f56c6c;font-size:12px;margin-top:4px">${H(d.error_message)}</div>`:''}
             <div class="card-acts">
             ${d.status==='done'?`<button class="btn btn-o btn-sm" onclick='viewRagDetail(${d.id}, ${JSON.stringify(d.filename||'')})'>查看切分</button>`:''}
-            ${d.status==='error'||d.status==='pending'?`<button class="btn btn-s btn-sm" onclick="retryRag(${d.id})">重新向量化</button>`:''}
+            ${isAdmin&&(d.status==='error'||d.status==='pending')?`<button class="btn btn-s btn-sm" onclick="retryRag(${d.id})">重新向量化</button>`:''}
             ${isAdmin?`<button class="btn btn-d btn-sm" onclick="delRag(${d.id})">删除</button>`:''}</div></div>`).join('');
     }catch(e){
         if(shouldIgnoreFetchError(e))return;

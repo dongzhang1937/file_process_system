@@ -43,7 +43,10 @@ def embed_directory():
 
 @rag_bp.route('/embed-file', methods=['POST'])
 def embed_file():
-    """向量化单个文件"""
+    """向量化单个文件（仅管理员）"""
+    denied = _require_admin()
+    if denied:
+        return denied
     try:
         from .rag_service import embed_and_store_document
         
@@ -110,7 +113,10 @@ def list_documents():
 
 @rag_bp.route('/documents/<int:doc_id>', methods=['DELETE'])
 def delete_document(doc_id):
-    """删除指定文档"""
+    """删除指定文档（仅管理员）"""
+    denied = _require_admin()
+    if denied:
+        return denied
     try:
         from .rag_service import delete_rag_document
         username = _get_username()

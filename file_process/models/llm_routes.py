@@ -20,18 +20,27 @@ def _get_username():
 
 @llm_bp.route('/config', methods=['GET'])
 def list_llm_configs():
-    """获取所有LLM配置"""
+    """获取所有LLM配置 + 当前用户选中的 config_id"""
     try:
         username = _get_username()
         configs = LLMConfigManager.list_configs(username=username)
-        # 隐藏敏感信息
         for config in configs:
             if config.get('api_key'):
                 config['api_key'] = config['api_key'][:8] + '****'
         
+        from .user_selection import get_effective_config_id
+        selected_id = get_effective_config_id(username, 'llm')
+        # 如果没有任何选中记录，fallback 到列表中第一条 is_default=1 的
+        if selected_id is None:
+            for c in configs:
+                if c.get('is_default'):
+                    selected_id = c['id']
+                    break
+        
         return jsonify({
             'success': True,
-            'data': configs
+            'data': configs,
+            'selected_id': selected_id
         })
     except Exception as e:
         logger.error(f"获取LLM配置失败: {e}")
@@ -66,6 +75,11 @@ def create_llm_config():
             extra_params=data.get('extra_params'),
             username=username
         )
+        
+        # 自动选中新创建的配置
+        if config_id:
+            from .user_selection import select_config as do_select
+            do_select(username, 'llm', config_id)
         
         return jsonify({
             'success': True,
@@ -124,11 +138,26 @@ def get_supported_models():
     })
 
 
+@llm_bp.route('/config/<int:config_id>/select', methods=['POST'])
+def select_llm_config(config_id):
+    """选中 LLM 配置（互斥，同时只能选一个）"""
+    try:
+        username = _get_username()
+        success = LLMConfigManager.select_config(config_id, username=username)
+        if success:
+            return jsonify({'success': True, 'message': '已选中'})
+        else:
+            return jsonify({'success': False, 'error': '配置不存在'}), 404
+    except Exception as e:
+        logger.error(f"选中LLM配置失败: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 # ==================== 网络搜索配置API ====================
 
 @llm_bp.route('/search-config', methods=['GET'])
 def list_search_configs():
-    """获取网络搜索配置"""
+    """获取网络搜索配置 + 当前用户选中的 config_id"""
     try:
         username = _get_username()
         configs = WebSearchConfigManager.list_configs(username=username)
@@ -136,9 +165,18 @@ def list_search_configs():
             if config.get('api_key'):
                 config['api_key'] = config['api_key'][:8] + '****'
         
+        from .user_selection import get_effective_config_id
+        selected_id = get_effective_config_id(username, 'search')
+        if selected_id is None:
+            for c in configs:
+                if c.get('is_default'):
+                    selected_id = c['id']
+                    break
+        
         return jsonify({
             'success': True,
-            'data': configs
+            'data': configs,
+            'selected_id': selected_id
         })
     except Exception as e:
         logger.error(f"获取搜索配置失败: {e}")
@@ -163,6 +201,11 @@ def create_search_config():
             is_default=data.get('is_default', False),
             username=username
         )
+        
+        # 自动选中新创建的配置
+        if config_id:
+            from .user_selection import select_config as do_select
+            do_select(username, 'search', config_id)
         
         return jsonify({
             'success': True,
@@ -209,6 +252,21 @@ def delete_search_config(config_id):
         return jsonify({'success': False, 'error': str(e)}), 403
     except Exception as e:
         logger.error(f"删除搜索配置失败: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@llm_bp.route('/search-config/<int:config_id>/select', methods=['POST'])
+def select_search_config(config_id):
+    """选中搜索配置（互斥，同时只能选一个）"""
+    try:
+        username = _get_username()
+        success = WebSearchConfigManager.select_config(config_id, username=username)
+        if success:
+            return jsonify({'success': True, 'message': '已选中'})
+        else:
+            return jsonify({'success': False, 'error': '配置不存在'}), 404
+    except Exception as e:
+        logger.error(f"选中搜索配置失败: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 

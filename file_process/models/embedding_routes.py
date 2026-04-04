@@ -36,19 +36,27 @@ def get_supported_providers():
 
 @embedding_bp.route('/config', methods=['GET'])
 def list_configs():
-    """获取所有 Embedding 配置"""
+    """获取所有 Embedding 配置 + 当前用户选中的 config_id"""
     try:
         username = _get_username()
         configs = EmbeddingConfigManager.get_all_configs(username=username)
         
-        # 转换日期时间格式
         for config in configs:
             if config.get('created_at'):
                 config['created_at'] = config['created_at'].strftime('%Y-%m-%d %H:%M:%S')
         
+        from .user_selection import get_effective_config_id
+        selected_id = get_effective_config_id(username, 'embedding')
+        if selected_id is None:
+            for c in configs:
+                if c.get('is_default'):
+                    selected_id = c['id']
+                    break
+        
         return jsonify({
             'success': True,
-            'data': configs
+            'data': configs,
+            'selected_id': selected_id
         })
     except Exception as e:
         logger.error(f"获取配置列表失败: {e}")
@@ -115,6 +123,9 @@ def create_config():
         )
         
         if config_id:
+            # 自动选中新创建的配置
+            from .user_selection import select_config as do_select
+            do_select(username, 'embedding', config_id)
             logger.info(f"创建 Embedding 配置成功: id={config_id}, name={data['name']}")
             return jsonify({
                 'success': True,
@@ -282,8 +293,9 @@ def test_config():
 def get_embedding_status():
     """获取当前 Embedding 服务状态"""
     try:
-        # 尝试获取默认配置
-        default_config = EmbeddingConfigManager.get_default_config()
+        # 尝试获取当前用户选中的配置
+        username = _get_username()
+        default_config = EmbeddingConfigManager.get_default_config(username=username)
         
         if default_config:
             # 隐藏敏感信息

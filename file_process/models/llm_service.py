@@ -25,14 +25,15 @@ def convert_decimal(obj):
 class LLMService:
     """LLM服务类 - 统一调用接口"""
     
-    def __init__(self, config=None):
+    def __init__(self, config=None, username='asd'):
         """
         初始化LLM服务
         
         Args:
             config: LLM配置，如果为None则使用默认配置
+            username: 当前用户名（用于获取用户选中的配置）
         """
-        config = config or LLMConfigManager.get_default_config()
+        config = config or LLMConfigManager.get_default_config(username=username)
         if not config:
             raise ValueError("未找到LLM配置，请先配置大模型")
         # 转换Decimal类型为float，避免JSON序列化错误

@@ -11,14 +11,15 @@ from .llm_config import WebSearchConfigManager
 class WebSearchService:
     """网络搜索服务"""
     
-    def __init__(self, config=None):
+    def __init__(self, config=None, username='asd'):
         """
         初始化搜索服务
         
         Args:
             config: 搜索配置，如果为None则使用默认配置
+            username: 当前用户名（用于获取用户选中的配置）
         """
-        self.config = config or WebSearchConfigManager.get_default_config()
+        self.config = config or WebSearchConfigManager.get_default_config(username=username)
         if not self.config:
             logger.warning("未找到网络搜索配置")
     
