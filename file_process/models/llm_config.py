@@ -229,20 +229,20 @@ class LLMConfigManager:
         return affected > 0
     
     @classmethod
-    def delete_config(cls, config_id, soft_delete=True, username=ADMIN_USERNAME):
-        """删除配置（普通用户只能删自己的）"""
-        # 权限校验
-        if username != ADMIN_USERNAME:
-            config = cls.get_config(config_id)
-            if config and config.get('username', ADMIN_USERNAME) == ADMIN_USERNAME:
-                raise PermissionError("无权删除管理员配置")
+    def delete_config(cls, config_id, username=ADMIN_USERNAME):
+        """删除配置（硬删除，普通用户只能删自己的）"""
+        config = cls.get_config(config_id)
+        if not config:
+            return False
+        config_owner = config.get('username', ADMIN_USERNAME)
+        if username != ADMIN_USERNAME and config_owner == ADMIN_USERNAME:
+            raise PermissionError("无权删除管理员配置")
         
-        if soft_delete:
-            sql = "UPDATE llm_configs SET is_active = 0, updated_at = %s WHERE id = %s"
-            affected = dml_sql(sql, (datetime.now(), config_id))
-        else:
-            sql = "DELETE FROM llm_configs WHERE id = %s"
-            affected = dml_sql(sql, (config_id,))
+        sql = "DELETE FROM llm_configs WHERE id = %s"
+        affected = dml_sql(sql, (config_id,))
+        # 清理所有用户对这条配置的选中记录
+        if affected > 0:
+            dml_sql("DELETE FROM user_selected_configs WHERE config_type = 'llm' AND config_id = %s", (config_id,))
         return affected > 0
     
     @classmethod
@@ -397,15 +397,18 @@ class WebSearchConfigManager:
     
     @classmethod
     def delete_config(cls, config_id, username=ADMIN_USERNAME):
-        """软删除配置（普通用户只能删自己的）"""
-        if username != ADMIN_USERNAME:
-            sql = "SELECT username FROM web_search_configs WHERE id = %s AND is_active = 1"
-            existing = fetch_one(sql, (config_id,))
-            if existing and existing.get('username', ADMIN_USERNAME) == ADMIN_USERNAME:
-                raise PermissionError("无权删除管理员配置")
+        """删除配置（硬删除，普通用户只能删自己的）"""
+        existing = fetch_one("SELECT * FROM web_search_configs WHERE id = %s", (config_id,))
+        if not existing:
+            return False
+        config_owner = existing.get('username', ADMIN_USERNAME)
+        if username != ADMIN_USERNAME and config_owner == ADMIN_USERNAME:
+            raise PermissionError("无权删除管理员配置")
         
-        sql = "UPDATE web_search_configs SET is_active = 0, updated_at = %s WHERE id = %s"
-        affected = dml_sql(sql, (datetime.now(), config_id))
+        sql = "DELETE FROM web_search_configs WHERE id = %s"
+        affected = dml_sql(sql, (config_id,))
+        if affected > 0:
+            dml_sql("DELETE FROM user_selected_configs WHERE config_type = 'search' AND config_id = %s", (config_id,))
         return affected > 0
     
     @classmethod

@@ -240,7 +240,8 @@ function closeLlmForm(){document.querySelectorAll('.llm-inline-form').forEach(e=
 function editLlm(id,name,type,model,base){showLlmForm(id,name,type,model,base)}
 async function saveLlm(editId){
     const b={config_name:document.getElementById('lf_name').value,model_type:document.getElementById('lf_type').value,
-        model_name:document.getElementById('lf_model').value,is_default:document.getElementById('lf_def').checked};
+        model_name:document.getElementById('lf_model').value};
+    if(!editId)b.is_default=true;
     const key=document.getElementById('lf_key').value;if(key)b.api_key=key;
     const base=document.getElementById('lf_base').value;if(base)b.api_base_url=base;
     try{

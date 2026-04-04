@@ -699,10 +699,10 @@ def get_rag_stats(username: str = ADMIN_USERNAME) -> dict[str, Any]:
         done_where = "WHERE status = 'done'"
         done_params = ()
         if username != ADMIN_USERNAME:
-            doc_where = "WHERE username = %s"
-            doc_params = (username,)
-            done_where = "WHERE status = 'done' AND username = %s"
-            done_params = (username,)
+            doc_where = "WHERE (username = %s OR username = %s)"
+            doc_params = (username, ADMIN_USERNAME)
+            done_where = "WHERE status = 'done' AND (username = %s OR username = %s)"
+            done_params = (username, ADMIN_USERNAME)
 
         cur.execute(f"""
             SELECT 
@@ -739,7 +739,7 @@ def get_rag_stats(username: str = ADMIN_USERNAME) -> dict[str, Any]:
 
 
 def list_rag_documents(username: str = ADMIN_USERNAME) -> list[dict[str, Any]]:
-    """列出 RAG 文档（普通用户仅查看自己的文档，管理员查看全部）"""
+    """列出 RAG 文档（管理员查看全部，普通用户查看自己的+admin的）"""
     conn = _get_pg_conn()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     
@@ -756,9 +756,9 @@ def list_rag_documents(username: str = ADMIN_USERNAME) -> list[dict[str, Any]]:
                 SELECT id, filename, product_name, doc_type, total_sections, total_chunks,
                        status, error_message, username, created_at, updated_at
                 FROM rag_documents
-                WHERE username = %s
+                WHERE username = %s OR username = %s
                 ORDER BY created_at DESC
-            """, (username,))
+            """, (username, ADMIN_USERNAME))
         docs = cur.fetchall()
         for d in docs:
             if d.get('created_at'):

@@ -585,18 +585,19 @@ class EmbeddingConfigManager:
         return affected > 0
     
     @staticmethod
-    def delete_config(config_id: int, soft_delete: bool = True, username: str = ADMIN_USERNAME) -> bool:
-        """删除配置（普通用户只能删自己的）"""
-        if username != ADMIN_USERNAME:
-            existing = EmbeddingConfigManager.get_config(config_id)
-            if existing and existing.get('username', ADMIN_USERNAME) == ADMIN_USERNAME:
-                raise PermissionError("无权删除管理员配置")
+    def delete_config(config_id: int, username: str = ADMIN_USERNAME) -> bool:
+        """删除配置（硬删除，普通用户只能删自己的）"""
+        existing = EmbeddingConfigManager.get_config(config_id)
+        if not existing:
+            return False
+        config_owner = existing.get('username', ADMIN_USERNAME)
+        if username != ADMIN_USERNAME and config_owner == ADMIN_USERNAME:
+            raise PermissionError("无权删除管理员配置")
         
-        if soft_delete:
-            sql = "UPDATE embedding_configs SET is_active = 0, name = CONCAT(name, '_deleted_', UNIX_TIMESTAMP()) WHERE id = %s AND is_active = 1"
-        else:
-            sql = "DELETE FROM embedding_configs WHERE id = %s"
+        sql = "DELETE FROM embedding_configs WHERE id = %s"
         affected = dml_sql(sql, (config_id,))
+        if affected > 0:
+            dml_sql("DELETE FROM user_selected_configs WHERE config_type = 'embedding' AND config_id = %s", (config_id,))
         return affected > 0
     
     @staticmethod
