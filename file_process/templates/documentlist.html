@@ -281,8 +281,7 @@
 
     <script>
         const API_BASE = '/upload';
-        const CHUNK_SIZE = 20 * 1024 * 1024 ; // 2MB per chunk
-        const MAX_FILE_SIZE = 500 * 1024 * 1024 *1024; //  5G
+        const CHUNK_SIZE = 20 * 1024 * 1024 ; // 20MB per chunk
         
         let uploadTasks = []; // 存储所有上传任务
         let taskCounter = 1; // 任务序号计数器
@@ -513,8 +512,6 @@
                 
                 if (!allowedTypes.includes(fileExt)) {
                     invalidFiles.push(`${file.name} (不支持的格式)`);
-                } else if (file.size > MAX_FILE_SIZE) {
-                    invalidFiles.push(`${file.name} (文件过大)`);
                 } else {
                     validFiles.push(file);
                 }
