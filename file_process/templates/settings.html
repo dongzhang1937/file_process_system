@@ -254,8 +254,24 @@ async function saveLlm(editId){
     }catch(e){document.getElementById('lf_msg').innerHTML=`<span style="color:red">❌ ${e.message}</span>`}
 }
 async function testLlm(id){
+    const btn=event?.target||document.querySelector(`#llm-card-${id} .btn-test-llm`);
+    if(!btn)return;
+    const origText=btn.textContent;
+    btn.disabled=true;btn.textContent='⏳ 测试中...';btn.style.opacity='0.6';btn.style.cursor='not-allowed';
+    // 在卡片内显示状态
+    const card=document.getElementById('llm-card-'+id);
+    let stEl=card?.querySelector('.test-result');
+    if(!stEl&&card){stEl=document.createElement('div');stEl.className='test-result';stEl.style.cssText='font-size:12px;margin-top:8px;padding:8px 12px;border-radius:4px;transition:all .3s';card.appendChild(stEl)}
+    if(stEl){stEl.style.background='#e6f7ff';stEl.style.color='#1890ff';stEl.style.border='1px solid #91d5ff';stEl.textContent='⏳ 正在测试连接，请稍候...'}
     try{const r=await(await fetch('/llm/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({config_id:id})})).json();
-    alert(r.success?`✅ 测试成功: ${r.data?.model||''}`:`❌ ${r.error}`)}catch(e){alert(e.message)}
+        if(stEl){
+            if(r.success){stEl.style.background='#f6ffed';stEl.style.color='#52c41a';stEl.style.border='1px solid #b7eb8f';
+                stEl.textContent='✅ 测试成功: '+(r.data?.response?.substring(0,100)||r.data?.model||'OK')}
+            else{stEl.style.background='#fff2f0';stEl.style.color='#ff4d4f';stEl.style.border='1px solid #ffccc7';
+                stEl.textContent='❌ 测试失败: '+(r.error||'未知错误')}
+        }
+    }catch(e){if(stEl){stEl.style.background='#fff2f0';stEl.style.color='#ff4d4f';stEl.style.border='1px solid #ffccc7';stEl.textContent='❌ 请求失败: '+e.message}}
+    finally{btn.disabled=false;btn.textContent=origText;btn.style.opacity='';btn.style.cursor='';}
 }
 async function delLlm(id){if(!confirm('确认删除？'))return;try{await fetch(`/llm/config/${id}`,{method:'DELETE'});loadLlm()}catch(e){alert(e.message)}}
 async function selectLlm(id){try{const r=await(await fetch(`/llm/config/${id}/select`,{method:'POST'})).json();if(r.success){loadLlm()}else{alert('选择失败: '+(r.error||'未知错误'))}}catch(e){alert('请求失败: '+e.message)}}
@@ -355,14 +371,37 @@ async function updateEmb(id){
     }catch(e){document.getElementById('ef_msg').innerHTML=`<span style="color:red">❌ ${e.message}</span>`}
 }
 async function testNewEmb(){
+    const btn=event?.target;
+    if(btn){btn.disabled=true;btn.textContent='⏳ 测试中...';btn.style.opacity='0.6';btn.style.cursor='not-allowed';}
+    const msgEl=document.getElementById('ef_msg');
+    if(msgEl)msgEl.innerHTML='<span style="color:#1890ff">⏳ 正在测试连接，请稍候...</span>';
     const b={config_data:{provider:document.getElementById('ef_prov').value,model_name:document.getElementById('ef_model').value,
         api_base:document.getElementById('ef_base').value,api_key:document.getElementById('ef_key').value,
         dimensions:parseInt(document.getElementById('ef_dim').value)||1024}};
     try{const r=await(await fetch('/api/embedding/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})).json();
-        document.getElementById('ef_msg').innerHTML=r.success?`<span style="color:green">✅ ${r.message||'成功'} 维度=${r.data?.dimensions}</span>`:`<span style="color:red">❌ ${r.error}</span>`
-    }catch(e){document.getElementById('ef_msg').innerHTML=`<span style="color:red">❌ ${e.message}</span>`}
+        if(msgEl)msgEl.innerHTML=r.success?`<span style="color:green">✅ ${r.message||'成功'} 维度=${r.data?.dimensions}</span>`:`<span style="color:red">❌ ${r.error}</span>`
+    }catch(e){if(msgEl)msgEl.innerHTML=`<span style="color:red">❌ ${e.message}</span>`}
+    finally{if(btn){btn.disabled=false;btn.textContent='测试连接';btn.style.opacity='';btn.style.cursor='';}}
 }
-async function testEmb(id){try{const r=await(await fetch('/api/embedding/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({config_id:id})})).json();alert(r.success?`✅ 维度=${r.data?.dimensions}`:`❌ ${r.error}`)}catch(e){alert(e.message)}}
+async function testEmb(id){
+    const btn=event?.target||document.querySelector(`#emb-card-${id} .btn-test-emb`);
+    if(!btn)return;
+    const origText=btn.textContent;
+    btn.disabled=true;btn.textContent='⏳ 测试中...';btn.style.opacity='0.6';btn.style.cursor='not-allowed';
+    const card=document.getElementById('emb-card-'+id);
+    let stEl=card?.querySelector('.test-result');
+    if(!stEl&&card){stEl=document.createElement('div');stEl.className='test-result';stEl.style.cssText='font-size:12px;margin-top:8px;padding:8px 12px;border-radius:4px;transition:all .3s';card.appendChild(stEl)}
+    if(stEl){stEl.style.background='#e6f7ff';stEl.style.color='#1890ff';stEl.style.border='1px solid #91d5ff';stEl.textContent='⏳ 正在测试连接，请稍候...'}
+    try{const r=await(await fetch('/api/embedding/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({config_id:id})})).json();
+        if(stEl){
+            if(r.success){stEl.style.background='#f6ffed';stEl.style.color='#52c41a';stEl.style.border='1px solid #b7eb8f';
+                stEl.textContent='✅ 测试成功，维度='+(r.data?.dimensions||'未知')}
+            else{stEl.style.background='#fff2f0';stEl.style.color='#ff4d4f';stEl.style.border='1px solid #ffccc7';
+                stEl.textContent='❌ 测试失败: '+(r.error||'未知错误')}
+        }
+    }catch(e){if(stEl){stEl.style.background='#fff2f0';stEl.style.color='#ff4d4f';stEl.style.border='1px solid #ffccc7';stEl.textContent='❌ 请求失败: '+e.message}}
+    finally{btn.disabled=false;btn.textContent=origText;btn.style.opacity='';btn.style.cursor='';}
+}
 async function delEmb(id){if(!confirm('确认删除？'))return;try{await fetch(`/api/embedding/config/${id}`,{method:'DELETE'});loadEmb()}catch(e){alert(e.message)}}
 async function selectEmb(id){try{const r=await(await fetch(`/api/embedding/config/${id}/default`,{method:'POST'})).json();if(r.success){loadEmb()}else{alert('选择失败: '+(r.error||'未知错误'))}}catch(e){alert('请求失败: '+e.message)}}
 
@@ -410,12 +449,17 @@ async function saveSql(t){
     }catch(e){document.getElementById(`sq_st_${t}`).innerHTML=`<span style="color:red">❌ ${e.message}</span>`}
 }
 async function testSql(t){
+    const btn=event?.target;
+    if(btn){btn.disabled=true;btn.textContent='⏳ 测试中...';btn.style.opacity='0.6';btn.style.cursor='not-allowed';}
+    const stEl=document.getElementById(`sq_st_${t}`);
+    if(stEl)stEl.innerHTML='<span style="color:#1890ff">⏳ 正在测试连接，请稍候...</span>';
     const b={db_type:t,host:document.getElementById(`sq_h_${t}`).value,port:parseInt(document.getElementById(`sq_p_${t}`).value)||0,
         username:document.getElementById(`sq_u_${t}`).value,password:document.getElementById(`sq_pw_${t}`).value,
         database_name:document.getElementById(`sq_db_${t}`).value};
     try{const r=await(await fetch('/llm/sql-db-config/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})).json();
-        document.getElementById(`sq_st_${t}`).innerHTML=r.success?`<span style="color:green">✅ ${H(r.data?.version||'连接成功')}</span>`:`<span style="color:red">❌ ${r.data?.message||r.error}</span>`
-    }catch(e){document.getElementById(`sq_st_${t}`).innerHTML=`<span style="color:red">❌ ${e.message}</span>`}
+        if(stEl)stEl.innerHTML=r.success?`<span style="color:green">✅ ${H(r.data?.version||'连接成功')}</span>`:`<span style="color:red">❌ ${r.data?.message||r.error}</span>`
+    }catch(e){if(stEl)stEl.innerHTML=`<span style="color:red">❌ ${e.message}</span>`}
+    finally{if(btn){btn.disabled=false;btn.textContent='测试';btn.style.opacity='';btn.style.cursor='';}}
 }
 
 // ===== Prompt =====
