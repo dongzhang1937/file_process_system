@@ -425,6 +425,45 @@ def delete_skills_config(config_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@llm_bp.route('/skills-config/builtin-defaults', methods=['GET'])
+def get_builtin_default_prompts():
+    """获取所有场景的内置默认Prompt（代码中硬编码的fallback模板）"""
+    try:
+        from .requirement_analyzer import RequirementAnalyzer
+        builtin_sql = RequirementAnalyzer._get_builtin_sql_prompts()
+
+        # 将内部 key 映射到 scene_type
+        scene_map = {
+            'mysql': 'sql_extraction_mysql',
+            'pg': 'sql_extraction_pg',
+            'oracle': 'sql_extraction_oracle',
+        }
+        defaults = {}
+        for key, prompt in builtin_sql.items():
+            scene = scene_map.get(key, key)
+            defaults[scene] = prompt
+
+        # web_search_summary 默认 prompt
+        defaults['web_search_summary'] = (
+            '你是一个专业的技术顾问，请根据提供的搜索结果给出准确、结构化的回答。\n\n'
+            '【用户需求】\n{{requirement}}\n\n'
+            '【搜索结果】\n{{search_results}}\n\n'
+            '请提供简洁准确的回答：'
+        )
+
+        # general 默认 prompt
+        defaults['general'] = (
+            '你是一个资深的数据库技术专家。\n'
+            '用户会给你一段技术需求或问题，请根据你的专业知识给出详尽、准确的回答。\n\n'
+            '【用户需求】\n{{requirement}}'
+        )
+
+        return jsonify({'success': True, 'data': defaults})
+    except Exception as e:
+        logger.error(f"获取内置默认Prompt失败: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 # ==================== SQL 数据库连接配置API ====================
 
 @llm_bp.route('/sql-db-config', methods=['GET'])

@@ -474,12 +474,29 @@ const ptHints={'sql_extraction_mysql':'<code>{{requirement}}</code>','sql_extrac
 function spt(s,btn){curPt=s;document.querySelectorAll('.pt-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
     document.getElementById('ptLabel').textContent=(ptLabels[s]||s)+' Prompt';
     document.getElementById('ptHint').innerHTML='可用变量：'+(ptHints[s]||'');document.getElementById('ptStatus').textContent='';loadPt(s)}
+let builtinDefaults={};
+async function loadBuiltinDefaults(){
+    try{const r=await(await fetch('/llm/skills-config/builtin-defaults')).json();
+        if(r.success)builtinDefaults=r.data||{};
+    }catch(e){console.warn('加载内置默认Prompt失败:',e)}
+}
 async function loadPt(scene){
     const ed=document.getElementById('ptEditor');ed.value='加载中...';ed.disabled=true;
+    const st=document.getElementById('ptStatus');
+    if(!Object.keys(builtinDefaults).length)await loadBuiltinDefaults();
     try{const r=await(await fetch(`/llm/skills-config?scene_type=${scene}`)).json();
-        if(r.success&&r.data&&r.data.length>0){const t=r.data.find(x=>x.is_default)||r.data[0];ed.value=t.system_prompt||'';ed.dataset.cid=t.id}
-        else{ed.value='';ed.dataset.cid=''}
-    }catch(e){ed.value='加载失败: '+e.message}ed.disabled=false}
+        if(r.success&&r.data&&r.data.length>0){
+            const t=r.data.find(x=>x.is_default)||r.data[0];
+            ed.value=t.system_prompt||'';ed.dataset.cid=t.id;
+            st.style.color='#67c23a';st.textContent='✅ 已有自定义模板（ID: '+t.id+'）'
+        }else{
+            // 数据库无记录，回退显示内置默认
+            const builtin=builtinDefaults[scene]||'';
+            ed.value=builtin;ed.dataset.cid='';
+            if(builtin){st.style.color='#1890ff';st.textContent='ℹ️ 当前显示系统内置默认模板（未保存到数据库），可直接编辑后保存'}
+            else{st.style.color='#909399';st.textContent='暂无内置默认模板，请自行编写'}
+        }
+    }catch(e){ed.value='加载失败: '+e.message;st.style.color='#f56c6c';st.textContent=''}ed.disabled=false}
 async function savePt(){
     const ed=document.getElementById('ptEditor'),c=ed.value.trim(),cid=ed.dataset.cid,st=document.getElementById('ptStatus');
     try{let r;
@@ -490,7 +507,7 @@ async function savePt(){
         if(r.success){st.style.color='#67c23a';st.textContent='✅ 保存成功';if(r.data?.id)ed.dataset.cid=r.data.id}
         else{st.style.color='#f56c6c';st.textContent='❌ '+r.error}
     }catch(e){st.style.color='#f56c6c';st.textContent='❌ '+e.message}}
-function resetPt(){if(confirm('确认清空？')){document.getElementById('ptEditor').value='';document.getElementById('ptStatus').textContent='已清空，请保存'}}
+function resetPt(){if(confirm('确认恢复为系统内置默认模板？')){const builtin=builtinDefaults[curPt]||'';document.getElementById('ptEditor').value=builtin;document.getElementById('ptStatus').style.color='#1890ff';document.getElementById('ptStatus').textContent=builtin?'已恢复为系统内置默认模板，请点击保存':'暂无内置默认模板'}}
 
 // ===== Search =====
 async function loadSch(){
