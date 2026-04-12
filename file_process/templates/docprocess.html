@@ -522,7 +522,7 @@
                 刷新列表
             </button>
             <span id="selectedProcessCount" style="color: #666; font-size: 13px; margin-left: 10px;">已选 0 个</span>
-            <a href="javascript:void(0)" onclick="recoverOrphanedTasks()" style="margin-left: auto; color: #909399; font-size: 12px; text-decoration: none;" title="恢复系统重启后卡住的处理任务">恢复卡住的任务</a>
+            <a href="javascript:void(0)" onclick="recoverOrphanedTasks()" style="margin-left: auto; color: #909399; font-size: 12px; text-decoration: none;" title="重置所有卡在处理中的任务为待处理状态">重置卡住的任务</a>
         </div>
 
         <!-- 文档列表 -->
@@ -605,7 +605,7 @@ function renderContentWithImages(content, images) {
     // 先替换图片占位符
     let result = escaped.replace(IMAGE_ID_RE, (m, id) => {
         const url = imgMap[String(id)];
-        if (!url) return m;
+        if (!url) return `<span style="color:#999;font-size:12px;background:#f5f5f5;padding:2px 6px;border-radius:3px">[图片 ${id} 未找到]</span>`;
         const safeUrl = escapeHtml(url);
         return `<div class="inline-image-wrapper"><img class="inline-image" data-src="${safeUrl}" data-loaded="false" src="${PLACEHOLDER_IMG}" alt="图片 ${id}" onclick="showImageModal(this.getAttribute('data-src'))"></div>`;
     });
@@ -1154,9 +1154,9 @@ function updateDocStatus(docId, status, data) {
     }
 }
 
-// 恢复孤儿任务
+// 恢复孤儿任务（重置卡住的processing状态为pending）
 async function recoverOrphanedTasks() {
-    if (!confirm('确定要恢复系统重启后丢失的处理任务吗？\n\n这将检查所有长时间处于"处理中"状态的任务，并重新提交到处理队列。')) {
+    if (!confirm('确定要重置所有卡住的"处理中"任务吗？\n\n这将把所有长时间处于"处理中"状态的任务重置为"待处理"，您可以重新点击"处理"按钮。')) {
         return;
     }
 
@@ -1164,10 +1164,10 @@ async function recoverOrphanedTasks() {
     const recoverBtn = event.target;
     const originalText = recoverBtn.textContent;
     recoverBtn.disabled = true;
-    recoverBtn.textContent = '恢复中...';
+    recoverBtn.textContent = '重置中...';
 
     try {
-        const response = await fetch(`${API_BASE}/recover-tasks`, {
+        const response = await fetch(`${API_BASE}/reset-stuck-tasks`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             credentials: 'same-origin'
@@ -1182,7 +1182,7 @@ async function recoverOrphanedTasks() {
         const result = await response.json();
 
         if (result.success) {
-            alert('任务恢复检查完成！\n\n已自动处理所有孤儿任务，请查看任务列表。');
+            alert(result.message || '任务重置完成！');
             // 刷新列表以显示最新状态
             loadDocProcessList();
         } else {

@@ -2025,7 +2025,7 @@ function renderContentWithImages(content, images) {
     // 先替换图片占位符
     let result = escaped.replace(IMAGE_ID_RE, (m, id) => {
         const url = imgMap[String(id)];
-        if (!url) return m;
+        if (!url) return `<span style="color:#999;font-size:12px;background:#f5f5f5;padding:2px 6px;border-radius:3px">[图片 ${id} 未找到]</span>`;
         const safeUrl = escapeHtml(url);
         return `<div style="margin:10px 0;"><img class="chapter-image" data-src="${safeUrl}" src="${safeUrl}" alt="图片 ${id}" onclick="showImage(this.getAttribute('data-src'))"></div>`;
     });

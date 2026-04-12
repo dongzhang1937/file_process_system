@@ -3,6 +3,7 @@ from config.db_config import fetch_one, fetch_all, dml_sql
 from .celery_app import celery
 import os
 import re
+import uuid
 import json
 import shutil
 from datetime import datetime, timedelta
@@ -63,10 +64,11 @@ def recover_orphaned_tasks():
             # 重新提交任务
             try:
                 if USE_ASYNC_PROCESSING:
-                    # 重新提交到Celery
+                    # 重新提交到Celery（使用新的task_id避免被旧revoke记录影响）
                     celery.send_task(
                         'file_process.models.prodetail.process_document_task',
                         args=[doc_id, file_path, username, filename],
+                        task_id=str(uuid.uuid4()),
                         countdown=0,
                         expires=3600
                     )
@@ -117,6 +119,49 @@ def recover_tasks_api():
             'success': False,
             'error': str(e)
         }), 500
+
+
+@doc_proc.route('/api/doc-process/reset-stuck-tasks', methods=['POST'])
+def reset_stuck_tasks_api():
+    """重置所有卡在 processing 状态的任务为 pending，并清除 Celery revoked 记录"""
+    try:
+        user_info = session.get('user')
+        username = user_info.get('username') if user_info else 'anonymous'
+
+        # 查找当前用户卡住的任务
+        stuck_sql = """
+            SELECT doc_id FROM doc_process_records
+            WHERE username = %s AND status = 'processing'
+        """
+        stuck_tasks = fetch_all(stuck_sql, parameters=(username,))
+
+        if not stuck_tasks:
+            return jsonify({'success': True, 'message': '没有卡住的任务', 'count': 0})
+
+        # 重置为 pending
+        reset_sql = """
+            UPDATE doc_process_records
+            SET status = 'pending', process_start_time = NULL, error_message = NULL
+            WHERE username = %s AND status = 'processing'
+        """
+        affected = dml_sql(reset_sql, parameters=(username,))
+
+        # 尝试清除 Celery worker 的 revoked 记录
+        try:
+            celery.control.discard_all()
+            logger.info("已清除 Celery 队列中的残留任务")
+        except Exception as e:
+            logger.warning(f"清除 Celery 队列失败（不影响重置）: {e}")
+
+        logger.info(f"已重置 {affected} 个卡住的任务为 pending, 用户: {username}")
+        return jsonify({
+            'success': True,
+            'message': f'已重置 {affected} 个卡住的任务，可重新点击"处理"按钮',
+            'count': affected
+        })
+    except Exception as e:
+        logger.error(f"重置卡住任务失败: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @doc_proc.route('/api/doc-process/list', methods=['GET'])
@@ -331,7 +376,7 @@ def process_document():
                 celery.send_task(
                     'file_process.models.prodetail.process_document_task', 
                     args=[doc_id, doc_record['file_path'], doc_record['username'], doc_record['filename']],
-                    # 添加任务选项，设置超时
+                    task_id=str(uuid.uuid4()),  # 唯一ID，避免被旧revoke影响
                     countdown=0,  # 立即执行
                     expires=3600  # 1小时后过期
                 )
@@ -699,6 +744,45 @@ def get_document_chapters():
                 chapter['images'] = image_list
             else:
                 chapter['images'] = []
+
+        # 补查：content 中引用了 {{IMAGE_ID_xxx}} 但 chapter_images 关联表中缺失的图片
+        # 收集所有 content 中引用的 IMAGE_ID，以及已有的 image ID
+        all_missing_ids = set()
+        for chapter in chapters:
+            content = chapter.get('content') or ''
+            referenced_ids = set(re.findall(r'\{\{IMAGE_ID_(\d+)\}\}', content))
+            existing_ids = {str(img['id']) for img in chapter['images']}
+            missing = referenced_ids - existing_ids
+            if missing:
+                all_missing_ids.update(missing)
+
+        if all_missing_ids:
+            # 一次性查询所有缺失的图片
+            placeholders = ','.join(['%s'] * len(all_missing_ids))
+            missing_ids_list = list(all_missing_ids)
+            missing_images_sql = f"""
+                SELECT id, image_path, image_url
+                FROM document_images
+                WHERE id IN ({placeholders})
+            """
+            missing_images = fetch_all(missing_images_sql, parameters=missing_ids_list)
+            missing_img_map = {}
+            for img in (missing_images or []):
+                missing_img_map[str(img['id'])] = {
+                    'id': str(img['id']),
+                    'image_path': img.get('image_path') or '',
+                    'image_url': img.get('image_url') or img.get('image_path') or ''
+                }
+
+            # 把缺失的图片补到对应章节
+            for chapter in chapters:
+                content = chapter.get('content') or ''
+                referenced_ids = set(re.findall(r'\{\{IMAGE_ID_(\d+)\}\}', content))
+                existing_ids = {str(img['id']) for img in chapter['images']}
+                missing = referenced_ids - existing_ids
+                for mid in missing:
+                    if mid in missing_img_map:
+                        chapter['images'].append(missing_img_map[mid])
 
         # 构建树形结构
         # 找出所有存在的ID

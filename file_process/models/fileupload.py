@@ -228,7 +228,7 @@ def init_upload():
         
         # 检查文件类型
         if not allowed_file(filename):
-            return jsonify({'error': '不支持的文件格式，仅支持: .docx, .pdf, .txt'}), 400
+            return jsonify({'error': '不支持的文件格式，仅支持: .docx, .doc'}), 400
        
        # 检查该用户下是否已存在同名文件
         try:

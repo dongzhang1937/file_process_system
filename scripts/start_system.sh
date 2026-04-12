@@ -15,6 +15,13 @@ export PYTHONPATH="$PROJECT_ROOT:${PYTHONPATH:-}"
 LOG_DIR="$PROJECT_ROOT/logs"
 mkdir -p "$LOG_DIR"
 
+# 使用 venv 的 Python（如果存在）
+PYTHON="$PROJECT_ROOT/venv/bin/python"
+if [ ! -f "$PYTHON" ]; then
+    PYTHON="python"
+    echo "⚠️  未找到 venv，使用系统 Python"
+fi
+
 # 检查Redis是否运行
 echo "检查Redis服务..."
 if ! redis-cli ping > /dev/null 2>&1; then
@@ -34,7 +41,7 @@ echo "✅ MySQL服务正常"
 
 # 启动Celery Worker (后台运行)
 echo "启动Celery Worker..."
-nohup python -m celery -A file_process.models.celery_app worker \
+nohup $PYTHON -m celery -A file_process.models.celery_app worker \
     --loglevel=info \
     --concurrency=2 \
     --pool=solo \
@@ -55,6 +62,6 @@ sleep 3
 
 # 启动Flask应用
 echo "启动Flask应用..."
-python app.py
+$PYTHON app.py
 
 echo "系统已停止"

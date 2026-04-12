@@ -13,6 +13,13 @@ export PYTHONPATH="$PROJECT_ROOT:${PYTHONPATH:-}"
 LOG_DIR="$PROJECT_ROOT/logs"
 mkdir -p "$LOG_DIR"
 
+# 使用 venv 的 Python（如果存在）
+PYTHON="$PROJECT_ROOT/venv/bin/python"
+if [ ! -f "$PYTHON" ]; then
+    PYTHON="python"
+    echo "⚠️  未找到 venv，使用系统 Python"
+fi
+
 # 检查是否已有 Celery 进程运行
 if pgrep -f "celery.*file_process.models.celery_app" > /dev/null; then
     echo "检测到已有 Celery Worker 运行，正在停止..."
@@ -24,7 +31,7 @@ fi
 # 启动 Celery Worker
 echo "正在启动 Celery Worker..."
 LOG_FILE="$LOG_DIR/celery.log"
-python -m celery -A file_process.models.celery_app worker \
+$PYTHON -m celery -A file_process.models.celery_app worker \
     --loglevel=info \
     --concurrency=1 \
     --pool=solo \

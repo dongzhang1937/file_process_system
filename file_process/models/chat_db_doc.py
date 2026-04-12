@@ -145,7 +145,7 @@ def analyze_uploaded_file():
             }), 400
         
         # 检查文件类型
-        allowed_extensions = {'.docx', '.txt', '.pdf'}
+        allowed_extensions = {'.docx', '.doc'}
         filename = file.filename or ''
         ext = os.path.splitext(filename)[1].lower()
         if ext not in allowed_extensions:
