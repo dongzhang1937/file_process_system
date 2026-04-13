@@ -238,7 +238,7 @@
                 <form id="uploadForm" action="/upload">
                     <div class="upload-controls">
                         <div class="file-input-wrapper">
-                            <input type="file" id="fileInput" name="file" accept=".docx,.pdf,.txt" multiple required>
+                            <input type="file" id="fileInput" name="file" accept=".docx,.doc,.txt" multiple required>
                             <label for="fileInput" class="file-input-label">选择文件（可多选）</label>
                         </div>
                         <span class="selected-file" id="selectedFileName">未选择文件</span>
@@ -249,7 +249,7 @@
                     </div>
                 </form>
                 <p style="color: #666; margin-top: 15px; font-size: 14px;">
-                    支持的文件格式: .docx, .pdf, .txt | 支持批量上传
+                    支持的文件格式: .docx, .doc, .txt | 支持批量上传
                 </p>
             </div>
 
@@ -503,7 +503,7 @@
                 return;
             }
             
-            const allowedTypes = ['.docx', '.doc'];
+            const allowedTypes = ['.docx', '.doc', '.txt'];
             const validFiles = [];
             const invalidFiles = [];
             
